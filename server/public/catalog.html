@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Вячеслав">
+    <meta name="keywords" content="одежда, магазин, стиль, тренды, покупки, мода">
+    <meta name="description" content="Интернет-магазин одежды, где вы найдете стильные вещи для любого случая">
+    <meta name="robots" content="index, follow">
+    <title>Каталог - Silver.Vy</title>
+    <link rel="stylesheet" type="text/css" href="styles2.css">
+</head>
+<body>
+    <header>
+        <h1>Silver.Vy</h1>
+    </header>
+
+<nav>
+    <a href="index.html">Главная</a>
+    <a href="catalog.html">Каталог</a>
+    <a href="about.html">О бренде</a>
+    <a href="contact.html">Контакты</a>
+    <a href="account.html" class="account-link">Аккаунт</a>
+    <a href="cart.html" class="cart-link">Корзина (<span id="cartCounter">0</span>)</a>
+</nav>
+
+    <div class="burger-menu">
+        <div class="burger-icon">☰</div>
+        <div class="nav-links">
+            <a href="index.html">Главная</a>
+            <a href="catalog.html">Каталог</a>
+            <a href="about.html">О бренде</a>
+            <a href="contact.html">Контакты</a>
+            <a href="account.html" class="account-link">Аккаунт</a>
+            <a href="cart.html" class="cart-link">Корзина (<span id="cartCounter">0</span>)</a>
+        </div>
+    </div>
+
+
+    <div class="content">
+        <section id="products">
+            <h2>Наши Товары</h2>
+            <div class="line"></div>
+
+            <!-- Секция: Верхняя одежда -->
+            <section class="category" id="outerwear">
+                <h3>Верхняя одежда</h3>
+                <div class="product-grid">
+                    <!-- Пальто -->
+                    <div class="product-card">
+                        <a href="product-coat.html" class="product-link">
+                            <img src="Одежда/coat/1_coat.png" alt="Пальто свободное">
+                            <h4>Пальто свободное</h4>
+                        </a>
+                        <p>12 999 ₽</p>
+                        <a href="product-coat.html" class="view-button">Посмотреть</a>
+                    </div>
+
+                    <!-- Бомбер -->
+                    <div class="product-card">
+                        <a href="product-bomber.html" class="product-link">
+                            <img src="Одежда/bomber/1_bomber.png" alt="Куртка прямого кроя из шерсти">
+                            <h4>Куртка прямого кроя из шерсти</h4>
+                        </a>
+                        <p>16 999 ₽</p>
+                        <a href="product-bomber.html" class="view-button">Посмотреть</a>
+                    </div>
+
+                    <!-- Тренчкот -->
+                    <div class="product-card">
+                        <a href="product-trench.html" class="product-link">
+                            <img src="Одежда/trench/1_trench.png" alt="Тренчкот">
+                            <h4>Тренчкот</h4>
+                        </a>
+                        <p>21 999 ₽</p>
+                        <a href="product-trench.html" class="view-button">Посмотреть</a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Секция: Обувь -->
+            <section class="category" id="shoes">
+                <h3>Обувь</h3>
+                <div class="product-grid">
+                    <!-- Ботинки -->
+                    <div class="product-card">
+                        <a href="product-boots.html" class="product-link">
+                            <img src="Одежда/boots/1_boots.png" alt="Ботинки кожаные">
+                            <h4>Ботинки кожаные</h4>
+                        </a>
+                        <p>9 999 ₽</p>
+                        <a href="product-boots.html" class="view-button">Посмотреть</a>
+                    </div>
+
+                    <!-- Лоферы -->
+                    <div class="product-card">
+                        <a href="product-loafers.html" class="product-link">
+                            <img src="Одежда/loafers/1_loafers.png" alt="Лоферы замшевые">
+                            <h4>Лоферы замшевые</h4>
+                        </a>
+                        <p>10 999 ₽</p>
+                        <a href="product-loafers.html" class="view-button">Посмотреть</a>
+                    </div>
+                </div>
+            </section>
+            
+            
+            <section class="category">
+                <h3>Базовый гардероб</h3>
+                <div class="product-grid">
+                    <div class="product-card">
+                        <a href="product-trousers.html" class="product-link">
+                            <img src="Одежда/trousers/1_trousers.png" alt="Брюки из хлопка и лиоцелла">
+                            <h4>Брюки из хлопка и лиоцелла</h4>
+                        </a>
+                        <p>4 999 ₽</p>
+                        <a href="product-trousers.html" class="view-button">Посмотреть</a>
+                    </div>
+
+                    <div class="product-card">
+                        <a href="product-shirt.html" class="product-link">
+                            <img src="Одежда/shirt/1_shirt.png" alt="Рубашка из хлопка и лиоцелла">
+                            <h4>Рубашка из хлопка и лиоцелла</h4>
+                        </a>
+                        <p>6 999 ₽</p>
+                        <a href="product-shirt.html" class="view-button">Посмотреть</a>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="category" id="denim">
+                <h3>Деним</h3>
+                <div class="product-grid">
+                    <div class="product-card">
+                        <a href="product-jeans.html" class="product-link">
+                            <img src="Одежда/jeans/1_jeans.png" alt="Джинсы baggy с высокой посадкой">
+                            <h4>Джинсы baggy с высокой посадкой</h4>
+                        </a>
+                        <p>6 999 ₽</p>
+                        <a href="product-jeans.html" class="view-button">Посмотреть</a>
+                    </div>
+
+                    <div class="product-card">
+                        <a href="product-jean_coat.html" class="product-link">
+                            <img src="Одежда/jean_coat/1_jean_coat.png" alt="Джинсовая куртка карго">
+                            <h4>Джинсовая куртка карго</h4>
+                        </a>
+                        <p>8 999 ₽</p>
+                        <a href="product-jean_coat.html" class="view-button">Посмотреть</a>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="category" id="summer2025">
+                <h3>Лето 2025</h3>
+                <div class="product-grid">
+                    <div class="product-card">
+                        <a href="product-linen_shirt.html" class="product-link">
+                            <img src="Одежда/linen_shirt/1_linen_shirt.png" alt="Рубашка изо льна">
+                            <h4>Рубашка изо льна</h4>
+                        </a>
+                        <p>5 999 ₽</p>
+                        <a href="product-linen_shirt.html" class="view-button">Посмотреть</a>
+                    </div>
+
+                    <div class="product-card">
+                        <a href="product-linen_shorts.html" class="product-link">
+                            <img src="Одежда/linen_shorts/1_linen_shorts.png" alt="Шорты изо льна">
+                            <h4>Шорты изо льна</h4>
+                        </a>
+                        <p>5 999 ₽</p>
+                        <a href="product-linen_shorts.html" class="view-button">Посмотреть</a>
+                    </div>
+                </div>
+            </section>
+            
+        </section>
+    </div>
+    <footer>
+    <div class="footer-content">
+        <div class="footer-section">
+            <h3>Контакты</h3>
+            <p>Адрес: Красноярск, ул. Щорса, 41</p>
+            <p>Телефон: +7 (962) 079-02-89</p>
+            <p>Email: info@silvervy.ru</p>
+        </div>
+        <div class="footer-section">
+            <h3>Ссылки</h3>
+            <div class="footer-links">
+                <a href="about.html">О компании</a>
+                <a href="contact.html">Поддержка</a>
+                <a href="#">Доставка</a>
+                <a href="#">Возврат</a>
+            </div>
+        </div>
+        <div class="footer-section">
+            <h3>Соцсети</h3>
+            <div class="social-icons">
+                <a href="#"><img src="instagram-icon.png" alt="Instagram"></a>
+                <a href="#"><img src="vk-icon.png" alt="VK"></a>
+                <a href="#"><img src="telegram-icon.jpg" alt="Telegram" style="border-radius: 10px;"></a>
+            </div>
+        </div>
+    </div>
+    <div class="line"></div>
+    <p>&copy; 2025 Silver.Vy. Все права защищены.</p>
+</footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const burgerIcon = document.querySelector('.burger-icon');
+            const navLinks = document.querySelector('.nav-links');
+
+            burgerIcon.addEventListener('click', function() {
+                navLinks.classList.toggle('active');
+            });
+
+            // Закрытие меню при клике вне области
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.burger-menu')) {
+                    navLinks.classList.remove('active');
+                }
+            });
+        });
+    </script>
+    <script src="cart.js"></script>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Вячеслав">
+    <meta name="keywords" content="одежда, магазин, стиль, тренды, покупки, мода">
+    <meta name="description" content="Интернет-магазин одежды, где вы найдете стильные вещи для любого случая">
+    <meta name="robots" content="index, follow">
+    <title>Silver.Vy - Современная одежда</title>
+    <link rel="stylesheet" type="text/css" href="styles2.css">
+</head>
+<body>
+    <header>
+        <h1>Silver.Vy</h1>
+    </header>
+
+<nav>
+    <a href="index.html">Главная</a>
+    <a href="catalog.html">Каталог</a>
+    <a href="about.html">О бренде</a>
+    <a href="contact.html">Контакты</a>
+    <a href="account.html" class="account-link">Аккаунт</a>
+    <a href="cart.html" class="cart-link">Корзина (<span id="cartCounter">0</span>)</a>
+</nav>
+
+    <div class="burger-menu">
+        <div class="burger-icon">☰</div>
+        <div class="nav-links">
+            <a href="index.html">Главная</a>
+            <a href="catalog.html">Каталог</a>
+            <a href="about.html">О бренде</a>
+            <a href="contact.html">Контакты</a>
+            <a href="account.html" class="account-link">Аккаунт</a>
+            <a href="cart.html" class="cart-link">Корзина (<span id="cartCounter">0</span>)</a>
+        </div>
+    </div>
+
+    <div class="hero-carousel">
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <video autoplay muted loop playsinline class="hero-video">
+                <source src="video1.mp4" type="video/mp4">
+                Ваш браузер не поддерживает видео
+                </video>
+                <div class="carousel-caption">
+                    <h2>ЛЕТО 2025</h2>
+                    <p>Изысканные силуэты и премиальные материалы</p>
+                    <a href="catalog.html#summer2025" class="cta-button" data-ignore-cart>Смотреть коллекцию</a>
+                </div>
+            </div>
+            
+            <div class="carousel-item">
+                <img src="Одежда/1_main.jpg" alt="Мужская коллекция">
+                <div class="carousel-caption">
+                    <h2>СОВРЕМЕННЫЙ МИНИМАЛИЗМ</h2>
+                    <p>Лаконичность и функциональность в каждой детали</p>
+                    <a href="catalog.html" class="cta-button" data-ignore-cart>Исследовать</a>
+                </div>
+            </div>
+        </div>
+        
+        <button class="carousel-control prev">‹</button>
+        <button class="carousel-control next">›</button>
+    </div>
+
+    <!-- Блок преимуществ -->
+    <section class="advantages">
+        <div class="advantage-card">
+            <img src="Одежда/delivery.png" alt="Доставка">
+            <h3>Быстрая доставка</h3>
+            <p>По всей России за 3-5 дней</p>
+        </div>
+        <div class="advantage-card">
+            <img src="Одежда/materials.png" alt="Качество">
+            <h3>Гарантия качества</h3>
+            <p>Премиальные материалы</p>
+        </div>
+        <div class="advantage-card">
+            <img src="Одежда/return.png" alt="Возврат">
+            <h3>Легкий возврат</h3>
+            <p>14 дней на примерку</p>
+        </div>
+    </section>
+
+    <section class="featured-categories">
+        <h2>Исследуйте коллекции</h2>
+        <div class="categories-grid">
+            <a href="catalog.html#outerwear" class="category-card">
+                <img src="Одежда/verh.jpg" alt="Верхняя одежда">
+                <div class="category-overlay">
+                    <h3>Верхняя одежда</h3>
+                </div>
+            </a>
+            <a href="catalog.html#shoes" class="category-card">
+                <img src="Одежда/obuv.jpg" alt="Обувь">
+                <div class="category-overlay">
+                    <h3>Обувь</h3>
+                </div>
+            </a>
+            <a href="catalog.html#denim" class="category-card">
+                <img src="Одежда/niz.jpg" alt="Деним">
+                <div class="category-overlay">
+                    <h3>Деним</h3>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <footer>
+    <div class="footer-content">
+        <div class="footer-section">
+            <h3>Контакты</h3>
+            <p>Адрес: Красноярск, ул. Щорса, 41</p>
+            <p>Телефон: +7 (962) 079-02-89</p>
+            <p>Email: info@silvervy.ru</p>
+        </div>
+        <div class="footer-section">
+            <h3>Ссылки</h3>
+            <div class="footer-links">
+                <a href="about.html">О компании</a>
+                <a href="contact.html">Поддержка</a>
+                <a href="#">Доставка</a>
+                <a href="#">Возврат</a>
+            </div>
+        </div>
+        <div class="footer-section">
+            <h3>Соцсети</h3>
+            <div class="social-icons">
+                <a href="#"><img src="instagram-icon.png" alt="Instagram"></a>
+                <a href="#"><img src="vk-icon.png" alt="VK"></a>
+                <a href="#"><img src="telegram-icon.jpg" alt="Telegram" style="border-radius: 10px;"></a>
+            </div>
+        </div>
+    </div>
+    <div class="line"></div>
+    <p>&copy; 2025 Silver.Vy. Все права защищены.</p>
+</footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const burgerIcon = document.querySelector('.burger-icon');
+            const navLinks = document.querySelector('.nav-links');
+
+            burgerIcon.addEventListener('click', function() {
+                navLinks.classList.toggle('active');
+            });
+
+            // Закрытие меню при клике вне области
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.burger-menu')) {
+                    navLinks.classList.remove('active');
+                }
+            });
+        });
+    </script>
+    
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const carouselItems = document.querySelectorAll('.carousel-item');
+    const prevButton = document.querySelector('.carousel-control.prev');
+    const nextButton = document.querySelector('.carousel-control.next');
+    let currentIndex = 0;
+
+    function showSlide(index) {
+        carouselItems.forEach(item => item.classList.remove('active'));
+        carouselItems[index].classList.add('active');
+    }
+
+    function nextSlide() {
+        currentIndex = (currentIndex + 1) % carouselItems.length;
+        showSlide(currentIndex);
+    }
+
+    function prevSlide() {
+        currentIndex = (currentIndex - 1 + carouselItems.length) % carouselItems.length;
+        showSlide(currentIndex);
+    }
+
+    prevButton.addEventListener('click', prevSlide);
+    nextButton.addEventListener('click', nextSlide);
+
+    // Обработчик для кнопки с якорем
+    document.querySelector('.cta-button[href*="#summer2025"]').addEventListener('click', function(e) {
+        window.location.href = this.getAttribute('href'); // Принудительный переход
+    });
+
+    // Автопереключение каждые 7 секунд
+    setInterval(nextSlide, 7000);
+
+    // Добавить в скрипт карусели
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    document.querySelector('.carousel-inner').addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+    });
+
+    document.querySelector('.carousel-inner').addEventListener('touchend', e => {
+        touchEndX = e.changedTouches[0].screenX;
+        if (touchStartX - touchEndX > 50) nextSlide();
+        if (touchStartX - touchEndX < -50) prevSlide();
+    });
+});
+</script>
+<script src="cart.js"></script>
+
+    
+</body>
+</html>

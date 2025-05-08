@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Вячеслав">
+    <meta name="keywords" content="одежда, магазин, стиль, тренды, покупки, мода">
+    <meta name="description" content="Интернет-магазин одежды, где вы найдете стильные вещи для любого случая">
+    <meta name="robots" content="index, follow">
+    <title>О бренде - Silver.Vy</title>
+    <link rel="stylesheet" href="styles2.css">
+</head>
+<body>
+    <header>
+        <h1>Silver.Vy</h1>
+    </header>
+
+<nav>
+    <a href="index.html">Главная</a>
+    <a href="catalog.html">Каталог</a>
+    <a href="about.html">О бренде</a>
+    <a href="contact.html">Контакты</a>
+    <a href="account.html" class="account-link">Аккаунт</a>
+    <a href="cart.html" class="cart-link">Корзина (<span id="cartCounter">0</span>)</a>
+</nav>
+
+    <div class="burger-menu">
+        <div class="burger-icon">☰</div>
+        <div class="nav-links">
+            <a href="index.html">Главная</a>
+            <a href="catalog.html">Каталог</a>
+            <a href="about.html">О бренде</a>
+            <a href="contact.html">Контакты</a>
+            <a href="account.html" class="account-link">Аккаунт</a>
+            <a href="cart.html" class="cart-link">Корзина (<span id="cartCounter">0</span>)</a>
+        </div>
+    </div>
+
+
+    <div class="content">
+        <section id="about">
+            <h2 class="section-title">О бренде</h2>
+            <div class="about-grid">
+                <div class="about-card">
+                    <h3>Философия</h3>
+                    <p>Современный минимализм — основа нашей эстетики. Каждая вещь создаётся для тех, кто ценит лаконичность и качество.</p>
+                </div>
+                
+                <div class="about-card">
+                    <h3>Материалы</h3>
+                    <p>Используем натуральные ткани: органический хлопок, шерсть и экокожу. Устойчивое производство — наш приоритет.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+<footer>
+    <div class="footer-content">
+        <div class="footer-section">
+            <h3>Контакты</h3>
+            <p>Адрес: Красноярск, ул. Щорса, 41</p>
+            <p>Телефон: +7 (962) 079-02-89</p>
+            <p>Email: info@silvervy.ru</p>
+        </div>
+        <div class="footer-section">
+            <h3>Ссылки</h3>
+            <div class="footer-links">
+                <a href="about.html">О компании</a>
+                <a href="contact.html">Поддержка</a>
+                <a href="#">Доставка</a>
+                <a href="#">Возврат</a>
+            </div>
+        </div>
+        <div class="footer-section">
+            <h3>Соцсети</h3>
+            <div class="social-icons">
+                <a href="#"><img src="instagram-icon.png" alt="Instagram"></a>
+                <a href="#"><img src="vk-icon.png" alt="VK"></a>
+                <a href="#"><img src="telegram-icon.jpg" alt="Telegram" style="border-radius: 10px;"></a>
+            </div>
+        </div>
+    </div>
+    <div class="line"></div>
+    <p>&copy; 2025 Silver.Vy. Все права защищены.</p>
+</footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const burgerIcon = document.querySelector('.burger-icon');
+            const navLinks = document.querySelector('.nav-links');
+
+            burgerIcon.addEventListener('click', function() {
+                navLinks.classList.toggle('active');
+            });
+
+            // Закрытие меню при клике вне области
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.burger-menu')) {
+                    navLinks.classList.remove('active');
+                }
+            });
+        });
+    </script>
+    <script src="cart.js"></script>
+</body>
+</html>
