@@ -1614,7 +1614,527 @@ header:hover h1 {
     }
 }
 
+@media (max-width: 768px) {
+    .view-button {
+        width: fit-content !important;
+        min-width: 120px !important;
+        padding: 8px 20px !important;
+        margin: 0.5rem auto !important;
+        display: block !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+    }
+}
 
+@media (max-width: 768px) {
+    .carousel-control {
+        width: 40px !important;
+        height: 60px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        background: rgba(121, 96, 72, 0.15) !important;
+        backdrop-filter: blur(2px) !important;
+        border-radius: 5px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 28px !important;
+        padding: 0 !important;
+    }
+
+    .carousel-control.prev {
+        left: 5px !important;
+        right: auto !important;
+    }
+
+    .carousel-control.next {
+        right: 5px !important;
+        left: auto !important;
+    }
+
+    .carousel-control:hover {
+        background: rgba(121, 96, 72, 0.25) !important;
+    }
+}
+
+/* Мобильная адаптация размеров */
+@media (max-width: 768px) {
+    .size-selector {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 1rem 0;
+    }
+
+    .size-selector > span {
+        width: 100%;
+        margin-bottom: 0.5rem;
+        font-size: 1rem;
+    }
+
+    .size {
+        flex: 1 1 calc(25% - 6px);
+        min-width: 60px;
+        padding: 10px 5px;
+        margin: 0 !important;
+        font-size: 0.9rem;
+        border-radius: 15px;
+        transition: all 0.2s;
+    }
+
+    .size.active {
+        transform: scale(1.05);
+        box-shadow: 0 3px 8px rgba(121, 96, 72, 0.2);
+    }
+}
+
+/* Мобильная адаптация формы заказа */
+@media (max-width: 768px) {
+    .checkout-modal {
+        width: 95% !important;
+        padding: 1.5rem !important;
+    }
+
+    .checkout-modal h3 {
+        font-size: 1.4rem !important;
+        margin-bottom: 1.5rem !important;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        width: 100% !important;
+        font-size: 16px !important;
+        padding: 12px 15px !important;
+        box-sizing: border-box !important;
+    }
+
+    .terms {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+
+    .terms label {
+        font-size: 0.85rem !important;
+        line-height: 1.4 !important;
+        flex: 1 !important;
+    }
+
+    .cta-button {
+        width: 100% !important;
+        padding: 14px !important;
+        font-size: 1rem !important;
+    }
+
+    textarea#notes {
+        min-height: 100px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .checkout-modal {
+        padding: 1rem !important;
+    }
+
+    .close-modal {
+        top: 0.5rem !important;
+        right: 0.5rem !important;
+        font-size: 1.8rem !important;
+    }
+
+    .checkout-modal h3 {
+        font-size: 1.3rem !important;
+    }
+
+    .terms label {
+        font-size: 0.8rem !important;
+    }
+}
+
+/* Стили для чекбокса */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.checkbox-container input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.checkbox-container label {
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* Мобильная адаптация */
+@media (max-width: 768px) {
+    .checkbox-container {
+        gap: 8px;
+    }
+
+    .checkbox-container label {
+        font-size: 0.85rem;
+    }
+
+    .checkbox-container input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* Для контейнера с чекбоксом */
+.form-group terms {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin: 1rem 0;
+}
+
+/* Чекбокс */
+.form-group terms input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    margin: 0;
+}
+
+/* Текст условия */
+.form-group terms label {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin: 0;
+}
+
+/* Адаптация для мобильных */
+@media (max-width: 480px) {
+    .form-group terms {
+        gap: 8px;
+        align-items: flex-start;
+    }
+
+    .form-group terms label {
+        font-size: 0.85rem;
+        white-space: normal;
+    }
+
+    .form-group terms input[type="checkbox"] {
+        margin-top: 3px;
+    }
+}
+
+/* Стили карты */
+.contacts-map {
+    padding: 4rem 5%;
+    background: #f8f5f2;
+}
+
+.map-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.map-card {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(121, 96, 72, 0.1);
+}
+
+.map-header {
+    padding: 2rem;
+    border-bottom: 2px solid #f0eae4;
+}
+
+.map-title {
+    font-family: 'Helvetica Neue', sans-serif;
+    font-weight: 300;
+    color: #5d4c3a;
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+}
+
+.map-address {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #796048;
+    font-size: 1.1rem;
+}
+
+.pin-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.custom-ymap {
+    width: 100%;
+    height: 500px;
+    border: none;
+    position: relative;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .contacts-map {
+        padding: 2rem;
+    }
+
+    .custom-ymap {
+        height: 350px;
+    }
+
+    .map-header {
+        padding: 1.5rem;
+    }
+
+    .map-title {
+        font-size: 1.5rem;
+    }
+}
+
+/* Кастомные элементы управления */
+.ymaps-2-1-79-controls__toolbar_right,
+.ymaps-2-1-79-controls__toolbar_left {
+    margin: 15px !important;
+}
+
+.ymaps-2-1-79-controls__control {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
+    border-radius: 8px !important;
+}
+
+.ymaps-2-1-79-map-copyrights-promo,
+.ymaps-2-1-79-copyright__wrap {
+    display: none !important;
+}
+
+/* Добавляем в styles2.css */
+/* Герой-секция */
+.brand-hero {
+    height: 70vh;
+    background: linear-gradient(rgba(93, 76, 58, 0.9), rgba(121, 96, 72, 0.8)),
+    url('Одежда/texture.png') center/cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4rem;
+}
+
+.hero-content {
+    text-align: center;
+    color: #f8f5f2;
+    max-width: 800px;
+    padding: 0 2rem;
+}
+
+.hero-content h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 3.5rem;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.hero-content p {
+    font-size: 1.4rem;
+    letter-spacing: 1px;
+}
+
+/* Обновленные карточки */
+.about-card {
+    position: relative;
+    padding: 3rem 2rem;
+    background: rgba(255,255,255,0.95);
+    border-radius: 16px;
+    text-align: center;
+    overflow: hidden;
+}
+
+.about-card i {
+    font-size: 3.5rem;
+    color: #796048;
+    margin-bottom: 1.5rem;
+    display: block;
+    transition: transform 0.3s;
+}
+
+.about-card:hover i {
+    transform: scale(1.1);
+}
+
+.about-card h3 {
+    font-size: 1.6rem;
+    margin-bottom: 1rem;
+    position: relative;
+    padding-bottom: 1rem;
+}
+
+.about-card h3::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 2px;
+    background: #c4a58a;
+}
+
+/* Блок статистики */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    margin: 4rem 0;
+}
+
+.stat-card {
+    background: rgba(255,255,255,0.95);
+    padding: 2.5rem;
+    border-radius: 16px;
+    text-align: center;
+    transition: transform 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-number {
+    font-family: 'Helvetica Neue', sans-serif;
+    font-weight: 300;
+    font-size: 3.5rem;
+    color: #5d4c3a;
+    line-height: 1;
+}
+
+.stat-label {
+    color: #796048;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+}
+
+/* Видеоблок */
+.video-container {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    margin: 4rem 0;
+    height: 600px;
+}
+
+.production-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.video-overlay h3 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .brand-hero {
+        height: 50vh;
+    }
+
+    .hero-content h2 {
+        font-size: 2rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .video-container {
+        height: 300px;
+    }
+
+    .video-overlay h3 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Добавить в styles2.css */
+/* Новые иконки */
+.bx-shape-circle:before { content: "\f1b2"; } /* Символ сообщества */
+.bx-recycle:before { content: "\f1b8"; } /* Переработка */
+
+/* Блок мастерской */
+.workshop-section {
+    background: rgba(255,255,255,0.95);
+    padding: 4rem 0;
+    margin: 4rem 0;
+    border-radius: 20px;
+}
+
+.craftsmanship-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.craftsmanship-grid img {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    border-radius: 12px;
+    transition: transform 0.3s;
+}
+
+.craftsmanship-grid img:hover {
+    transform: scale(1.03);
+}
+
+/* Обновленная статистика */
+.stat-card {
+    background: #f8f5f2;
+    padding: 2rem;
+    border-radius: 16px;
+    text-align: center;
+    border: 2px solid #e0d7d0;
+}
+
+.stat-card i {
+    font-size: 2.5rem;
+    color: #796048;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.stat-label {
+    font-size: 1.1rem;
+    color: #5d4c3a;
+    line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+    .craftsmanship-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-card {
+        padding: 1.5rem;
+    }
+}
 
 
 

@@ -37,6 +37,7 @@ async function loadUserCart() {
         const data = await response.json();
         localStorage.setItem('cart', JSON.stringify(data));
         updateCartCounter();
+        if (document.querySelector('.cart-section')) renderCart();
     } catch (error) {
         console.error('Ошибка при загрузке корзины:', error);
     }
@@ -58,6 +59,7 @@ async function saveCartToServer() {
         if (!response.ok) {
             throw new Error('Ошибка сохранения корзины');
         }
+        await loadUserCart();
     } catch (error) {
         console.error('Ошибка при сохранении корзины:', error);
     }
@@ -161,7 +163,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Загружаем корзину пользователя, если он авторизован
     if (checkAuth()) {
         await loadUserCart();
-        if (document.querySelector('.cart-section')) renderCart();
     }
 });
 
@@ -236,9 +237,14 @@ function showErrorModal(message) {
         modal.remove();
     });
 
-    // Закрытие при клике вне модального окна
+    // Закрытие по крестику
+    modal.querySelector('.close-modal').addEventListener('click', () => {
+        modal.remove();
+    });
+
+    // Закрытие по клику вне модалки
     modal.addEventListener('click', (e) => {
-        if(e.target === modal) {
+        if (e.target === modal) {
             modal.remove();
         }
     });
@@ -250,7 +256,6 @@ function showOrderMessage(message) {
     modal.innerHTML = `
         <div class="auth-error-content">
             <div class="auth-error-header">
-                <span class="auth-error-close">&times;</span>
             </div>
             <p>${message}</p>
             <button class="auth-error-account">Перейти на главную страницу</button>
@@ -259,21 +264,9 @@ function showOrderMessage(message) {
 
     document.body.appendChild(modal);
 
-    // Закрытие при клике на крестик
-    modal.querySelector('.auth-error-close').addEventListener('click', () => {
-        modal.remove();
-    });
-
     modal.querySelector('.auth-error-account').addEventListener('click', () => {
         window.location.href = 'index.html';
         modal.remove();
-    });
-
-    // Закрытие при клике вне модального окна
-    modal.addEventListener('click', (e) => {
-        if(e.target === modal) {
-            modal.remove();
-        }
     });
 }
 

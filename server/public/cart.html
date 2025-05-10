@@ -95,15 +95,25 @@
                 <textarea id="notes" placeholder="Дополнительные инструкции для курьера"></textarea>
             </div>
 
-            <div class="form-group terms">
-                <input type="checkbox" id="agreeTerms" required>
-                <label for="agreeTerms">Согласен с <a href="#">условиями доставки</a></label>
-            </div>
-
             <button type="submit" class="cta-button" checkout-submit>Подтвердить заказ</button>
         </form>
     </div>
 </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Закрытие по крестику
+            document.querySelector('.close-modal')?.addEventListener('click', () => {
+                document.getElementById('checkoutOverlay').style.display = 'none';
+            });
+
+            // Закрытие по клику вне модалки
+            document.getElementById('checkoutOverlay')?.addEventListener('click', (e) => {
+                if (e.target === document.getElementById('checkoutOverlay')) {
+                    document.getElementById('checkoutOverlay').style.display = 'none';
+                }
+            });
+        });
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const burgerIcon = document.querySelector('.burger-icon');

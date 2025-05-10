@@ -11,6 +11,7 @@ exports.getCart = async (req, res) => {
             cart = await Cart.create({ userId, items: [] });
         }
 
+        await cart.reload();
         res.status(200).json(cart.items);
     } catch (error) {
         res.status(500).json({ message: 'Ошибка при получении корзины', error: error.message });
@@ -33,6 +34,7 @@ exports.updateCart = async (req, res) => {
             await cart.save();
         }
 
+        await cart.reload();
         res.status(200).json({ message: 'Корзина обновлена', items: cart.items });
     } catch (error) {
         res.status(500).json({ message: 'Ошибка при обновлении корзины', error: error.message });

@@ -42,9 +42,9 @@
             <h2 class="section-title">Контакты</h2>
             <div class="contact-grid">
                 <div class="contact-card">
-                    <img src="Одежда/home.png" alt="Адрес" class="contact-icon">
-                    <h3>Адрес</h3>
-                    <p>Красноярск, ул. Щорса, 41</p>
+                    <img src="Одежда/email.png" alt="Почта" class="contact-icon">
+                    <h3>Электронная почта</h3>
+                    <p>info@silvervy.ru</p>
                 </div>
 
                 <div class="contact-card">
@@ -54,7 +54,32 @@
                 </div>
             </div>
         </section>
+
+        <!-- После блока с контактами -->
+        <section class="contacts-map">
+            <div class="map-container">
+                <div class="map-card">
+                    <div class="map-header">
+                        <h3 class="map-title">Наш магазин</h3>
+                        <div class="map-address">
+                            <svg class="pin-icon" viewBox="0 0 24 24" fill="#796048">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/>
+                            </svg>
+                            <p>Красноярск, ул. Щорса, 41</p>
+                        </div>
+                    </div>
+
+                    <div id="map" class="custom-ymap"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Подключение API Яндекса -->
+        <script src="https://api-maps.yandex.ru/2.1/?apikey=1084b7eb-a78d-481d-9023-fccb4d9e9510
+&lang=ru_RU"></script>
     </div>
+
+
 
 <footer>
     <div class="footer-content">
@@ -103,5 +128,48 @@
         });
     </script>
     <script src="cart.js"></script>
+    <script> document.addEventListener('DOMContentLoaded', function() {
+        if(document.getElementById('map')) {
+            ymaps.ready(initDesignMap);
+        }
+    });
+
+    function initDesignMap() {
+        const map = new ymaps.Map('map', {
+            center: [55.991037, 92.955249],
+            zoom: 17,
+            controls: ['zoomControl', 'fullscreenControl']
+        });
+
+        // Кастомный маркер
+        const marker = new ymaps.Placemark([55.991037, 92.955249], {
+            hintContent: 'Silver.Vy',
+            balloonContentHeader: 'Магазин Silver.Vy',
+            balloonContentBody: 'Ежедневно с 10:00 до 21:00'
+        }, {
+            iconLayout: 'default#imageWithContent',
+            iconImageHref: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iIzc5NjA0OCIvPjxwYXRoIGQ9Ik0yMCAyMy4zbC02LjQtNi40YTEgMSAwIDExMS40LTEuNGw1IDUgNS01YTEgMSAwIDAxMS40IDEuNGwtNi40IDYuNHoiIGZpbGw9IiNmZmYiLz48L3N2Zz4=',
+            iconImageSize: [40, 40],
+            iconImageOffset: [-20, -40],
+            iconContentOffset: [0, 0]
+        });
+
+        map.geoObjects.add(marker);
+
+        // Оптимизация для мобильных
+        if(window.matchMedia('(max-width: 768px)').matches) {
+            map.behaviors.disable('scrollZoom');
+            map.setZoom(16);
+        }
+
+        // Обновление при ресайзе
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                map.container.fitToViewport();
+            }, 100);
+        });
+    } </script>
 </body>
 </html>
