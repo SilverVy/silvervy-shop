@@ -2136,5 +2136,73 @@ header:hover h1 {
     }
 }
 
+/* Обновлённые стили */
+.video-container {
+    position: relative;
+    width: 100%;
+    margin: 4rem 0;
+}
 
+.video-wrapper {
+    position: relative;
+    padding-top: 56.25%; /* Соотношение 16:9 */
+    overflow: hidden;
+}
+
+.concept-video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: cover;
+}
+
+.video-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #fff;
+    width: 90%;
+}
+
+.play-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+@media (max-width: 768px) and (orientation: portrait) {
+    .video-wrapper {
+        padding-top: 177.77%; /* 9:16 для вертикальной ориентации */
+    }
+
+    .concept-video {
+        width: 100%;
+        height: auto;
+    }
+
+    .play-icon {
+        font-size: 2rem;
+    }
+
+    .video-overlay h3 {
+        font-size: 1.5rem;
+    }
+
+    .video-overlay p {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 768px) and (orientation: landscape) {
+    .video-wrapper {
+        padding-top: 56.25%;
+    }
+}
 
