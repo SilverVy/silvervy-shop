@@ -1,12 +1,9 @@
-// controllers/orderController.js
 const { User, Cart } = require('../models');
 const { Op } = require('sequelize');
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-    host: 'smtp.yandex.com',
-    port: 587,
-    secure: true,
+    service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
@@ -26,7 +23,6 @@ exports.createOrder = async (req, res) => {
             }
         });
 
-        // Исправленная проверка без оператора ?.
         if (!user || !user.Cart || !user.Cart.items || user.Cart.items.length === 0) {
             return res.status(400).json({ message: 'Корзина пуста' });
         }
@@ -37,12 +33,16 @@ exports.createOrder = async (req, res) => {
             return res.status(400).json({ message: 'Заполните город и адрес' });
         }
 
-        await transporter.sendMail({
+        const orderNumber = Date.now();
+        const totalSum = user.Cart.items.reduce((sum, item) => sum + item.price, 0);
+
+        // Попытка отправить письмо — не блокирует оформление заказа
+        transporter.sendMail({
             from: `"Silver.Vy" <${process.env.EMAIL_USER}>`,
             to: user.email,
             subject: 'Заказ оформлен',
             html: `
-        <h2>Ваш заказ №${Date.now()} принят!</h2>
+        <h2>Ваш заказ №${orderNumber} принят!</h2>
         <p>Детали доставки:</p>
         <ul>
           <li>Город: ${city}</li>
@@ -55,9 +55,11 @@ exports.createOrder = async (req, res) => {
             <li>${item.name} - ${item.price} руб.</li>
           `).join('')}
         </ul>
-        <p>Сумма: ${user.Cart.items.reduce((sum, item) => sum + item.price, 0)} руб.</p>
+        <p>Сумма: ${totalSum} руб.</p>
         <p>Мы свяжемся с вами в течение часа для уточнения деталей.</p>
       `
+        }).catch(emailErr => {
+            console.error('Ошибка отправки письма (заказ всё равно оформлен):', emailErr.message);
         });
 
         await Cart.update(
