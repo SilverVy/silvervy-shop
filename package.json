@@ -18,7 +18,8 @@
     "nodemailer": "^6.9.8",
     "pg": "^8.11.3",
     "sequelize": "^5.22.5",
-    "path-to-regexp": "^6.2.1"
+    "path-to-regexp": "^6.2.1",
+    "resend": "^4.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
