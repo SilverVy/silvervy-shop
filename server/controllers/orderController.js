@@ -1,52 +1,10 @@
+// controllers/orderController.js
 const { User, Cart } = require('../models');
 const { Op } = require('sequelize');
+const { Resend } = require('resend');
 
-const UNISENDER_API_KEY = process.env.UNISENDER_API_KEY;
-const UNISENDER_LIST_ID = process.env.UNISENDER_LIST_ID;
-const SENDER_EMAIL = process.env.UNISENDER_SENDER_EMAIL;
-
-async function sendOrderEmail({ to, orderNumber, city, address, notes, items, totalSum }) {
-    if (!UNISENDER_API_KEY || !UNISENDER_LIST_ID || !SENDER_EMAIL) {
-        console.error('UniSender не настроен (нет API ключа/списка/отправителя), письмо не отправлено');
-        return;
-    }
-
-    const html = `
-        <h2>Ваш заказ №${orderNumber} принят!</h2>
-        <p>Детали доставки:</p>
-        <ul>
-          <li>Город: ${city}</li>
-          <li>Адрес: ${address}</li>
-          ${notes ? `<li>Примечания: ${notes}</li>` : ''}
-        </ul>
-        <p>Товары:</p>
-        <ul>
-          ${items.map(item => `
-            <li>${item.name} - ${item.price} руб.</li>
-          `).join('')}
-        </ul>
-        <p>Сумма: ${totalSum} руб.</p>
-        <p>Мы свяжемся с вами в течение часа для уточнения деталей.</p>
-      `;
-
-    const params = new URLSearchParams({
-        format: 'json',
-        api_key: UNISENDER_API_KEY,
-        email: to,
-        sender_name: 'Silver.Vy',
-        sender_email: SENDER_EMAIL,
-        subject: 'Заказ оформлен',
-        body: html,
-        list_id: UNISENDER_LIST_ID
-    });
-
-    const response = await fetch(`https://api.unisender.com/ru/api/sendEmail?${params.toString()}`);
-    const data = await response.json();
-
-    if (data.error) {
-        throw new Error(`UniSender API error: ${data.error}`);
-    }
-}
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'info@silvervy.ru';
 
 exports.createOrder = async (req, res) => {
     try {
@@ -74,17 +32,28 @@ exports.createOrder = async (req, res) => {
         const orderNumber = Date.now();
         const totalSum = user.Cart.items.reduce((sum, item) => sum + item.price, 0);
 
-        // Попытка отправить письмо — не блокирует оформление заказа
-        sendOrderEmail({
+        // Отправка письма через Resend
+        await resend.emails.send({
+            from: `Silver.Vy <${FROM_EMAIL}>`,
             to: user.email,
-            orderNumber,
-            city,
-            address,
-            notes,
-            items: user.Cart.items,
-            totalSum
-        }).catch(emailErr => {
-            console.error('Ошибка отправки письма (заказ всё равно оформлен):', emailErr.message);
+            subject: `Заказ №${orderNumber} оформлен`,
+            html: `
+                <h2>Ваш заказ №${orderNumber} принят!</h2>
+                <p>Детали доставки:</p>
+                <ul>
+                    <li>Город: ${city}</li>
+                    <li>Адрес: ${address}</li>
+                    ${notes ? `<li>Примечания: ${notes}</li>` : ''}
+                </ul>
+                <p>Товары:</p>
+                <ul>
+                    ${user.Cart.items.map(item => `
+                        <li>${item.name} - ${item.price} руб.</li>
+                    `).join('')}
+                </ul>
+                <p><strong>Сумма: ${totalSum} руб.</strong></p>
+                <p>Мы свяжемся с вами в течение часа для уточнения деталей.</p>
+            `
         });
 
         await Cart.update(
