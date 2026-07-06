@@ -1,4 +1,4 @@
-#models
+// models
 const db = require('../config/db');
 const User = require('./User');
 const Cart = require('./Cart');
