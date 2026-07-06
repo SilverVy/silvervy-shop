@@ -17,7 +17,6 @@ const sequelize = new Sequelize(
     }
 );
 
-// Проверка подключения
 sequelize.authenticate()
     .then(() => {
         console.log('Подключение к PostgreSQL установлено');
