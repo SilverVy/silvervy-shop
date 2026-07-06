@@ -3,7 +3,6 @@ const { User } = require('../models');
 
 module.exports.authenticate = async (req, res, next) => {
     try {
-        // Заменяем опциональную цепочку на стандартную проверку
         const authHeader = req.header('Authorization');
         const token = authHeader && authHeader.replace('Bearer ', '');
 
