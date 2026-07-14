@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Вячеслав">
+    <meta name="keywords" content="одежда, магазин, стиль, тренды, покупки, мода">
+    <meta name="description" content="Интернет-магазин одежды, где вы найдете стильные вещи для любого случая">
+    <meta name="robots" content="index, follow">
+    <title>Контакты - Silver.Vy</title>
+    <link rel="stylesheet" href="styles2.css">
+    <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="shortcut icon" href="favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+</head>
+<body>
+    <header>
+        <h1>Silver.Vy</h1>
+    </header>
+
+<nav>
+    <a href="index.html">Главная</a>
+    <a href="catalog.html">Каталог</a>
+    <a href="about.html">О бренде</a>
+    <a href="contact.html">Контакты</a>
+    <a href="account.html" class="account-link">Аккаунт</a>
+    <a href="cart.html" class="cart-link">Корзина (<span id="cartCounter">0</span>)</a>
+</nav>
+
+    <div class="burger-menu">
+        <div class="burger-icon">☰</div>
+        <div class="nav-links">
+            <a href="index.html">Главная</a>
+            <a href="catalog.html">Каталог</a>
+            <a href="about.html">О бренде</a>
+            <a href="contact.html">Контакты</a>
+            <a href="account.html" class="account-link">Аккаунт</a>
+            <a href="cart.html" class="cart-link">Корзина (<span id="cartCounter">0</span>)</a>
+        </div>
+    </div>
+
+
+    <div class="content">
+        <section id="contact">
+            <h2 class="section-title">Контакты</h2>
+            <div class="contact-grid">
+                <div class="contact-card">
+                    <img src="Одежда/email.png" alt="Почта" class="contact-icon">
+                    <h3>Электронная почта</h3>
+                    <p>info@silvervy.ru</p>
+                </div>
+
+                <div class="contact-card">
+                    <img src="Одежда/phone.png" alt="Телефон" class="contact-icon">
+                    <h3>Телефон</h3>
+                    <p>+7 (962) 079-02-89</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- После блока с контактами -->
+        <section class="contacts-map">
+            <div class="map-container">
+                <div class="map-card">
+                    <div class="map-header">
+                        <h3 class="map-title">Наш магазин</h3>
+                        <div class="map-address">
+                            <svg class="pin-icon" viewBox="0 0 24 24" fill="#796048">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/>
+                            </svg>
+                            <p>Красноярск, ул. Щорса, 41</p>
+                        </div>
+                    </div>
+
+                    <div id="map" class="custom-ymap"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Подключение API Яндекса -->
+        <script src="https://api-maps.yandex.ru/2.1/?apikey=1084b7eb-a78d-481d-9023-fccb4d9e9510
+&lang=ru_RU"></script>
+    </div>
+
+
+
+<footer>
+    <div class="footer-content">
+        <div class="footer-section">
+            <h3>Контакты</h3>
+            <p>Адрес: Красноярск, ул. Щорса, 41</p>
+            <p>Телефон: +7 (962) 079-02-89</p>
+            <p>Email: info@silvervy.ru</p>
+        </div>
+        <div class="footer-section">
+            <h3>Ссылки</h3>
+            <div class="footer-links">
+                <a href="about.html">О компании</a>
+                <a href="contact.html">Контакты</a>
+
+            </div>
+        </div>
+        <div class="footer-section">
+            <h3>Соцсети</h3>
+            <div class="social-icons">
+                <a href="#"><img src="instagram-icon.png" alt="Instagram"></a>
+                <a href="#"><img src="vk-icon.png" alt="VK"></a>
+                <a href="#"><img src="telegram-icon.jpg" alt="Telegram" style="border-radius: 10px;"></a>
+            </div>
+        </div>
+    </div>
+    <div class="line"></div>
+    <p>&copy; 2026 Silver.Vy. Все права защищены.</p>
+</footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const burgerIcon = document.querySelector('.burger-icon');
+            const navLinks = document.querySelector('.nav-links');
+
+            burgerIcon.addEventListener('click', function() {
+                navLinks.classList.toggle('active');
+            });
+
+            // Закрытие меню при клике вне области
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.burger-menu')) {
+                    navLinks.classList.remove('active');
+                }
+            });
+        });
+    </script>
+    <script src="cart.js"></script>
+    <script> document.addEventListener('DOMContentLoaded', function() {
+        if(document.getElementById('map')) {
+            ymaps.ready(initDesignMap);
+        }
+    });
+
+    function initDesignMap() {
+        const map = new ymaps.Map('map', {
+            center: [55.991037, 92.955249],
+            zoom: 17,
+            controls: ['zoomControl', 'fullscreenControl']
+        });
+
+        // Кастомный маркер
+        const marker = new ymaps.Placemark([55.991037, 92.955249], {
+            hintContent: 'Silver.Vy',
+            balloonContentHeader: 'Магазин Silver.Vy',
+            balloonContentBody: 'Ежедневно с 10:00 до 21:00'
+        }, {
+            iconLayout: 'default#imageWithContent',
+            iconImageHref: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iIzc5NjA0OCIvPjxwYXRoIGQ9Ik0yMCAyMy4zbC02LjQtNi40YTEgMSAwIDExMS40LTEuNGw1IDUgNS01YTEgMSAwIDAxMS40IDEuNGwtNi40IDYuNHoiIGZpbGw9IiNmZmYiLz48L3N2Zz4=',
+            iconImageSize: [40, 40],
+            iconImageOffset: [-20, -40],
+            iconContentOffset: [0, 0]
+        });
+
+        map.geoObjects.add(marker);
+
+        // Оптимизация для мобильных
+        if(window.matchMedia('(max-width: 768px)').matches) {
+            map.behaviors.disable('scrollZoom');
+            map.setZoom(16);
+        }
+
+        // Обновление при ресайзе
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                map.container.fitToViewport();
+            }, 100);
+        });
+    } </script>
+</body>
+</html>
