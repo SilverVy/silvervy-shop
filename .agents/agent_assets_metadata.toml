@@ -1,0 +1,58 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "abD4AsMYLxxOGfGXVI6T0"
+uri = "file://reports/01_silvervy_project_charter.docx"
+type = "word_document"
+title = "Устав проекта Silver.Vy"
+description = "Устав по приложенному шаблону: цель, границы, аналоги, задачи, план, команда, ресурсы и риски."
+logical_id = "d0a74f57-6249-4d94-a547-a3ce3683945a"
+content_hash = "sha256:f3d59e788a83c9fda2f15d5e68b2cd3bbed8f64f9cd76f6738af42accba1e802"
+size = 115782
+mtime_ms = 1790250316880
+storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:ecabb725-e452-436f-9e5b-8b727de341bc/d0a74f57-6249-4d94-a547-a3ce3683945a/0fad73b8-32a6-4f6b-94f1-99e908707798"
+storage_version_token = "1790250476122671"
+content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+[[outputs]]
+id = "a2XNqBpRz-0ikgSxpbwVC"
+uri = "file://reports/02_silvervy_product_requirements.docx"
+type = "word_document"
+title = "Требования к продукту Silver.Vy"
+description = "Отчет с историей пересмотра, 11 пользовательскими историями, критериями приемки и проверкой INVEST."
+logical_id = "47bb4979-f543-4218-9ae9-549fe204c6e1"
+content_hash = "sha256:0ac05643c4f70afb2c30dacc137cf332b9cda8acbc193f45173168bcd4c2ab35"
+size = 45961
+mtime_ms = 1790250317000
+storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:ecabb725-e452-436f-9e5b-8b727de341bc/47bb4979-f543-4218-9ae9-549fe204c6e1/a1cbf554-978d-4dec-be6c-ffbd5e6e2002"
+storage_version_token = "1790250476751721"
+content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+[[outputs]]
+id = "J_XdKE4QqQrSZLaGO6y7F"
+uri = "file://reports/03_silvervy_project_team.docx"
+type = "word_document"
+title = "Состав команды Silver.Vy"
+description = "Роли и ответственность единственного участника проекта с указанием тим-лидера."
+logical_id = "feef3e6d-1cee-4b31-b428-9cd0c739d4b8"
+content_hash = "sha256:401a94783244e22848cae3752cc0c79982bd0421e65a6ce91415dd8711199f1d"
+size = 41712
+mtime_ms = 1790250317068
+storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:ecabb725-e452-436f-9e5b-8b727de341bc/feef3e6d-1cee-4b31-b428-9cd0c739d4b8/5312f93b-f5e3-496e-b60c-79cdf1fa5a63"
+storage_version_token = "1790250477331281"
+content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+[[outputs]]
+id = "bfYpDjSyMbEq3AnvaeATl"
+uri = "file://reports/04_silvervy_project_management_plan.docx"
+type = "word_document"
+title = "План управления проектом Silver.Vy"
+description = "План по заинтересованным сторонам, рискам, коммуникациям и персоналу."
+logical_id = "12ec2850-9ad9-4486-9939-31fd04573fc7"
+content_hash = "sha256:e40175dc15eb5c3d78c36fa90d0f9e61a7c4f7a140280d9afaa8032211594fb7"
+size = 45858
+mtime_ms = 1790250317224
+storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:ecabb725-e452-436f-9e5b-8b727de341bc/12ec2850-9ad9-4486-9939-31fd04573fc7/c8c14c2c-f6f1-4a24-9b5a-095d8a899cb1"
+storage_version_token = "1790250477937776"
+content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"

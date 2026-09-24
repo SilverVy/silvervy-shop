@@ -1,0 +1,1 @@
+- [Word-template hyperlinks](word-template-hyperlinks.md) — clear paragraph XML to remove embedded hyperlinks when replacing text with python-docx.
