@@ -93,6 +93,39 @@ function describeResultShape(value, depth = 0) {
     return typeof value;
 }
 
+function parseSseEvents(stream) {
+    const events = [];
+    const eventNames = [];
+    let eventName = 'message';
+    let dataLines = [];
+    const flush = () => {
+        if (eventName !== 'message') eventNames.push(eventName);
+        if (dataLines.length) {
+            const rawData = dataLines.join('\n');
+            let value;
+            try {
+                value = JSON.parse(rawData);
+            } catch {
+                value = rawData;
+            }
+            events.push({ name: eventName, value });
+        }
+        eventName = 'message';
+        dataLines = [];
+    };
+    for (const line of stream.split(/\r?\n/)) {
+        if (!line) {
+            flush();
+        } else if (line.startsWith('event:')) {
+            eventName = line.slice(6).trim();
+        } else if (line.startsWith('data:')) {
+            dataLines.push(line.slice(5).replace(/^ /, ''));
+        }
+    }
+    flush();
+    return { events, eventNames };
+}
+
 async function callQwen(person, garment, prompt) {
     const form = new FormData();
     form.append('files', new Blob([person.buffer], { type: person.mimeType }), 'person.jpg');
@@ -127,22 +160,28 @@ async function callQwen(person, garment, prompt) {
     });
     if (!resultResponse.ok) throw new Error(`Не удалось получить результат Qwen (${resultResponse.status})`);
     const stream = await resultResponse.text();
-    const events = stream.split(/\r?\n/).filter(line => line.startsWith('data:')).map(line => {
-        try {
-            return JSON.parse(line.slice(5).trim());
-        } catch {
-            return null;
-        }
-    }).filter(value => value !== null);
-    const providerError = events.findLast(event => event?.error)?.error;
-    if (providerError) throw new Error(String(providerError));
+    const parsedStream = parseSseEvents(stream);
+    const events = parsedStream.events;
+    const providerError = events.findLast(event => event.name === 'error' || event.value?.error);
+    if (providerError) {
+        const message = typeof providerError.value === 'string'
+            ? providerError.value
+            : providerError.value?.error || 'Qwen сообщила об ошибке';
+        throw new Error(String(message).slice(0, 300));
+    }
     let output = null;
     for (let index = events.length - 1; index >= 0 && !output; index -= 1) {
-        output = findImageFile(events[index]);
+        output = findImageFile(events[index].value);
     }
     const imageUrl = output?.url || output?.path;
     if (!imageUrl) {
-        console.error('Qwen result shape:', events.slice(-4).map(event => describeResultShape(event)).join(' | '));
+        console.error('Qwen SSE diagnostic:', JSON.stringify({
+            status: resultResponse.status,
+            contentType: resultResponse.headers.get('content-type'),
+            streamBytes: Buffer.byteLength(stream),
+            eventNames: parsedStream.eventNames,
+            dataEvents: events.slice(-4).map(event => `${event.name}:${describeResultShape(event.value)}`)
+        }));
         const error = new Error('Qwen не вернула изображение');
         error.code = 'EMPTY_MODEL_RESULT';
         throw error;
