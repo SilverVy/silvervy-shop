@@ -313,7 +313,7 @@
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Не удалось создать примерку');
             status.textContent = `Готово. Визуализация выбранного размера ${size} создана.`;
-            result.innerHTML = `<img alt="Результат виртуальной примерки" src="${data.image}"><a class="tryon-download" download="silvervy-try-on.png" href="${data.image}">Скачать результат</a><small>Результат создан FASHN VTON 1.5. Выбранный размер показывается как ориентир: модель не получает реальные мерки изделия.</small>`;
+            result.innerHTML = `<img alt="Результат виртуальной примерки" src="${data.image}"><a class="tryon-download" download="silvervy-try-on.png" href="${data.image}">Скачать результат</a><small>Результат создан ${data.provider || 'моделью виртуальной примерки'}. Выбранный размер показывается как ориентир: модель не получает реальные мерки изделия.</small>`;
         } catch (error) {
             status.textContent = error.message || 'Сервис примерки временно недоступен.';
         } finally {
