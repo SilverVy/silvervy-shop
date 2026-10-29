@@ -126,3 +126,17 @@ mtime_ms = 1793293404789
 storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:ecabb725-e452-436f-9e5b-8b727de341bc/24319c8a-23a4-42e0-a479-8c88a8fedb49/75f6271d-b262-4e26-bc3c-b4bd832deb04"
 storage_version_token = "1793293460828166"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "6qQ7zeJZD55SnxtunMG1G"
+uri = "file://attached_assets/generated_images/tryon-test-person.jpg"
+type = "image"
+title = "Тестовое фото человека для Colab"
+description = "Подготовленный синтетический фронтальный снимок в полный рост для пилота MV-VTON."
+logical_id = "95aea114-5477-4abd-a390-b9e68d1bb4d5"
+content_hash = "sha256:bd1e0c4e27ee4b00ef630aa83ac043595cdfb15b796cf53b4bb7d918e26226a4"
+size = 66099
+mtime_ms = 1793274102737
+storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:ecabb725-e452-436f-9e5b-8b727de341bc/95aea114-5477-4abd-a390-b9e68d1bb4d5/4c9120d3-b9c5-40da-8e00-e390779fefd7"
+storage_version_token = "1793293988334631"
+content_type = "image/jpeg"
