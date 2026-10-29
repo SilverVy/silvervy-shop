@@ -9,4 +9,6 @@ IDM-VTON's public app applies an `upper_body` mask and has no size-conditioning,
 
 **Why:** The user prefers restoring the previously functioning IDM-VTON path over continuing with Qwen, despite IDM-VTON's known category and conditioning limits. FASHN returned empty results for its own official example, and IDM-VTON's shared ZeroGPU quota can be exhausted.
 
-**How to apply:** Use IDM-VTON only for the explicitly chosen upper-body pilot. Keep lower-body try-on unavailable until a compatible provider is selected. State clearly that IDM-VTON internally creates its mask and does not use selected sizes, profile measurements, custom masks, or extra product views to control output.
+**How to apply:** Use IDM-VTON only for the explicitly chosen upper-body pilot. Keep lower-body try-on unavailable until a compatible provider is selected. The endpoint accepts a garment-description string, so size and profile values may be sent as textual fit guidance, but this is not structured size conditioning and may not change the image. It still does not accept custom masks or extra product views.
+
+**Why:** The user asked for the strongest available fit approximation without switching away from IDM-VTON; its textual garment description is the only exposed field where size guidance can be attempted.

@@ -13,6 +13,19 @@
         'product-jean_coat.html': 'tops'
     };
 
+    const garmentDescriptions = {
+        'product-coat.html': 'long wool coat',
+        'product-bomber.html': 'bomber jacket',
+        'product-trench.html': 'trench coat',
+        'product-jean_coat.html': 'denim jacket',
+        'product-shirt.html': 'shirt',
+        'product-linen_shirt.html': 'linen shirt'
+    };
+
+    const garmentReferenceImages = {
+        'product-coat.html': 'Одежда/coat/2_coat.png'
+    };
+
     const fitProfiles = {
         'product-coat.html': { label: 'свободный oversize', ease: 14 },
         'product-bomber.html': { label: 'прямой', ease: 10 },
@@ -52,8 +65,12 @@
         const canvas = document.createElement('canvas');
         canvas.width = Math.round(bitmap.width * scale);
         canvas.height = Math.round(bitmap.height * scale);
-        canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-        return canvas.toDataURL('image/jpeg', 0.86);
+        const context = canvas.getContext('2d');
+        context.fillStyle = '#888888';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        bitmap.close();
+        return canvas.toDataURL('image/jpeg', 0.94);
     }
 
     function getProduct(button) {
@@ -63,7 +80,10 @@
             const file = location.pathname.split('/').pop();
             return {
                 name: page.querySelector('.product-info h2')?.textContent.trim() || 'Товар Silver.Vy',
-                image: image?.src,
+                image: garmentReferenceImages[file]
+                    ? new URL(garmentReferenceImages[file], location.href).href
+                    : image?.src,
+                garmentDescription: garmentDescriptions[file] || 'upper-body clothing',
                 category: categories[file] || null,
                 fit: fitProfiles[file] || { label: 'стандартный', ease: 6 },
                 sizes: [...page.querySelectorAll('.size')].map(item => item.textContent.trim()),
@@ -78,6 +98,7 @@
         return {
             name: card?.querySelector('h4')?.textContent.trim() || 'Товар Silver.Vy',
             image: image?.src,
+            garmentDescription: garmentDescriptions[file] || 'upper-body clothing',
             category: categories[file] || null,
             fit: fitProfiles[file] || { label: 'стандартный', ease: 6 },
             sizes: ['XS', 'S', 'M', 'L']
@@ -137,7 +158,7 @@
                     </div>
                 <label class="tryon-size-label"><span>03</span>Размер для генерации<select class="tryon-size"></select></label>
                 </div>
-                <p class="tryon-fit-note">IDM-VTON создаёт визуальный эскиз по фото; выбранный размер и параметры тела не меняют результат генерации. Размерная подсказка ориентировочная.</p>
+                <p class="tryon-fit-note">Размер и параметры тела передаются IDM-VTON только как текстовая подсказка. Модель может их не учесть; это не расчёт точной посадки.</p>
                 <label class="tryon-consent"><input type="checkbox" required><span>Я согласен(на) передать фото в Hugging Face для генерации. Фото не сохраняется в профиле Silver.Vy.</span></label>
                 <button class="tryon-generate" type="button"><span>✦</span> Создать примерку</button>
                 <p class="tryon-status" role="status"></p>
@@ -196,6 +217,7 @@
         modal.dataset.fit = product.fit?.label || 'стандартный';
         modal.dataset.ease = product.fit?.ease || 6;
         modal.dataset.image = product.image || '';
+        modal.dataset.garmentDescription = product.garmentDescription || 'upper-body clothing';
         modal.dataset.product = product.name;
         modal.querySelector('.tryon-product').textContent = product.name;
         const select = modal.querySelector('.tryon-size');
@@ -243,7 +265,7 @@
         const recommendation = chooseRecommendedSize(values, product.category || modal.dataset.category);
         const select = modal.querySelector('.tryon-size');
         const visibleSizes = [...select.options].map(option => option.value);
-        modal.querySelector('.tryon-fit-note').textContent = `IDM-VTON получает одно фото вещи и не принимает параметры тела, выбранный размер или пользовательскую маску. Сетка ${modal.dataset.fit} / прибавка ${modal.dataset.ease} см — только ориентир для выбора размера, а не условие генерации.`;
+        modal.querySelector('.tryon-fit-note').textContent = `Мерки и размер передаются IDM-VTON только текстом; структурных параметров посадки и пользовательских масок у публичного сервиса нет. Крой ${modal.dataset.fit} и прибавка ${modal.dataset.ease} см — ориентировочная подсказка, не замеры изделия.`;
         if (recommendation && visibleSizes.includes(recommendation)) {
             label.textContent = `Предварительная рекомендация: ${recommendation}`;
             if (!select.dataset.userChanged) select.value = recommendation;
@@ -323,6 +345,7 @@
                     garmentImage,
                     category: modal.dataset.category,
                     productName: modal.dataset.product,
+                    garmentDescription: modal.dataset.garmentDescription,
                     size,
                     recommendedSize,
                     measurements,
@@ -332,7 +355,7 @@
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Не удалось создать примерку');
             status.textContent = 'Готово. Это визуальный эскиз, а не точный расчёт посадки.';
-            result.innerHTML = `<img alt="Результат виртуальной примерки" src="${data.image}"><a class="tryon-download" download="silvervy-try-on.png" href="${data.image}">Скачать результат</a><small>${data.provider || 'IDM-VTON'} автоматически строит маску. Пользовательские маски, дополнительные ракурсы и размер не передаются модели.</small>`;
+            result.innerHTML = `<img alt="Результат виртуальной примерки" src="${data.image}"><a class="tryon-download" download="silvervy-try-on.png" href="${data.image}">Скачать результат</a><small>${data.provider || 'IDM-VTON'} строит маску самостоятельно. Размер и мерки влияют только на текстовую инструкцию; пользовательские маски и дополнительные ракурсы не передаются.</small>`;
         } catch (error) {
             status.textContent = error.message || 'Сервис примерки временно недоступен.';
         } finally {

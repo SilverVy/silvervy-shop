@@ -1,7 +1,16 @@
 const MAX_IMAGE_BYTES = 7 * 1024 * 1024;
 const QWEN_SPACE_URL = (process.env.QWEN_SPACE_URL || 'https://qwen-qwen-image-edit-2511.hf.space').replace(/\/$/, '');
 const IDM_SPACE_URL = (process.env.IDM_VTON_SPACE_URL || 'https://yisol-idm-vton.hf.space').replace(/\/$/, '');
-const { randomUUID } = require('node:crypto');
+const { createHash, randomUUID } = require('node:crypto');
+const IDM_GARMENT_DESCRIPTIONS = new Set([
+    'long wool coat',
+    'bomber jacket',
+    'trench coat',
+    'denim jacket',
+    'shirt',
+    'linen shirt',
+    'upper-body clothing'
+]);
 
 function providerHeaders(headers = {}) {
     return {
@@ -112,6 +121,36 @@ function sanitizeProviderError(message) {
         .replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, '[image data]')
         .replace(/https?:\/\/[^\s"'<>]+/g, '[url]')
         .slice(0, 300);
+}
+
+function buildIdmGarmentDescription({ baseDescription, size, recommendedSize, measurements, fitProfile }) {
+    const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+    const selectedIndex = sizes.indexOf(size);
+    const recommendedIndex = sizes.indexOf(recommendedSize);
+    const delta = selectedIndex >= 0 && recommendedIndex >= 0 ? selectedIndex - recommendedIndex : 0;
+    const fit = /oversize|baggy|свободн/i.test(fitProfile)
+        ? 'relaxed oversized cut'
+        : 'straight cut';
+    const sizeGuidance = delta > 0
+        ? `Selected size ${size}, larger than the profile recommendation ${recommendedSize}. Show a visibly roomier fit with a wider torso and sleeves and slightly longer sleeves and hem.`
+        : delta < 0
+            ? `Selected size ${size}, smaller than the profile recommendation ${recommendedSize}. Show a visibly closer fit with a narrower torso and sleeves and slightly shorter sleeves and hem.`
+            : `Selected size ${size}, matching the profile recommendation. Preserve the intended ${fit}.`;
+    const body = [
+        ['heightCm', 'height'],
+        ['weightKg', 'weight'],
+        ['chestCm', 'chest'],
+        ['waistCm', 'waist'],
+        ['hipCm', 'hips']
+    ].map(([key, label]) => measurements[key] ? `${label} ${measurements[key]}${key === 'weightKg' ? ' kg' : ' cm'}` : null)
+        .filter(Boolean)
+        .join(', ');
+    return [
+        baseDescription,
+        body ? `Model body measurements: ${body}.` : '',
+        sizeGuidance,
+        "Keep the same garment design, color, collar, closure, pockets, seams, and visible details. Do not alter the person's anatomy."
+    ].filter(Boolean).join(' ');
 }
 
 function parseSseEvents(stream) {
@@ -226,7 +265,7 @@ async function callQwen(person, garment, prompt) {
     return `data:${imageResponse.headers.get('content-type') || 'image/png'};base64,${result.toString('base64')}`;
 }
 
-async function callIdm(person, garment) {
+async function callIdm(person, garment, garmentDescription) {
     const form = new FormData();
     form.append('files', new Blob([person.buffer], { type: person.mimeType }), 'person.jpg');
     form.append('files', new Blob([garment.buffer], { type: garment.mimeType }), 'garment.jpg');
@@ -256,6 +295,7 @@ async function callIdm(person, garment) {
         meta: { _type: 'gradio.FileData' }
     });
     const sessionHash = randomUUID().replace(/-/g, '');
+    const seed = createHash('sha256').update(person.buffer).update(garment.buffer).digest().readUInt32BE(0);
     const joinResponse = await fetch(`${IDM_SPACE_URL}/queue/join`, {
         method: 'POST',
         headers: providerHeaders({ 'Content-Type': 'application/json' }),
@@ -263,11 +303,11 @@ async function callIdm(person, garment) {
             data: [
                 { background: fileData(uploaded[0], 'person.jpg', person.mimeType), layers: [], composite: null },
                 fileData(uploaded[1], 'garment.jpg', garment.mimeType),
-                'upper-body clothing',
+                garmentDescription,
                 true,
                 false,
                 20,
-                Math.floor(Math.random() * 2147483647)
+                seed
             ],
             fn_index: functionIndex,
             session_hash: sessionHash,
@@ -331,17 +371,35 @@ exports.generate = async (req, res) => {
         if (!['XS', 'S', 'M', 'L', 'XL', 'XXL'].includes(size)) {
             return res.status(400).json({ message: 'Выберите размер для генерации' });
         }
+        const measurementRanges = {
+            heightCm: [120, 220],
+            weightKg: [30, 250],
+            chestCm: [60, 160],
+            waistCm: [45, 150],
+            hipCm: [65, 170]
+        };
         const safeMeasurements = {};
-        for (const key of ['heightCm', 'weightKg', 'chestCm', 'waistCm', 'hipCm']) {
+        for (const [key, [minimum, maximum]] of Object.entries(measurementRanges)) {
             const value = Number(measurements[key]);
-            if (Number.isFinite(value) && value > 0) safeMeasurements[key] = value;
+            if (Number.isFinite(value) && value >= minimum && value <= maximum) safeMeasurements[key] = value;
         }
 
-        const image = await callIdm(person, garment);
+        const requestedDescription = String(req.body.garmentDescription || '');
+        const baseDescription = IDM_GARMENT_DESCRIPTIONS.has(requestedDescription)
+            ? requestedDescription
+            : 'upper-body clothing';
+        const garmentDescription = buildIdmGarmentDescription({
+            baseDescription,
+            size,
+            recommendedSize: ['XS', 'S', 'M', 'L', 'XL', 'XXL'].includes(recommendedSize) ? recommendedSize : '',
+            measurements: safeMeasurements,
+            fitProfile
+        });
+        const image = await callIdm(person, garment, garmentDescription);
 
         res.status(200).json({
             image,
-            provider: 'IDM-VTON; selected size is not model-conditioned'
+            provider: 'IDM-VTON; size and profile passed as text guidance only'
         });
     } catch (error) {
         console.error('Try-on provider error:', error.name, error.message);
