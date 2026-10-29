@@ -1,6 +1,7 @@
 const MAX_IMAGE_BYTES = 7 * 1024 * 1024;
 const SPACE_URL = (process.env.TRYON_SPACE_URL || 'https://fashn-ai-fashn-vton-1-5.hf.space').replace(/\/$/, '');
 const IDM_SPACE_URL = 'https://yisol-idm-vton.hf.space';
+const QWEN_SPACE_URL = (process.env.QWEN_SPACE_URL || 'https://qwen-qwen-image-edit-2511.hf.space').replace(/\/$/, '');
 const { randomUUID } = require('node:crypto');
 
 function providerHeaders(headers = {}) {
@@ -173,12 +174,143 @@ async function callIdm(person, garment) {
     return `data:${imageResponse.headers.get('content-type') || 'image/png'};base64,${result.toString('base64')}`;
 }
 
+function getFitInstruction(size, recommendedSize, category, fitProfile) {
+    const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+    const selectedIndex = sizes.indexOf(String(size || '').toUpperCase());
+    const recommendedIndex = sizes.indexOf(String(recommendedSize || '').toUpperCase());
+    const delta = selectedIndex >= 0 && recommendedIndex >= 0
+        ? selectedIndex - recommendedIndex
+        : 0;
+    const baseFit = String(fitProfile || 'relaxed fit');
+    const itemArea = category === 'bottoms'
+        ? 'waist, seat, thigh, leg width and trouser length'
+        : category === 'one-pieces'
+            ? 'chest, waist, hips, sleeves and overall length'
+            : 'chest, torso volume, shoulder ease, sleeve width, sleeve length and hem length';
+    const fit = delta < 0
+        ? `The selected size ${size} is ${Math.abs(delta)} size${Math.abs(delta) === 1 ? '' : 's'} below the profile-based recommendation ${recommendedSize || ''}. Show a visibly closer, less roomy fit in the ${itemArea}.`
+        : delta > 0
+            ? `The selected size ${size} is ${delta} size${delta === 1 ? '' : 's'} above the profile-based recommendation ${recommendedSize || ''}. Show a visibly roomier fit in the ${itemArea}, with proportionally longer sleeves or hem where relevant.`
+            : `The selected size ${size} matches the profile-based recommendation. Show the intended ${baseFit} with natural ease in the ${itemArea}.`;
+    return `${fit} Do not change the person's body shape to fake the fit.`;
+}
+
+function buildQwenPrompt({ productName, category, size, recommendedSize, measurements, fitProfile }) {
+    const categoryLabel = category === 'bottoms'
+        ? 'trousers or other lower-body garment'
+        : category === 'one-pieces'
+            ? 'one-piece garment'
+            : 'top or outerwear';
+    const body = [
+        ['heightCm', 'height in cm'],
+        ['weightKg', 'weight in kg'],
+        ['chestCm', 'chest in cm'],
+        ['waistCm', 'waist in cm'],
+        ['hipCm', 'hips in cm']
+    ].map(([key, label]) => measurements?.[key] ? `${label}: ${measurements[key]}` : null).filter(Boolean).join(', ');
+    const fitInstruction = getFitInstruction(size, recommendedSize, category, fitProfile);
+    return [
+        'Create a photorealistic virtual try-on edit using the provided images.',
+        'Image 1 is the person and must remain the base image. Image 2 is the exact garment reference.',
+        `Replace only the ${categoryLabel} on the person with the garment shown in image 2. The product is "${productName}".`,
+        `Preserve the garment's main color, overall silhouette, cut, collar or waistband, sleeves or legs, pockets, seams, buttons, and visible construction details. Do not add labels, logos, accessories, or new design elements.`,
+        `The person selected size ${size}. ${body ? `Their profile measurements are ${body}.` : ''}`,
+        fitInstruction,
+        'Keep the same person, face, hair, pose, body proportions, background, framing, and lighting. Do not alter other clothing except where it is naturally covered by the reference garment.'
+    ].filter(Boolean).join(' ');
+}
+
+function findImageFile(value) {
+    if (Array.isArray(value)) {
+        for (const item of value) {
+            const found = findImageFile(item);
+            if (found) return found;
+        }
+    } else if (value && typeof value === 'object') {
+        if (typeof value.url === 'string' || typeof value.path === 'string') return value;
+        for (const item of Object.values(value)) {
+            const found = findImageFile(item);
+            if (found) return found;
+        }
+    }
+    return null;
+}
+
+async function callQwen(person, garment, prompt) {
+    const form = new FormData();
+    form.append('files', new Blob([person.buffer], { type: person.mimeType }), 'person.jpg');
+    form.append('files', new Blob([garment.buffer], { type: garment.mimeType }), 'garment.png');
+    const uploadResponse = await fetch(`${QWEN_SPACE_URL}/gradio_api/upload`, {
+        method: 'POST',
+        body: form,
+        headers: providerHeaders(),
+        signal: AbortSignal.timeout(60000)
+    });
+    if (!uploadResponse.ok) throw new Error(`Qwen не приняла изображения (${uploadResponse.status})`);
+    const uploaded = await uploadResponse.json();
+    if (!Array.isArray(uploaded) || uploaded.length !== 2) throw new Error('Qwen не вернула загруженные изображения');
+
+    const gallery = uploaded.map(path => ({
+        image: { path, meta: { _type: 'gradio.FileData' } },
+        caption: null
+    }));
+    const eventResponse = await fetch(`${QWEN_SPACE_URL}/gradio_api/call/infer`, {
+        method: 'POST',
+        headers: providerHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ data: [gallery, prompt, 4217, false, 4, 30, 1024, 768, false] }),
+        signal: AbortSignal.timeout(60000)
+    });
+    if (!eventResponse.ok) throw new Error(`Qwen не запустила генерацию (${eventResponse.status})`);
+    const job = await eventResponse.json();
+    if (!job.event_id) throw new Error('Qwen не вернула идентификатор генерации');
+
+    const resultResponse = await fetch(`${QWEN_SPACE_URL}/gradio_api/call/infer/${job.event_id}`, {
+        headers: providerHeaders({ Accept: 'text/event-stream' }),
+        signal: AbortSignal.timeout(300000)
+    });
+    if (!resultResponse.ok) throw new Error(`Не удалось получить результат Qwen (${resultResponse.status})`);
+    const stream = await resultResponse.text();
+    const events = stream.split(/\r?\n/).filter(line => line.startsWith('data:')).map(line => {
+        try {
+            return JSON.parse(line.slice(5).trim());
+        } catch {
+            return null;
+        }
+    }).filter(value => value !== null);
+    const providerError = events.findLast(event => event?.error)?.error;
+    if (providerError) throw new Error(String(providerError));
+    const output = findImageFile(events.findLast(Boolean));
+    const imageUrl = output?.url || output?.path;
+    if (!imageUrl) {
+        const error = new Error('Qwen не вернула изображение');
+        error.code = 'EMPTY_MODEL_RESULT';
+        throw error;
+    }
+    const absoluteUrl = imageUrl.startsWith('http')
+        ? imageUrl
+        : imageUrl.startsWith('/gradio_api/')
+            ? `${QWEN_SPACE_URL}${imageUrl}`
+            : `${QWEN_SPACE_URL}/gradio_api/file=${encodeURIComponent(imageUrl)}`;
+    const imageResponse = await fetch(absoluteUrl, {
+        headers: providerHeaders(),
+        signal: AbortSignal.timeout(60000)
+    });
+    if (!imageResponse.ok) throw new Error('Не удалось загрузить результат Qwen');
+    const result = Buffer.from(await imageResponse.arrayBuffer());
+    if (!result.length || result.length > 12 * 1024 * 1024) throw new Error('Размер результата Qwen превышает допустимый');
+    return `data:${imageResponse.headers.get('content-type') || 'image/png'};base64,${result.toString('base64')}`;
+}
+
 exports.generate = async (req, res) => {
     try {
         const person = readImage(req.body.personImage);
         const garment = readImage(req.body.garmentImage);
         const category = req.body.category;
         const productName = String(req.body.productName || '');
+        const size = String(req.body.size || '').toUpperCase();
+        const recommendedSize = String(req.body.recommendedSize || '').toUpperCase();
+        const fitProfile = String(req.body.fitProfile || '');
+        const measurements = req.body.measurements || {};
 
         if (!person || !garment) {
             return res.status(400).json({ message: 'Загрузите фотографию и проверьте изображение товара' });
@@ -186,23 +318,26 @@ exports.generate = async (req, res) => {
         if (!['tops', 'bottoms', 'one-pieces'].includes(category)) {
             return res.status(400).json({ message: 'Для этой категории виртуальная примерка пока недоступна' });
         }
+        if (!['XS', 'S', 'M', 'L', 'XL', 'XXL'].includes(size)) {
+            return res.status(400).json({ message: 'Выберите размер для генерации' });
+        }
+        const safeMeasurements = {};
+        for (const key of ['heightCm', 'weightKg', 'chestCm', 'waistCm', 'hipCm']) {
+            const value = Number(measurements[key]);
+            if (Number.isFinite(value) && value > 0) safeMeasurements[key] = value;
+        }
 
-        const useIdm = category === 'tops' && !/(пальто|тренч)/i.test(productName);
-        const provider = useIdm ? 'IDM-VTON' : 'FASHN VTON 1.5';
-        const image = useIdm
-            ? await callIdm(person, garment)
-            : await callSpace([
-                { url: person.dataUrl, size: person.size, mime_type: person.mimeType, orig_name: 'person.jpg', meta: { _type: 'gradio.FileData' } },
-                { url: garment.dataUrl, size: garment.size, mime_type: garment.mimeType, orig_name: 'garment.jpg', meta: { _type: 'gradio.FileData' } },
-                category,
-                'model',
-                30,
-                1.5,
-                Math.floor(Math.random() * 2147483647),
-                true
-            ]);
+        const prompt = buildQwenPrompt({
+            productName,
+            category,
+            size,
+            recommendedSize,
+            measurements: safeMeasurements,
+            fitProfile
+        });
+        const image = await callQwen(person, garment, prompt);
 
-        res.status(200).json({ image, provider });
+        res.status(200).json({ image, provider: 'Qwen Image Edit — size-conditioned preview' });
     } catch (error) {
         console.error('Try-on provider error:', error.name, error.message);
         const quotaReached = /zerogpu quota|quota/i.test(error.message);
@@ -210,9 +345,9 @@ exports.generate = async (req, res) => {
         const status = quotaReached ? 503 : emptyResult ? 502 : /timeout|timed out/i.test(error.message) ? 504 : 502;
         res.status(status).json({
             message: quotaReached
-                ? 'У внешней модели временно закончился лимит вычислений. Повторите позже или настройте HF_TOKEN в переменных backend на Render.'
+                ? 'У модели примерки закончился лимит вычислений. Проверьте HF_TOKEN в переменных backend на Render и повторите позже.'
                 : emptyResult
-                    ? 'Модель не вернула изображение. Это может быть временная ошибка сервиса; попробуйте позже.'
+                    ? 'Модель примерки не вернула изображение. Попробуйте позже; если ошибка повторится, проверьте журнал backend на Render.'
                 : status === 504
                     ? 'Генерация заняла слишком много времени. Попробуйте ещё раз.'
                     : 'Сервис примерки временно не ответил. Попробуйте позже.',

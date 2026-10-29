@@ -135,9 +135,9 @@
                             <div class="tryon-chart-table"></div>
                         </details>
                     </div>
-                    <label class="tryon-size-label"><span>03</span>Размер для подсказки<select class="tryon-size"></select></label>
+                <label class="tryon-size-label"><span>03</span>Размер для генерации<select class="tryon-size"></select></label>
                 </div>
-                <p class="tryon-fit-note">Подбор размера ориентировочный: сетка построена по типовым меркам, а не по замерам производителя. ИИ-визуализация не гарантирует точную посадку и не меняет физические размеры изделия.</p>
+                <p class="tryon-fit-note">Выбранный размер и параметры профиля задают визуальную посадку. Сетка примерная, замеров изделий по размерам нет, поэтому результат не гарантирует реальную посадку.</p>
                 <label class="tryon-consent"><input type="checkbox" required><span>Я согласен(на) передать фото в Hugging Face для генерации. Фото не сохраняется в профиле Silver.Vy.</span></label>
                 <button class="tryon-generate" type="button"><span>✦</span> Создать примерку</button>
                 <p class="tryon-status" role="status"></p>
@@ -241,7 +241,7 @@
         const recommendation = chooseRecommendedSize(values, product.category || modal.dataset.category);
         const select = modal.querySelector('.tryon-size');
         const visibleSizes = [...select.options].map(option => option.value);
-        modal.querySelector('.tryon-fit-note').textContent = `Ориентировочная сетка по типовым параметрам тела. Крой изделия: ${modal.dataset.fit}; расчётная прибавка для свободы около ${modal.dataset.ease} см. Это не замеры производителя и не гарантия посадки. ИИ-визуализация не меняет реальные размеры изделия.`;
+        modal.querySelector('.tryon-fit-note').textContent = `Ориентировочная сетка по типовым параметрам тела. Крой изделия: ${modal.dataset.fit}; расчётная прибавка для свободы около ${modal.dataset.ease} см. Выбранный размер будет передан модели как инструкция по посадке, но точных замеров изделия нет.`;
         if (recommendation && visibleSizes.includes(recommendation)) {
             label.textContent = `Предварительная рекомендация: ${recommendation}`;
             if (!select.dataset.userChanged) select.value = recommendation;
@@ -293,7 +293,7 @@
         button.disabled = true;
         button.classList.add('generating');
         result.innerHTML = '';
-        status.textContent = 'Подготавливаем образ… Фото передаётся модели на Hugging Face.';
+        status.textContent = 'Подготавливаем примерку с учетом профиля и выбранного размера…';
         try {
             const personImage = await compressImage(file);
             const garmentImage = await imageToDataUrl(modal.dataset.image);
@@ -305,15 +305,25 @@
             const saveData = await saveResponse.json().catch(() => ({}));
             if (!saveResponse.ok) throw new Error(saveData.message || 'Не удалось сохранить параметры профиля');
 
+            const recommendedSize = chooseRecommendedSize(measurements, modal.dataset.category);
             const response = await fetch('https://silvervy-backend.onrender.com/api/try-on', {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ personImage, garmentImage, category: modal.dataset.category, productName: modal.dataset.product })
+                body: JSON.stringify({
+                    personImage,
+                    garmentImage,
+                    category: modal.dataset.category,
+                    productName: modal.dataset.product,
+                    size,
+                    recommendedSize,
+                    measurements,
+                    fitProfile: modal.dataset.fit
+                })
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Не удалось создать примерку');
-            status.textContent = 'Готово. Размер влияет на подсказку, но не меняет изображение.';
-            result.innerHTML = `<img alt="Результат виртуальной примерки" src="${data.image}"><a class="tryon-download" download="silvervy-try-on.png" href="${data.image}">Скачать результат</a><small>Результат создан ${data.provider || 'моделью виртуальной примерки'}. Размер на изображение не влияет: модель не получает лекала и точные мерки изделия.</small>`;
+            status.textContent = 'Готово. Посадка сгенерирована с учетом выбранного размера и параметров профиля.';
+            result.innerHTML = `<img alt="Результат виртуальной примерки" src="${data.image}"><a class="tryon-download" download="silvervy-try-on.png" href="${data.image}">Скачать результат</a><small>Результат создан ${data.provider || 'моделью виртуальной примерки'}. Размер влияет на инструкцию генерации; визуальная посадка приблизительная, фактические замеры изделия по размерам не заданы.</small>`;
         } catch (error) {
             status.textContent = error.message || 'Сервис примерки временно недоступен.';
         } finally {
