@@ -37,9 +37,59 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="user-profile">
                     <h2>Добро пожаловать, ${user.name}!</h2>
                     <p>Email: ${user.email}</p>
+                    <div class="tryon-profile">
+                        <h3>Параметры для подбора размера</h3>
+                        <p>Измените данные в любое время. Фото тела в профиле не сохраняется.</p>
+                        <form id="bodyMeasurementsForm">
+                            <label>Рост, см<input name="heightCm" type="number" min="120" max="220" required></label>
+                            <label>Вес, кг<input name="weightKg" type="number" min="30" max="250" required></label>
+                            <label>Обхват груди, см<input name="chestCm" type="number" min="60" max="160" required></label>
+                            <label>Обхват талии, см<input name="waistCm" type="number" min="45" max="150" required></label>
+                            <label>Обхват бёдер, см<input name="hipCm" type="number" min="65" max="170" required></label>
+                            <label>Длина внутреннего шва, см<input name="inseamCm" type="number" min="55" max="100"></label>
+                            <button type="submit" class="cta-button">Сохранить параметры</button>
+                            <span id="measurementsStatus" role="status"></span>
+                        </form>
+                    </div>
                     <button id="logoutButton" class="cta-button">Выйти</button>
                 </div>
             `;
+
+            const measurementsForm = document.getElementById('bodyMeasurementsForm');
+            const authHeaders = { Authorization: `Bearer ${token}` };
+            fetch('/api/auth/profile', { headers: authHeaders })
+                .then(response => response.ok ? response.json() : null)
+                .then(data => {
+                    if (!data?.user?.bodyMeasurements) return;
+                    for (const [key, value] of Object.entries(data.user.bodyMeasurements)) {
+                        const input = measurementsForm.elements.namedItem(key);
+                        if (input) input.value = value;
+                    }
+                })
+                .catch(() => {});
+
+            measurementsForm.addEventListener('submit', async event => {
+                event.preventDefault();
+                const status = document.getElementById('measurementsStatus');
+                const bodyMeasurements = Object.fromEntries(
+                    Array.from(measurementsForm.elements)
+                        .filter(input => input.name)
+                        .map(input => [input.name, input.value])
+                );
+                try {
+                    const response = await fetch('/api/auth/profile', {
+                        method: 'PUT',
+                        headers: { ...authHeaders, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(bodyMeasurements)
+                    });
+                    const data = await response.json();
+                    status.textContent = response.ok ? 'Параметры сохранены' : data.message;
+                    status.className = response.ok ? 'success' : 'error';
+                } catch {
+                    status.textContent = 'Не удалось сохранить параметры';
+                    status.className = 'error';
+                }
+            });
 
             document.getElementById('logoutButton')?.addEventListener('click', function() {
                 localStorage.removeItem('token');

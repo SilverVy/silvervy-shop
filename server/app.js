@@ -14,7 +14,7 @@ app.use(cors({
         : 'http://localhost:3000',
     credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: '12mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Статические файлы
@@ -24,10 +24,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 const authRoutes = require('./routes/authRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const tryOnRoutes = require('./routes/tryOnRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/try-on', tryOnRoutes);
 
 // Обработка 404 для API (исправлено)
 app.use('/api', (req, res) => {
@@ -52,7 +54,9 @@ app.use((err, req, res, next) => {
 db.authenticate()
     .then(() => {
         console.log('Database connection established');
-        return db.sync();
+        return db.sync().then(() => db.query(
+            'ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "bodyMeasurements" JSONB'
+        ));
     })
     .then(() => {
         const PORT = process.env.PORT || 5000;

@@ -64,3 +64,32 @@ exports.login = async (req, res) => {
         res.status(500).json({ message: 'Ошибка при входе', error: error.message });
     }
 };
+
+exports.getProfile = async (req, res) => {
+    res.status(200).json({
+        user: {
+            id: req.user.id,
+            name: req.user.name,
+            email: req.user.email,
+            bodyMeasurements: req.user.bodyMeasurements || {}
+        }
+    });
+};
+
+exports.updateProfile = async (req, res) => {
+    const allowed = ['heightCm', 'weightKg', 'chestCm', 'waistCm', 'hipCm', 'inseamCm'];
+    const measurements = {};
+
+    for (const key of allowed) {
+        const value = req.body[key];
+        if (value === null || value === undefined || value === '') continue;
+        const number = Number(value);
+        if (!Number.isFinite(number) || number < 1 || number > 300) {
+            return res.status(400).json({ message: 'Проверьте введённые параметры' });
+        }
+        measurements[key] = number;
+    }
+
+    await req.user.update({ bodyMeasurements: measurements });
+    res.status(200).json({ message: 'Параметры сохранены', bodyMeasurements: measurements });
+};
