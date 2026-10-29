@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const measurementsForm = document.getElementById('bodyMeasurementsForm');
             const authHeaders = { Authorization: `Bearer ${token}` };
-            fetch('/api/auth/profile', { headers: authHeaders })
+            fetch('https://silvervy-backend.onrender.com/api/auth/profile', { headers: authHeaders })
                 .then(response => response.ok ? response.json() : null)
                 .then(data => {
                     if (!data?.user?.bodyMeasurements) return;
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         .map(input => [input.name, input.value])
                 );
                 try {
-                    const response = await fetch('/api/auth/profile', {
+                    const response = await fetch('https://silvervy-backend.onrender.com/api/auth/profile', {
                         method: 'PUT',
                         headers: { ...authHeaders, 'Content-Type': 'application/json' },
                         body: JSON.stringify(bodyMeasurements)

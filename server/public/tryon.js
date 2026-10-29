@@ -217,7 +217,7 @@
         }
 
         try {
-            const response = await fetch('/api/auth/profile', { headers: { Authorization: `Bearer ${token()}` } });
+            const response = await fetch('https://silvervy-backend.onrender.com/api/auth/profile', { headers: { Authorization: `Bearer ${token()}` } });
             if (response.ok) {
                 const data = await response.json();
                 const measurements = data.user.bodyMeasurements || {};
@@ -297,14 +297,15 @@
         try {
             const personImage = await compressImage(file);
             const garmentImage = await imageToDataUrl(modal.dataset.image);
-            const saveResponse = await fetch('/api/auth/profile', {
+            const saveResponse = await fetch('https://silvervy-backend.onrender.com/api/auth/profile', {
                 method: 'PUT',
                 headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify(measurements)
             });
-            if (!saveResponse.ok) throw new Error('Не удалось сохранить параметры профиля');
+            const saveData = await saveResponse.json().catch(() => ({}));
+            if (!saveResponse.ok) throw new Error(saveData.message || 'Не удалось сохранить параметры профиля');
 
-            const response = await fetch('/api/try-on', {
+            const response = await fetch('https://silvervy-backend.onrender.com/api/try-on', {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ personImage, garmentImage, category: modal.dataset.category, size })
