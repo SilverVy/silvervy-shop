@@ -13,7 +13,7 @@
 
 | Подход | Сохраняет конкретную вещь | Размер влияет на посадку | Покрытие и ограничение |
 |---|---|---|---|
-| 2D VTON: FASHN, IDM-VTON, CatVTON | Нет гарантии: модель генерирует изображение заново | Нет, если мерки/размер не входят в модель | Быстрый визуальный эскиз; не использовать как точное доказательство посадки |
+| 2D VTON: FASHN, OOTDiffusion, IDM-VTON | Нет гарантии: модель генерирует изображение заново | Нет, если мерки/размер не входят в модель | Быстрый визуальный эскиз; OOTDiffusion покрывает верх, низ и платья, но не принимает размер |
 | 3D: лекала + симуляция | Да, если меш и текстуры соответствуют товару | Да, через лекала каждого размера и мерки аватара | Требует отдельных 3D-данных и проверки каждого изделия |
 | TailorNet и похожие learned-модели | Только для предусмотренных классов/представлений | Меняет тело/позу/стиль обученной одежды | Не переносит автоматически уникальное пальто из каталожного фото [6] |
 
@@ -39,11 +39,12 @@ Blender может симулировать тканевый меш с физи�
 ## Источники
 
 1. [FASHN VTON v1.5 — официальный репозиторий](https://github.com/fashn-AI/fashn-vton-1.5)
-2. [IDM-VTON — официальный репозиторий](https://github.com/yisol/IDM-VTON)
-3. [Код публичного демо IDM-VTON](https://huggingface.co/spaces/yisol/IDM-VTON/raw/main/app.py)
-4. [GarmentCode — parametric sewing patterns](https://github.com/maria-korosteleva/GarmentCode)
-5. [GarmentCodeData — ETH Zurich](https://igl.ethz.ch/projects/GarmentCodeData/)
-6. [TailorNet dataset — официальный репозиторий](https://github.com/zycliao/TailorNet_dataset)
-7. [Design2GarmentCode — официальный код](https://github.com/Style3D/design2garmentcode-impl)
-8. [Blender Manual — Cloth Physics](https://docs.blender.org/manual/en/latest/physics/cloth/introduction.html)
-9. [SMPL-X — parametric 3D body model](https://smpl-x.is.tue.mpg.de/)
+2. [OOTDiffusion — официальный репозиторий](https://github.com/levihsu/OOTDiffusion)
+3. [IDM-VTON — официальный репозиторий](https://github.com/yisol/IDM-VTON)
+4. [Код публичного демо IDM-VTON](https://huggingface.co/spaces/yisol/IDM-VTON/raw/main/app.py)
+5. [GarmentCode — parametric sewing patterns](https://github.com/maria-korosteleva/GarmentCode)
+6. [GarmentCodeData — ETH Zurich](https://igl.ethz.ch/projects/GarmentCodeData/)
+7. [TailorNet dataset — официальный репозиторий](https://github.com/zycliao/TailorNet_dataset)
+8. [Design2GarmentCode — официальный код](https://github.com/Style3D/design2garmentcode-impl)
+9. [Blender Manual — Cloth Physics](https://docs.blender.org/manual/en/latest/physics/cloth/introduction.html)
+10. [SMPL-X — parametric 3D body model](https://smpl-x.is.tue.mpg.de/)

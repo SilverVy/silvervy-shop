@@ -6,6 +6,13 @@
     "tier": 1,
     "evidence": "research/sources/primary-source-excerpts.md"
   },
+  "ootdiffusion": {
+    "title": "OOTDiffusion official repository",
+    "url": "https://github.com/levihsu/OOTDiffusion",
+    "published": "Repository accessed 2026-10-29",
+    "tier": 1,
+    "evidence": "research/sources/primary-source-excerpts.md"
+  },
   "idm-vton": {
     "title": "IDM-VTON official repository",
     "url": "https://github.com/yisol/IDM-VTON",

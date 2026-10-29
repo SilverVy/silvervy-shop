@@ -14,7 +14,7 @@
 
 | # | Area | Status | Sources |
 |---|---|---|---|
-| 1 | 2D try-on and size conditioning | done | 3 |
+| 1 | 2D try-on and size conditioning | done | 4 |
 | 2 | Open 3D garment simulation | done | 5 |
 | 3 | Required product and body data | done | 4 |
 
@@ -30,6 +30,8 @@
 ## Findings Log
 
 Official 2D try-on interfaces accept person/garment images and a garment category, not body measurements or selected size. IDM-VTON's demo masks only the upper body. GarmentCode/GarmentCodeData demonstrate a viable 3D pattern-and-drape direction, but require garment patterns and body measurements; they do not turn a single store photo into an exact product.
+
+OOTDiffusion supports upper-body, lower-body, and dress categories, but its documented inference interface has no body-measurement or size-conditioning input.
 
 Recommended direction: stop describing the current diffusion output as size-accurate. For exact appearance and size-dependent fit, create per-size 3D garment assets from patterns or model them manually, then simulate/render against a measured avatar. Precompute the fit offline and display 3D assets on the site. No verified free hosted service provides reliable, unlimited, exact physics-based try-on.
 

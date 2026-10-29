@@ -14,3 +14,9 @@ The clothing direction is men's oversized apparel in natural tones such as beige
 **Why:** the user stated these as product requirements for the try-on catalog.
 
 **How to apply:** preserve this direction when proposing or creating replacement catalog garments and when deciding which apparel categories to support.
+
+The current catalog has product images only; there are no garment patterns or 3D garment files.
+
+**Why:** the user stated this while choosing a 2D fallback for virtual try-on.
+
+**How to apply:** do not assume physical garment measurements, graded patterns, or 3D assets exist; any size-aware image rendering from current assets is an approximation.

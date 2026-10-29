@@ -8,6 +8,12 @@ Source: https://github.com/fashn-AI/fashn-vton-1.5
 
 The repository describes image-based virtual try-on from a person image and garment image. Its documented categories are `tops`, `bottoms`, and `one-pieces`; its basic inference interface does not expose body measurements or a selected garment size.
 
+## OOTDiffusion
+
+Source: https://github.com/levihsu/OOTDiffusion
+
+The official repository pairs garment categories with upper-body, lower-body, and dress modes. Its documented inference options include person/garment images, sample count, steps, guidance, and seed, but no body measurements or selected garment size.
+
 ## IDM-VTON
 
 Source: https://github.com/yisol/IDM-VTON
