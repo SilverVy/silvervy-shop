@@ -10,15 +10,36 @@ function readImage(value) {
     return { dataUrl: value, size: buffer.length, mimeType: match[1] };
 }
 
-async function callSpace(data) {
-    const start = await fetch(`${SPACE_URL}/gradio_api/call/try_on`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data }),
-        signal: AbortSignal.timeout(30000)
-    });
+function pause(duration) {
+    return new Promise(resolve => setTimeout(resolve, duration));
+}
 
-    if (!start.ok) throw new Error(`Модель недоступна (${start.status})`);
+async function callSpace(data) {
+    let start;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+            start = await fetch(`${SPACE_URL}/gradio_api/call/try_on`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data }),
+                signal: AbortSignal.timeout(30000)
+            });
+        } catch (error) {
+            if (attempt === 0 && ['TypeError', 'TimeoutError', 'AbortError'].includes(error.name)) {
+                await pause(1200);
+                continue;
+            }
+            throw error;
+        }
+
+        if (start.ok) break;
+        if (attempt === 0 && [429, 502, 503, 504].includes(start.status)) {
+            await pause(1200);
+            continue;
+        }
+        throw new Error(`Модель недоступна (${start.status})`);
+    }
+
     const job = await start.json();
     if (!job.event_id) throw new Error('Сервис не вернул идентификатор генерации');
 
@@ -71,6 +92,7 @@ exports.generate = async (req, res) => {
 
         res.status(200).json({ image, provider: 'FASHN VTON 1.5' });
     } catch (error) {
+        console.error('Try-on provider error:', error.name, error.message);
         const status = /timeout|timed out/i.test(error.message) ? 504 : 502;
         res.status(status).json({
             message: status === 504 ? 'Генерация заняла слишком много времени. Попробуйте ещё раз.' : 'Сервис примерки временно не ответил. Попробуйте позже.',
