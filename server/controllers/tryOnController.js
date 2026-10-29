@@ -295,7 +295,7 @@ async function callIdm(person, garment, garmentDescription) {
         meta: { _type: 'gradio.FileData' }
     });
     const sessionHash = randomUUID().replace(/-/g, '');
-    const seed = createHash('sha256').update(person.buffer).update(garment.buffer).digest().readUInt32BE(0);
+    const seed = createHash('sha256').update(person.buffer).update(garment.buffer).digest().readUInt32BE(0) % 2147483648;
     const joinResponse = await fetch(`${IDM_SPACE_URL}/queue/join`, {
         method: 'POST',
         headers: providerHeaders({ 'Content-Type': 'application/json' }),
