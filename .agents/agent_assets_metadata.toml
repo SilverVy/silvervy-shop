@@ -56,3 +56,17 @@ mtime_ms = 1790250317224
 storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:ecabb725-e452-436f-9e5b-8b727de341bc/12ec2850-9ad9-4486-9939-31fd04573fc7/c8c14c2c-f6f1-4a24-9b5a-095d8a899cb1"
 storage_version_token = "1790250477937776"
 content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+[[outputs]]
+id = "i5-TLNoPngt75ChXV_A6k"
+uri = "file://attached_assets/generated_images/tryon-test-person-2x3.jpg"
+type = "image"
+title = "Тестовое фото для примерки"
+description = "Синтетический мужской образ, полный рост, анфас, вертикальный кадр 2:3."
+logical_id = "e7f0faa8-e7bc-421f-bc1e-5beea3ac80f8"
+content_hash = "sha256:bc31a136c3ffa5370cf1eba61e5564fd73527ebd0982e1bdd845eb783954cccb"
+size = 74866
+mtime_ms = 1793274125781
+storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:ecabb725-e452-436f-9e5b-8b727de341bc/e7f0faa8-e7bc-421f-bc1e-5beea3ac80f8/5e6b47fe-d9e4-4098-85cf-e43b292eb002"
+storage_version_token = "1793274137373941"
+content_type = "image/jpeg"
