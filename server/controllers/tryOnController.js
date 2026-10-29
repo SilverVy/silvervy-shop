@@ -83,6 +83,7 @@ function findImageFile(value) {
 }
 
 function describeResultShape(value, depth = 0) {
+    if (value === null) return 'null';
     if (depth > 3) return Array.isArray(value) ? 'array' : typeof value;
     if (Array.isArray(value)) {
         return `array(${value.length})[${value.slice(0, 2).map(item => describeResultShape(item, depth + 1)).join(',')}]`;
@@ -91,6 +92,24 @@ function describeResultShape(value, depth = 0) {
         return `{${Object.entries(value).slice(0, 5).map(([key, item]) => `${key}:${describeResultShape(item, depth + 1)}`).join(',')}}`;
     }
     return typeof value;
+}
+
+function getProviderErrorMessage(value, depth = 0) {
+    if (depth > 3 || value === null || value === undefined) return '';
+    if (typeof value === 'string') return value.trim();
+    if (typeof value !== 'object') return '';
+    for (const key of ['error', 'message', 'detail', 'msg', 'exception']) {
+        const message = getProviderErrorMessage(value[key], depth + 1);
+        if (message) return message;
+    }
+    return '';
+}
+
+function sanitizeProviderError(message) {
+    return String(message)
+        .replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, '[image data]')
+        .replace(/https?:\/\/[^\s"'<>]+/g, '[url]')
+        .slice(0, 300);
 }
 
 function parseSseEvents(stream) {
@@ -164,10 +183,13 @@ async function callQwen(person, garment, prompt) {
     const events = parsedStream.events;
     const providerError = events.findLast(event => event.name === 'error' || event.value?.error);
     if (providerError) {
-        const message = typeof providerError.value === 'string'
-            ? providerError.value
-            : providerError.value?.error || 'Qwen сообщила об ошибке';
-        throw new Error(String(message).slice(0, 300));
+        const message = sanitizeProviderError(getProviderErrorMessage(providerError.value));
+        console.error('Qwen provider error event:', JSON.stringify({
+            eventName: providerError.name,
+            resultShape: describeResultShape(providerError.value),
+            message: message || undefined
+        }));
+        throw new Error(message || `Qwen сообщила об ошибке (${describeResultShape(providerError.value)})`);
     }
     let output = null;
     for (let index = events.length - 1; index >= 0 && !output; index -= 1) {
