@@ -9,10 +9,21 @@ from PIL import Image, ImageDraw, ImageOps
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "generated-artifacts" / "mv-vton-pilot"
 SOURCES = [
-    ("front_detail", ROOT / "server/public/Одежда/coat/1_coat.png", "close_front"),
-    ("front_full", ROOT / "server/public/Одежда/coat/2_coat.png", "front"),
-    ("side_proxy", ROOT / "server/public/Одежда/coat/3_coat.png", "side"),
+    ("coat", ROOT / "server/public/Одежда/coat/2_coat.png", "front"),
+    ("bomber", ROOT / "server/public/Одежда/bomber/1_bomber.png", "front"),
+    ("trench", ROOT / "server/public/Одежда/trench/1_trench.png", "front"),
+    ("shirt", ROOT / "server/public/Одежда/shirt/1_shirt.png", "front"),
+    ("linen_shirt", ROOT / "server/public/Одежда/linen_shirt/1_linen_shirt.png", "front"),
+    ("jean_coat", ROOT / "server/public/Одежда/jean_coat/1_jean_coat.png", "front"),
 ]
+WEB_MASKS = {
+    "coat": "server/public/Одежда/coat/2_coat-mask.png",
+    "bomber": "server/public/Одежда/bomber/1_bomber-mask.png",
+    "trench": "server/public/Одежда/trench/1_trench-mask.png",
+    "shirt": "server/public/Одежда/shirt/1_shirt-mask.png",
+    "linen_shirt": "server/public/Одежда/linen_shirt/1_linen_shirt-mask.png",
+    "jean_coat": "server/public/Одежда/jean_coat/1_jean_coat-mask.png",
+}
 PERSON = ROOT / "attached_assets/generated_images/tryon-test-person.jpg"
 MAX_EDGE = 1024
 PADDING_RATIO = 0.045
@@ -129,7 +140,7 @@ def segment_inputs():
             allowed |= labels == class_id
         mask = (allowed & (confidence >= 0.42)).to(torch.uint8).cpu().numpy() * 255
         mask_image = Image.fromarray(mask, mode="L")
-        if name == "front_full":
+        if name == "coat":
             mask_image = remove_coat_underlayers(mask_image)
         mask_image.save(OUTPUT / f"{name}-semantic-mask.png")
         tint = Image.new("RGBA", image.size, (91, 217, 172, 0))
@@ -174,17 +185,17 @@ def segment_inputs():
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--segment", action="store_true")
-    parser.add_argument("--install-web-mask", action="store_true")
+    parser.add_argument("--install-web-mask", action="append", choices=WEB_MASKS, default=[])
     args = parser.parse_args()
     OUTPUT.mkdir(parents=True, exist_ok=True)
     manifest = {
-        "model": "MV-VTON",
+        "model": "SegFormer clothing parser",
         "person_image": str(PERSON.relative_to(ROOT)),
         "garment_views": [prepare_garment(*entry) for entry in SOURCES],
         "limitations": [
-            "The side view is only a proxy for the model's expected rear view.",
-            "The alpha mask separates the photographed model from the background; it is not a coat-only segmentation mask.",
-            "Garment-only masks, person parsing, pose maps, and MV-VTON warp intermediates remain required.",
+            "Semantic masks can include visible underlayers and must be visually reviewed before installation.",
+            "Only the coat reference has manually defined cardigan and cuff exclusion polygons.",
+            "A garment mask enables reference-image scaling but does not provide true physical size conditioning.",
         ],
     }
     person = ImageOps.exif_transpose(Image.open(PERSON)).convert("RGB")
@@ -209,11 +220,11 @@ def main():
     print(f"Contact sheet: {OUTPUT / 'garment-view-check.jpg'}")
     if args.segment:
         print(json.dumps(segment_inputs(), ensure_ascii=False, indent=2))
-    if args.install_web_mask:
-        mask_path = OUTPUT / "front_full-semantic-mask.png"
+    for name in args.install_web_mask:
+        mask_path = OUTPUT / f"{name}-semantic-mask.png"
         if not mask_path.exists():
-            parser.error("Run with --segment and visually review the front_full mask first")
-        web_mask = ROOT / "server/public/Одежда/coat/2_coat-mask.png"
+            parser.error(f"Generate and visually review {mask_path.relative_to(ROOT)} first")
+        web_mask = ROOT / WEB_MASKS[name]
         web_mask.parent.mkdir(parents=True, exist_ok=True)
         Image.open(mask_path).convert("L").save(web_mask)
         print(f"Installed reviewed mask: {web_mask.relative_to(ROOT)}")

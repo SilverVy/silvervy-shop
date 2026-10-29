@@ -23,11 +23,21 @@
     };
 
     const garmentReferenceImages = {
-        'product-coat.html': 'Одежда/coat/2_coat.png'
+        'product-coat.html': 'Одежда/coat/2_coat.png',
+        'product-bomber.html': 'Одежда/bomber/1_bomber.png',
+        'product-trench.html': 'Одежда/trench/1_trench.png',
+        'product-shirt.html': 'Одежда/shirt/1_shirt.png',
+        'product-linen_shirt.html': 'Одежда/linen_shirt/1_linen_shirt.png',
+        'product-jean_coat.html': 'Одежда/jean_coat/1_jean_coat.png'
     };
 
     const garmentMaskImages = {
-        'product-coat.html': 'Одежда/coat/2_coat-mask.png'
+        'product-coat.html': 'Одежда/coat/2_coat-mask.png',
+        'product-bomber.html': 'Одежда/bomber/1_bomber-mask.png',
+        'product-trench.html': 'Одежда/trench/1_trench-mask.png',
+        'product-shirt.html': 'Одежда/shirt/1_shirt-mask.png',
+        'product-linen_shirt.html': 'Одежда/linen_shirt/1_linen_shirt-mask.png',
+        'product-jean_coat.html': 'Одежда/jean_coat/1_jean_coat-mask.png'
     };
 
     const fitProfiles = {
