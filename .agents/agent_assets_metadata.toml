@@ -112,3 +112,17 @@ mtime_ms = 1793277584901
 storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:ecabb725-e452-436f-9e5b-8b727de341bc/cb78b848-2526-4621-aa6c-5a1168ec77de/e12d2d29-85ad-427f-867f-18664e91194b"
 storage_version_token = "1793277614254078"
 content_type = "text/markdown"
+
+[[outputs]]
+id = "QDpHNC7l4qfzlQA48aIBn"
+uri = "file://generated-artifacts/mv-vton-pilot/garment-view-check.jpg"
+type = "image"
+title = "MV-VTON: подготовленные ракурсы пальто"
+description = "Фронтальный крупный, фронтальный полный и боковой ракурс, нормализованные без растяжения."
+logical_id = "24319c8a-23a4-42e0-a479-8c88a8fedb49"
+content_hash = "sha256:d40ecbf9520d997ca975615353c50d6a2eef8dc6fd9109927b0885c59602442c"
+size = 53171
+mtime_ms = 1793293404789
+storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:ecabb725-e452-436f-9e5b-8b727de341bc/24319c8a-23a4-42e0-a479-8c88a8fedb49/75f6271d-b262-4e26-bc3c-b4bd832deb04"
+storage_version_token = "1793293460828166"
+content_type = "image/jpeg"
