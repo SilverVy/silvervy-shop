@@ -82,6 +82,17 @@ function findImageFile(value) {
     return null;
 }
 
+function describeResultShape(value, depth = 0) {
+    if (depth > 3) return Array.isArray(value) ? 'array' : typeof value;
+    if (Array.isArray(value)) {
+        return `array(${value.length})[${value.slice(0, 2).map(item => describeResultShape(item, depth + 1)).join(',')}]`;
+    }
+    if (value && typeof value === 'object') {
+        return `{${Object.entries(value).slice(0, 5).map(([key, item]) => `${key}:${describeResultShape(item, depth + 1)}`).join(',')}}`;
+    }
+    return typeof value;
+}
+
 async function callQwen(person, garment, prompt) {
     const form = new FormData();
     form.append('files', new Blob([person.buffer], { type: person.mimeType }), 'person.jpg');
@@ -125,9 +136,13 @@ async function callQwen(person, garment, prompt) {
     }).filter(value => value !== null);
     const providerError = events.findLast(event => event?.error)?.error;
     if (providerError) throw new Error(String(providerError));
-    const output = findImageFile(events.findLast(Boolean));
+    let output = null;
+    for (let index = events.length - 1; index >= 0 && !output; index -= 1) {
+        output = findImageFile(events[index]);
+    }
     const imageUrl = output?.url || output?.path;
     if (!imageUrl) {
+        console.error('Qwen result shape:', events.slice(-4).map(event => describeResultShape(event)).join(' | '));
         const error = new Error('Qwen не вернула изображение');
         error.code = 'EMPTY_MODEL_RESULT';
         throw error;
