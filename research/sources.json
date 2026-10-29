@@ -1,0 +1,65 @@
+{
+  "fashn-vton": {
+    "title": "FASHN VTON v1.5 official repository",
+    "url": "https://github.com/fashn-AI/fashn-vton-1.5",
+    "published": "Repository accessed 2026-10-29",
+    "tier": 1,
+    "evidence": "research/sources/primary-source-excerpts.md"
+  },
+  "idm-vton": {
+    "title": "IDM-VTON official repository",
+    "url": "https://github.com/yisol/IDM-VTON",
+    "published": "Repository accessed 2026-10-29",
+    "tier": 1,
+    "evidence": "research/sources/primary-source-excerpts.md"
+  },
+  "idm-vton-space": {
+    "title": "IDM-VTON public demo inference code",
+    "url": "https://huggingface.co/spaces/yisol/IDM-VTON/raw/main/app.py",
+    "published": "Accessed 2026-10-29",
+    "tier": 1,
+    "evidence": "research/sources/primary-source-excerpts.md"
+  },
+  "garmentcode": {
+    "title": "GarmentCode official repository",
+    "url": "https://github.com/maria-korosteleva/GarmentCode",
+    "published": "Repository accessed 2026-10-29",
+    "tier": 1,
+    "evidence": "research/sources/primary-source-excerpts.md"
+  },
+  "garmentcodedata": {
+    "title": "GarmentCodeData project, ETH Zurich",
+    "url": "https://igl.ethz.ch/projects/GarmentCodeData/",
+    "published": "Project page accessed 2026-10-29",
+    "tier": 1,
+    "evidence": "research/sources/primary-source-excerpts.md"
+  },
+  "tailornet": {
+    "title": "TailorNet dataset repository",
+    "url": "https://github.com/zycliao/TailorNet_dataset",
+    "published": "Repository accessed 2026-10-29",
+    "tier": 1,
+    "evidence": "research/sources/primary-source-excerpts.md"
+  },
+  "design2garmentcode": {
+    "title": "Design2GarmentCode official implementation",
+    "url": "https://github.com/Style3D/design2garmentcode-impl",
+    "published": "Repository accessed 2026-10-29",
+    "tier": 1,
+    "evidence": "research/sources/primary-source-excerpts.md"
+  },
+  "blender-cloth": {
+    "title": "Blender manual: Cloth Physics",
+    "url": "https://docs.blender.org/manual/en/latest/physics/cloth/introduction.html",
+    "published": "Documentation accessed 2026-10-29",
+    "tier": 1,
+    "evidence": "research/sources/primary-source-excerpts.md"
+  },
+  "smpl-x": {
+    "title": "SMPL-X parametric body model",
+    "url": "https://smpl-x.is.tue.mpg.de/",
+    "published": "Project page accessed 2026-10-29",
+    "tier": 1,
+    "evidence": "research/sources/primary-source-excerpts.md"
+  }
+}

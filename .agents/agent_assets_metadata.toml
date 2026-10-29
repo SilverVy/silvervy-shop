@@ -98,3 +98,17 @@ mtime_ms = 1793276578976
 storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:ecabb725-e452-436f-9e5b-8b727de341bc/26887250-ac59-48ce-81e4-fea5f2fd2fef/156d4ee3-bc75-4059-8273-2b23d1c6bc78"
 storage_version_token = "1793276585019169"
 content_type = "text/markdown"
+
+[[outputs]]
+id = "7MZi6uvcYtKO4nGW71qKi"
+uri = "file://research/size-aware-try-on.md"
+type = "text"
+title = "Исследование: точная примерка по размеру"
+description = "Сравнение 2D-моделей и 3D-подхода, с данными для товаров Silver.Vy."
+logical_id = "cb78b848-2526-4621-aa6c-5a1168ec77de"
+content_hash = "sha256:863bb1b51ca09358f4292b7b781251e1c569b8817a872bbfd70429f993d55faf"
+size = 8747
+mtime_ms = 1793276809444
+storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:ecabb725-e452-436f-9e5b-8b727de341bc/cb78b848-2526-4621-aa6c-5a1168ec77de/039fe9c8-feaf-4ba4-9c0c-786d475bdc0a"
+storage_version_token = "1793276863241612"
+content_type = "text/markdown"

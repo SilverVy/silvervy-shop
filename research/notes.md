@@ -1,6 +1,6 @@
 # Research Notes: Size-Accurate Virtual Try-On
 
-**Status:** researching
+**Status:** complete
 **Depth:** Quick
 
 ## Plan
@@ -14,27 +14,29 @@
 
 | # | Area | Status | Sources |
 |---|---|---|---|
-| 1 | 2D try-on and size conditioning | pending | -- |
-| 2 | Open 3D garment simulation | pending | -- |
-| 3 | Required product and body data | pending | -- |
+| 1 | 2D try-on and size conditioning | done | 3 |
+| 2 | Open 3D garment simulation | done | 5 |
+| 3 | Required product and body data | done | 4 |
 
 ## Coverage Checklist
 
-- [ ] Do current image try-on models use selected garment size or measurements?
-- [ ] Can image-only product photos be converted into accurate 3D garments automatically?
-- [ ] What per-size garment data is required for a physically meaningful fit?
-- [ ] Which open-source tools can simulate tops, bottoms, and outerwear?
-- [ ] Can a free hosted service reliably run the required simulation?
-- [ ] What prototype can preserve the garment's color, texture, and construction?
+- [x] Do current image try-on models use selected garment size or measurements?
+- [x] Can image-only product photos be converted into accurate 3D garments automatically?
+- [x] What per-size garment data is required for a physically meaningful fit?
+- [x] Which open-source tools can simulate tops, bottoms, and outerwear?
+- [x] Can a free hosted service reliably run the required simulation?
+- [x] What prototype can preserve the garment's color, texture, and construction?
 
 ## Findings Log
 
-Research has not started.
+Official 2D try-on interfaces accept person/garment images and a garment category, not body measurements or selected size. IDM-VTON's demo masks only the upper body. GarmentCode/GarmentCodeData demonstrate a viable 3D pattern-and-drape direction, but require garment patterns and body measurements; they do not turn a single store photo into an exact product.
+
+Recommended direction: stop describing the current diffusion output as size-accurate. For exact appearance and size-dependent fit, create per-size 3D garment assets from patterns or model them manually, then simulate/render against a measured avatar. Precompute the fit offline and display 3D assets on the site. No verified free hosted service provides reliable, unlimited, exact physics-based try-on.
 
 ## Conflicts & Open Questions
 
-None yet.
+Image-only 2D diffusion cannot guarantee exact garment preservation or physical size simulation. Existing catalog photos do not include the sewing patterns, graded dimensions, or fabric properties needed for an exact 3D simulation.
 
 ## Gaps
 
-None yet.
+The web search callbacks returned HTTP 402 during this research. Findings were verified by direct reads of official repositories and documentation; the evidence URLs and excerpts are recorded under research/sources/.
