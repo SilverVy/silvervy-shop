@@ -1,8 +1,5 @@
 const MAX_IMAGE_BYTES = 7 * 1024 * 1024;
-const SPACE_URL = (process.env.TRYON_SPACE_URL || 'https://fashn-ai-fashn-vton-1-5.hf.space').replace(/\/$/, '');
-const IDM_SPACE_URL = 'https://yisol-idm-vton.hf.space';
 const QWEN_SPACE_URL = (process.env.QWEN_SPACE_URL || 'https://qwen-qwen-image-edit-2511.hf.space').replace(/\/$/, '');
-const { randomUUID } = require('node:crypto');
 
 function providerHeaders(headers = {}) {
     return {
@@ -20,160 +17,6 @@ function readImage(value) {
     return { dataUrl: value, buffer, size: buffer.length, mimeType: match[1] };
 }
 
-function pause(duration) {
-    return new Promise(resolve => setTimeout(resolve, duration));
-}
-
-async function callSpaceAttempt(data) {
-    let start;
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-        try {
-            start = await fetch(`${SPACE_URL}/gradio_api/call/try_on`, {
-                method: 'POST',
-                headers: providerHeaders({ 'Content-Type': 'application/json' }),
-                body: JSON.stringify({ data }),
-                signal: AbortSignal.timeout(30000)
-            });
-        } catch (error) {
-            if (attempt === 0 && ['TypeError', 'TimeoutError', 'AbortError'].includes(error.name)) {
-                await pause(1200);
-                continue;
-            }
-            throw error;
-        }
-
-        if (start.ok) break;
-        if (attempt === 0 && [429, 502, 503, 504].includes(start.status)) {
-            await pause(1200);
-            continue;
-        }
-        throw new Error(`Модель недоступна (${start.status})`);
-    }
-
-    const job = await start.json();
-    if (!job.event_id) throw new Error('Сервис не вернул идентификатор генерации');
-
-    const resultResponse = await fetch(`${SPACE_URL}/gradio_api/call/try_on/${job.event_id}`, {
-        headers: providerHeaders({ Accept: 'text/event-stream' }),
-        signal: AbortSignal.timeout(240000)
-    });
-    if (!resultResponse.ok) throw new Error(`Ошибка ожидания результата (${resultResponse.status})`);
-
-    const stream = await resultResponse.text();
-    const dataLines = stream.split(/\r?\n/).filter(line => line.startsWith('data:'));
-    if (!dataLines.length) throw new Error('Модель не вернула результат');
-    const result = JSON.parse(dataLines[dataLines.length - 1].slice(5).trim());
-    if (!result) {
-        const error = new Error('Модель вернула пустой результат');
-        error.code = 'EMPTY_MODEL_RESULT';
-        throw error;
-    }
-    if (typeof result === 'object' && result.error) throw new Error(String(result.error));
-    const image = Array.isArray(result) ? result[0] : result?.data?.[0];
-    const imageUrl = image?.url || image?.path;
-    if (!imageUrl) {
-        const error = new Error('Модель не вернула изображение');
-        error.code = 'EMPTY_MODEL_RESULT';
-        throw error;
-    }
-
-    const absoluteUrl = imageUrl.startsWith('http') ? imageUrl : `${SPACE_URL}/gradio_api/file=${encodeURIComponent(imageUrl)}`;
-    const imageResponse = await fetch(absoluteUrl, { headers: providerHeaders(), signal: AbortSignal.timeout(60000) });
-    if (!imageResponse.ok) throw new Error('Не удалось загрузить результат модели');
-    const output = Buffer.from(await imageResponse.arrayBuffer());
-    if (!output.length || output.length > 12 * 1024 * 1024) throw new Error('Размер результата превышает допустимый');
-    return `data:${imageResponse.headers.get('content-type') || 'image/png'};base64,${output.toString('base64')}`;
-}
-
-async function callSpace(data) {
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-        try {
-            return await callSpaceAttempt(data);
-        } catch (error) {
-            if (attempt === 0 && error.code === 'EMPTY_MODEL_RESULT') {
-                await pause(1200);
-                continue;
-            }
-            throw error;
-        }
-    }
-    throw new Error('Модель не вернула изображение');
-}
-
-async function callIdm(person, garment) {
-    const form = new FormData();
-    form.append('files', new Blob([person.buffer], { type: person.mimeType }), 'person.jpg');
-    form.append('files', new Blob([garment.buffer], { type: garment.mimeType }), 'garment.jpg');
-    const uploadResponse = await fetch(`${IDM_SPACE_URL}/upload`, {
-        method: 'POST',
-        body: form,
-        headers: providerHeaders(),
-        signal: AbortSignal.timeout(60000)
-    });
-    if (!uploadResponse.ok) throw new Error(`IDM-VTON не приняла изображения (${uploadResponse.status})`);
-    const uploaded = await uploadResponse.json();
-    if (!Array.isArray(uploaded) || uploaded.length !== 2) throw new Error('IDM-VTON не вернула загруженные изображения');
-
-    const configResponse = await fetch(`${IDM_SPACE_URL}/config`, { headers: providerHeaders(), signal: AbortSignal.timeout(30000) });
-    if (!configResponse.ok) throw new Error(`Не удалось получить настройки IDM-VTON (${configResponse.status})`);
-    const config = await configResponse.json();
-    const functionIndex = config.dependencies?.findIndex(dependency => dependency.api_name === 'tryon');
-    if (functionIndex < 0) throw new Error('В IDM-VTON не найдена функция генерации');
-
-    const fileData = (path, origName, mimeType) => ({
-        path,
-        orig_name: origName,
-        mime_type: mimeType,
-        meta: { _type: 'gradio.FileData' }
-    });
-    const sessionHash = randomUUID().replace(/-/g, '');
-    const joinResponse = await fetch(`${IDM_SPACE_URL}/queue/join`, {
-        method: 'POST',
-        headers: providerHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({
-            data: [
-                { background: fileData(uploaded[0], 'person.jpg', person.mimeType), layers: [], composite: null },
-                fileData(uploaded[1], 'garment.jpg', garment.mimeType),
-                'upper-body clothing',
-                true,
-                false,
-                20,
-                Math.floor(Math.random() * 2147483647)
-            ],
-            fn_index: functionIndex,
-            session_hash: sessionHash,
-            event_data: null
-        }),
-        signal: AbortSignal.timeout(30000)
-    });
-    if (!joinResponse.ok) throw new Error(`IDM-VTON не запустила генерацию (${joinResponse.status})`);
-
-    const streamResponse = await fetch(`${IDM_SPACE_URL}/queue/data?session_hash=${encodeURIComponent(sessionHash)}`, {
-        headers: providerHeaders({ Accept: 'text/event-stream' }),
-        signal: AbortSignal.timeout(240000)
-    });
-    if (!streamResponse.ok) throw new Error(`Не удалось получить результат IDM-VTON (${streamResponse.status})`);
-    const stream = await streamResponse.text();
-    const events = stream.split(/\r?\n/).filter(line => line.startsWith('data:')).map(line => {
-        try {
-            return JSON.parse(line.slice(5).trim());
-        } catch {
-            return null;
-        }
-    }).filter(Boolean);
-    const completed = events.findLast(event => event.msg === 'process_completed');
-    const output = completed?.output?.data?.[0];
-    const imageUrl = output?.url || output?.path;
-    if (!completed?.success || !imageUrl) throw new Error(completed?.output?.error || 'IDM-VTON не вернула изображение');
-
-    const absoluteUrl = imageUrl.startsWith('http') ? imageUrl : `${IDM_SPACE_URL}/file=${encodeURIComponent(imageUrl)}`;
-    const imageResponse = await fetch(absoluteUrl, { headers: providerHeaders(), signal: AbortSignal.timeout(60000) });
-    if (!imageResponse.ok) throw new Error('Не удалось загрузить результат IDM-VTON');
-    const result = Buffer.from(await imageResponse.arrayBuffer());
-    if (!result.length || result.length > 12 * 1024 * 1024) throw new Error('Размер результата IDM-VTON превышает допустимый');
-    return `data:${imageResponse.headers.get('content-type') || 'image/png'};base64,${result.toString('base64')}`;
-}
-
 function getFitInstruction(size, recommendedSize, category, fitProfile) {
     const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
     const selectedIndex = sizes.indexOf(String(size || '').toUpperCase());
@@ -188,9 +31,9 @@ function getFitInstruction(size, recommendedSize, category, fitProfile) {
             ? 'chest, waist, hips, sleeves and overall length'
             : 'chest, torso volume, shoulder ease, sleeve width, sleeve length and hem length';
     const fit = delta < 0
-        ? `The selected size ${size} is ${Math.abs(delta)} size${Math.abs(delta) === 1 ? '' : 's'} below the profile-based recommendation ${recommendedSize || ''}. Show a visibly closer, less roomy fit in the ${itemArea}.`
+        ? `The selected size ${size} is ${Math.abs(delta)} size${Math.abs(delta) === 1 ? '' : 's'} below the profile-based recommendation ${recommendedSize || ''}. Show a clearly visible, closer, less roomy fit in the ${itemArea}; do not limit the change to the hem length.`
         : delta > 0
-            ? `The selected size ${size} is ${delta} size${delta === 1 ? '' : 's'} above the profile-based recommendation ${recommendedSize || ''}. Show a visibly roomier fit in the ${itemArea}, with proportionally longer sleeves or hem where relevant.`
+            ? `The selected size ${size} is ${delta} size${delta === 1 ? '' : 's'} above the profile-based recommendation ${recommendedSize || ''}. Show a clearly visible, roomier fit in the ${itemArea}, with proportionally wider sleeves or legs and longer sleeves or hem where relevant; do not limit the change to the hem length.`
             : `The selected size ${size} matches the profile-based recommendation. Show the intended ${baseFit} with natural ease in the ${itemArea}.`;
     return `${fit} Do not change the person's body shape to fake the fit.`;
 }
@@ -221,6 +64,9 @@ function buildQwenPrompt({ productName, category, size, recommendedSize, measure
 }
 
 function findImageFile(value) {
+    if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('/') || value.startsWith('data:'))) {
+        return value.startsWith('data:') ? { url: value } : { path: value };
+    }
     if (Array.isArray(value)) {
         for (const item of value) {
             const found = findImageFile(item);
@@ -286,9 +132,10 @@ async function callQwen(person, garment, prompt) {
         error.code = 'EMPTY_MODEL_RESULT';
         throw error;
     }
+    if (imageUrl.startsWith('data:')) return imageUrl;
     const absoluteUrl = imageUrl.startsWith('http')
         ? imageUrl
-        : imageUrl.startsWith('/gradio_api/')
+        : imageUrl.startsWith('/gradio_api/') || imageUrl.startsWith('/file=')
             ? `${QWEN_SPACE_URL}${imageUrl}`
             : `${QWEN_SPACE_URL}/gradio_api/file=${encodeURIComponent(imageUrl)}`;
     const imageResponse = await fetch(absoluteUrl, {
