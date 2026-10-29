@@ -1,5 +1,9 @@
 const API_URL = 'https://silvervy-backend.onrender.com/api/cart';
 
+const tryOnScript = document.createElement('script');
+tryOnScript.src = 'tryon.js';
+document.body.appendChild(tryOnScript);
+
 // Проверка авторизации
 function checkAuth() {
     return localStorage.getItem('token') !== null;
@@ -184,7 +188,8 @@ document.querySelectorAll('.cta-button').forEach(button => {
 });
 
 // Обработка формы
-document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
+const checkoutForm = document.getElementById('checkoutForm');
+if (checkoutForm) checkoutForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const formData = {
@@ -271,20 +276,20 @@ function showOrderMessage(message) {
 }
 
 // При открытии формы
-document.getElementById('city').addEventListener('focus', function() {
+document.getElementById('city')?.addEventListener('focus', function() {
     window.scrollTo(0, 0);
 });
 
-document.getElementById('address').addEventListener('focus', function() {
+document.getElementById('address')?.addEventListener('focus', function() {
     window.scrollTo(0, 0);
 });
 
-document.getElementById('notes').addEventListener('focus', function() {
+document.getElementById('notes')?.addEventListener('focus', function() {
     window.scrollTo(0, 0);
 });
 
 // При сабмите формы
-document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+document.getElementById('checkoutForm')?.addEventListener('submit', function(e) {
     e.preventDefault();
     window.scrollTo(0, 0);
 });
