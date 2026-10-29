@@ -97,7 +97,9 @@
         const file = link?.getAttribute('href')?.split('/').pop();
         return {
             name: card?.querySelector('h4')?.textContent.trim() || 'Товар Silver.Vy',
-            image: image?.src,
+            image: garmentReferenceImages[file]
+                ? new URL(garmentReferenceImages[file], location.href).href
+                : image?.src,
             garmentDescription: garmentDescriptions[file] || 'upper-body clothing',
             category: categories[file] || null,
             fit: fitProfiles[file] || { label: 'стандартный', ease: 6 },
