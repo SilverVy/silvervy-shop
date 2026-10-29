@@ -84,3 +84,17 @@ mtime_ms = 1793274378633
 storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:ecabb725-e452-436f-9e5b-8b727de341bc/25b9047e-7bad-47ad-88fa-0b6157847d26/f8028fd1-8e22-453f-ae1d-ca3e8c1233f6"
 storage_version_token = "1793274428836809"
 content_type = "image/png"
+
+[[outputs]]
+id = "trmlGlAJOnTs4KcWxORmT"
+uri = "file://research/notes.md"
+type = "text"
+title = "Исследование 3D-примерки"
+description = "План и выводы о сохранении одежды и посадке по размеру."
+logical_id = "26887250-ac59-48ce-81e4-fea5f2fd2fef"
+content_hash = "sha256:1fd25c3ce94cccb24d99650727b9f51fce9b8bff2667525a718a4f4c6e1e6b77"
+size = 1273
+mtime_ms = 1793276578976
+storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:ecabb725-e452-436f-9e5b-8b727de341bc/26887250-ac59-48ce-81e4-fea5f2fd2fef/156d4ee3-bc75-4059-8273-2b23d1c6bc78"
+storage_version_token = "1793276585019169"
+content_type = "text/markdown"
