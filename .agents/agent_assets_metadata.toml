@@ -70,3 +70,17 @@ mtime_ms = 1793274125781
 storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:ecabb725-e452-436f-9e5b-8b727de341bc/e7f0faa8-e7bc-421f-bc1e-5beea3ac80f8/5e6b47fe-d9e4-4098-85cf-e43b292eb002"
 storage_version_token = "1793274137373941"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "8kMrYbsXDEGw4--xa5dLP"
+uri = "file://attached_assets/generated_images/fashn-person2-test.png"
+type = "image"
+title = "Фото FASHN для проверки примерки"
+description = "Официальный тестовый снимок FASHN, который проходит проверку примерки с рубашкой Silver.Vy."
+logical_id = "25b9047e-7bad-47ad-88fa-0b6157847d26"
+content_hash = "sha256:0fbd68ea4972e9bfaf582ef25c4d8c466582c2dce66bca021d4f16ebe35c7471"
+size = 1804127
+mtime_ms = 1793274378633
+storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:ecabb725-e452-436f-9e5b-8b727de341bc/25b9047e-7bad-47ad-88fa-0b6157847d26/f8028fd1-8e22-453f-ae1d-ca3e8c1233f6"
+storage_version_token = "1793274428836809"
+content_type = "image/png"
