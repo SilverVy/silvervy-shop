@@ -137,7 +137,7 @@
                     </div>
                 <label class="tryon-size-label"><span>03</span>Размер для генерации<select class="tryon-size"></select></label>
                 </div>
-                <p class="tryon-fit-note">Выбранный размер и параметры профиля задают визуальную посадку. Сетка примерная, замеров изделий по размерам нет, поэтому результат не гарантирует реальную посадку.</p>
+                <p class="tryon-fit-note">IDM-VTON создаёт визуальный эскиз по фото; выбранный размер и параметры тела не меняют результат генерации. Размерная подсказка ориентировочная.</p>
                 <label class="tryon-consent"><input type="checkbox" required><span>Я согласен(на) передать фото в Hugging Face для генерации. Фото не сохраняется в профиле Silver.Vy.</span></label>
                 <button class="tryon-generate" type="button"><span>✦</span> Создать примерку</button>
                 <p class="tryon-status" role="status"></p>
@@ -174,10 +174,12 @@
 
         document.querySelectorAll('.tryon-launch').forEach(button => {
             const product = getProduct(button);
-            if (!product.category) {
+            if (!product.category || product.category !== 'tops') {
                 button.disabled = true;
-                button.textContent = 'Примерка обуви скоро';
-                button.title = 'Текущая модель поддерживает верхнюю одежду, брюки и цельные образы';
+                button.textContent = product.category === 'bottoms' ? 'Примерка низа временно недоступна' : 'Примерка обуви скоро';
+                button.title = product.category === 'bottoms'
+                    ? 'Публичная IDM-VTON поддерживает только верхнюю одежду'
+                    : 'Текущая IDM-VTON поддерживает только верхнюю одежду';
             }
             button.addEventListener('click', () => openModal(button));
         });
@@ -241,7 +243,7 @@
         const recommendation = chooseRecommendedSize(values, product.category || modal.dataset.category);
         const select = modal.querySelector('.tryon-size');
         const visibleSizes = [...select.options].map(option => option.value);
-        modal.querySelector('.tryon-fit-note').textContent = `Ориентировочная сетка по типовым параметрам тела. Крой изделия: ${modal.dataset.fit}; расчётная прибавка для свободы около ${modal.dataset.ease} см. Выбранный размер будет передан модели как инструкция по посадке, но точных замеров изделия нет.`;
+        modal.querySelector('.tryon-fit-note').textContent = `IDM-VTON получает одно фото вещи и не принимает параметры тела, выбранный размер или пользовательскую маску. Сетка ${modal.dataset.fit} / прибавка ${modal.dataset.ease} см — только ориентир для выбора размера, а не условие генерации.`;
         if (recommendation && visibleSizes.includes(recommendation)) {
             label.textContent = `Предварительная рекомендация: ${recommendation}`;
             if (!select.dataset.userChanged) select.value = recommendation;
@@ -265,11 +267,18 @@
 
     async function compressImage(file) {
         const bitmap = await createImageBitmap(file);
+        if (bitmap.height <= bitmap.width) throw new Error('Нужно вертикальное фото в полный рост, снятое в анфас.');
+        if (bitmap.width < 512 || bitmap.height < 768) throw new Error('Разрешение фото слишком низкое. Загрузите снимок не меньше 512 × 768 пикселей.');
+        if (bitmap.height / bitmap.width < 1.25 || bitmap.height / bitmap.width > 2.6) throw new Error('Выберите вертикальный кадр примерно 2:3, где фигура целиком занимает фото.');
         const scale = Math.min(1, 1200 / Math.max(bitmap.width, bitmap.height));
         const canvas = document.createElement('canvas');
         canvas.width = Math.round(bitmap.width * scale);
         canvas.height = Math.round(bitmap.height * scale);
-        canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        const context = canvas.getContext('2d');
+        context.fillStyle = '#f4f1ec';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        bitmap.close();
         return canvas.toDataURL('image/jpeg', 0.86);
     }
 
@@ -293,7 +302,7 @@
         button.disabled = true;
         button.classList.add('generating');
         result.innerHTML = '';
-        status.textContent = 'Подготавливаем примерку с учетом профиля и выбранного размера…';
+        status.textContent = 'Проверяем фото и подготавливаем его для IDM-VTON…';
         try {
             const personImage = await compressImage(file);
             const garmentImage = await imageToDataUrl(modal.dataset.image);
@@ -322,8 +331,8 @@
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Не удалось создать примерку');
-            status.textContent = 'Готово. Посадка сгенерирована с учетом выбранного размера и параметров профиля.';
-            result.innerHTML = `<img alt="Результат виртуальной примерки" src="${data.image}"><a class="tryon-download" download="silvervy-try-on.png" href="${data.image}">Скачать результат</a><small>Результат создан ${data.provider || 'моделью виртуальной примерки'}. Размер влияет на инструкцию генерации; визуальная посадка приблизительная, фактические замеры изделия по размерам не заданы.</small>`;
+            status.textContent = 'Готово. Это визуальный эскиз, а не точный расчёт посадки.';
+            result.innerHTML = `<img alt="Результат виртуальной примерки" src="${data.image}"><a class="tryon-download" download="silvervy-try-on.png" href="${data.image}">Скачать результат</a><small>${data.provider || 'IDM-VTON'} автоматически строит маску. Пользовательские маски, дополнительные ракурсы и размер не передаются модели.</small>`;
         } catch (error) {
             status.textContent = error.message || 'Сервис примерки временно недоступен.';
         } finally {

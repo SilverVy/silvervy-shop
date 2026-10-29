@@ -325,6 +325,9 @@ exports.generate = async (req, res) => {
         if (!['tops', 'bottoms', 'one-pieces'].includes(category)) {
             return res.status(400).json({ message: 'Для этой категории виртуальная примерка пока недоступна' });
         }
+        if (category !== 'tops') {
+            return res.status(422).json({ message: 'IDM-VTON сейчас поддерживает только верхнюю одежду. Примерка низа и цельных изделий временно отключена.' });
+        }
         if (!['XS', 'S', 'M', 'L', 'XL', 'XXL'].includes(size)) {
             return res.status(400).json({ message: 'Выберите размер для генерации' });
         }
@@ -334,20 +337,11 @@ exports.generate = async (req, res) => {
             if (Number.isFinite(value) && value > 0) safeMeasurements[key] = value;
         }
 
-        const prompt = buildQwenPrompt({
-            productName,
-            category,
-            size,
-            recommendedSize,
-            measurements: safeMeasurements,
-            fitProfile
-        });
-        const useIdm = category === 'tops';
-        const image = useIdm ? await callIdm(person, garment) : await callQwen(person, garment, prompt);
+        const image = await callIdm(person, garment);
 
         res.status(200).json({
             image,
-            provider: useIdm ? 'IDM-VTON' : 'Qwen Image Edit'
+            provider: 'IDM-VTON; selected size is not model-conditioned'
         });
     } catch (error) {
         console.error('Try-on provider error:', error.name, error.message);

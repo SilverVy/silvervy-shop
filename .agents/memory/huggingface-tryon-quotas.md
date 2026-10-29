@@ -5,8 +5,8 @@ description: Reliability limits of public Hugging Face Spaces used for Silver.Vy
 
 Do not assume an empty virtual try-on result means the uploaded photo is invalid. Public Hugging Face ZeroGPU Spaces can return `null` or an explicit quota error even when their runtime reports `RUNNING`. Verify a known-good example and inspect provider quota errors before asking users to retake photos. Authenticated requests may use the backend-only `HF_TOKEN` environment variable; never expose or log its value.
 
-IDM-VTON's public app applies an `upper_body` mask and has no size-conditioning input. Do not route long coats through it or imply the selected size changes generated pixels.
+IDM-VTON's public app applies an `upper_body` mask and has no size-conditioning, custom-mask, or multi-view input. The user explicitly chose it for the upper-body pilot because Qwen did not work and IDM-VTON previously ran on the site; lower-body try-on is temporarily disabled.
 
-**Why:** FASHN returned empty results for its own official example, while IDM-VTON produced an image and later reported that its shared ZeroGPU quota was exhausted. IDM-VTON also cropped a long coat because its mask is limited to the upper body.
+**Why:** The user prefers restoring the previously functioning IDM-VTON path over continuing with Qwen, despite IDM-VTON's known category and conditioning limits. FASHN returned empty results for its own official example, and IDM-VTON's shared ZeroGPU quota can be exhausted.
 
-**How to apply:** When debugging this app's model failures, separate photo validation from provider availability, check the provider response and quota before changing image preprocessing, and route long outerwear only to a full-length model.
+**How to apply:** Use IDM-VTON only for the explicitly chosen upper-body pilot. Keep lower-body try-on unavailable until a compatible provider is selected. State clearly that IDM-VTON internally creates its mask and does not use selected sizes, profile measurements, custom masks, or extra product views to control output.
