@@ -135,7 +135,7 @@
                             <div class="tryon-chart-table"></div>
                         </details>
                     </div>
-                    <label class="tryon-size-label"><span>03</span>Размер для примерки<select class="tryon-size"></select></label>
+                    <label class="tryon-size-label"><span>03</span>Размер для подсказки<select class="tryon-size"></select></label>
                 </div>
                 <p class="tryon-fit-note">Подбор размера ориентировочный: сетка построена по типовым меркам, а не по замерам производителя. ИИ-визуализация не гарантирует точную посадку и не меняет физические размеры изделия.</p>
                 <label class="tryon-consent"><input type="checkbox" required><span>Я согласен(на) передать фото в Hugging Face для генерации. Фото не сохраняется в профиле Silver.Vy.</span></label>
@@ -308,12 +308,12 @@
             const response = await fetch('https://silvervy-backend.onrender.com/api/try-on', {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ personImage, garmentImage, category: modal.dataset.category, size })
+                body: JSON.stringify({ personImage, garmentImage, category: modal.dataset.category, productName: modal.dataset.product })
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Не удалось создать примерку');
-            status.textContent = `Готово. Визуализация выбранного размера ${size} создана.`;
-            result.innerHTML = `<img alt="Результат виртуальной примерки" src="${data.image}"><a class="tryon-download" download="silvervy-try-on.png" href="${data.image}">Скачать результат</a><small>Результат создан ${data.provider || 'моделью виртуальной примерки'}. Выбранный размер показывается как ориентир: модель не получает реальные мерки изделия.</small>`;
+            status.textContent = 'Готово. Размер влияет на подсказку, но не меняет изображение.';
+            result.innerHTML = `<img alt="Результат виртуальной примерки" src="${data.image}"><a class="tryon-download" download="silvervy-try-on.png" href="${data.image}">Скачать результат</a><small>Результат создан ${data.provider || 'моделью виртуальной примерки'}. Размер на изображение не влияет: модель не получает лекала и точные мерки изделия.</small>`;
         } catch (error) {
             status.textContent = error.message || 'Сервис примерки временно недоступен.';
         } finally {

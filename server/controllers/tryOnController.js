@@ -178,6 +178,7 @@ exports.generate = async (req, res) => {
         const person = readImage(req.body.personImage);
         const garment = readImage(req.body.garmentImage);
         const category = req.body.category;
+        const productName = String(req.body.productName || '');
 
         if (!person || !garment) {
             return res.status(400).json({ message: 'Загрузите фотографию и проверьте изображение товара' });
@@ -186,8 +187,9 @@ exports.generate = async (req, res) => {
             return res.status(400).json({ message: 'Для этой категории виртуальная примерка пока недоступна' });
         }
 
-        const provider = category === 'tops' ? 'IDM-VTON' : 'FASHN VTON 1.5';
-        const image = category === 'tops'
+        const useIdm = category === 'tops' && !/(пальто|тренч)/i.test(productName);
+        const provider = useIdm ? 'IDM-VTON' : 'FASHN VTON 1.5';
+        const image = useIdm
             ? await callIdm(person, garment)
             : await callSpace([
                 { url: person.dataUrl, size: person.size, mime_type: person.mimeType, orig_name: 'person.jpg', meta: { _type: 'gradio.FileData' } },
