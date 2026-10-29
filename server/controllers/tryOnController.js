@@ -14,7 +14,7 @@ function pause(duration) {
     return new Promise(resolve => setTimeout(resolve, duration));
 }
 
-async function callSpace(data) {
+async function callSpaceAttempt(data) {
     let start;
     for (let attempt = 0; attempt < 2; attempt += 1) {
         try {
@@ -53,10 +53,19 @@ async function callSpace(data) {
     const dataLines = stream.split(/\r?\n/).filter(line => line.startsWith('data:'));
     if (!dataLines.length) throw new Error('Модель не вернула результат');
     const result = JSON.parse(dataLines[dataLines.length - 1].slice(5).trim());
-    if (result.error) throw new Error(String(result.error));
+    if (!result) {
+        const error = new Error('Модель вернула пустой результат');
+        error.code = 'EMPTY_MODEL_RESULT';
+        throw error;
+    }
+    if (typeof result === 'object' && result.error) throw new Error(String(result.error));
     const image = Array.isArray(result) ? result[0] : result?.data?.[0];
     const imageUrl = image?.url || image?.path;
-    if (!imageUrl) throw new Error('В ответе модели нет изображения');
+    if (!imageUrl) {
+        const error = new Error('Модель не вернула изображение');
+        error.code = 'EMPTY_MODEL_RESULT';
+        throw error;
+    }
 
     const absoluteUrl = imageUrl.startsWith('http') ? imageUrl : `${SPACE_URL}/gradio_api/file=${encodeURIComponent(imageUrl)}`;
     const imageResponse = await fetch(absoluteUrl, { signal: AbortSignal.timeout(60000) });
@@ -64,6 +73,21 @@ async function callSpace(data) {
     const output = Buffer.from(await imageResponse.arrayBuffer());
     if (!output.length || output.length > 12 * 1024 * 1024) throw new Error('Размер результата превышает допустимый');
     return `data:${imageResponse.headers.get('content-type') || 'image/png'};base64,${output.toString('base64')}`;
+}
+
+async function callSpace(data) {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+            return await callSpaceAttempt(data);
+        } catch (error) {
+            if (attempt === 0 && error.code === 'EMPTY_MODEL_RESULT') {
+                await pause(1200);
+                continue;
+            }
+            throw error;
+        }
+    }
+    throw new Error('Модель не вернула изображение');
 }
 
 exports.generate = async (req, res) => {
