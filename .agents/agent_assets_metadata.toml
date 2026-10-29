@@ -140,3 +140,17 @@ mtime_ms = 1793274102737
 storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:ecabb725-e452-436f-9e5b-8b727de341bc/95aea114-5477-4abd-a390-b9e68d1bb4d5/4c9120d3-b9c5-40da-8e00-e390779fefd7"
 storage_version_token = "1793293988334631"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "rUfcKMwHJWBDWvsQdV_rX"
+uri = "file://generated-artifacts/mv-vton-pilot/coat-underlayer-exclusions.jpg"
+type = "image"
+title = "Исключённые из маски подслои пальто"
+description = "Красным показаны области исходных ракурсов, которые код маски исключает: кардиган на фронтальном фото и выступающие вязаные манжеты."
+logical_id = "94c69e4b-4794-438d-bbd5-6d4d30f6013a"
+content_hash = "sha256:288dc7576425b87e27e5862e501e31e0ced981fe76945ebba1625576ebb705af"
+size = 70636
+mtime_ms = 1793298125540
+storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:ecabb725-e452-436f-9e5b-8b727de341bc/94c69e4b-4794-438d-bbd5-6d4d30f6013a/c70d7394-f1de-4cea-b57d-ebd407e43a3f"
+storage_version_token = "1793298133055840"
+content_type = "image/jpeg"
