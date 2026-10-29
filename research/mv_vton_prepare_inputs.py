@@ -1,5 +1,6 @@
 import json
 import argparse
+import os
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageOps
@@ -15,6 +16,10 @@ SOURCES = [
 PERSON = ROOT / "attached_assets/generated_images/tryon-test-person.jpg"
 MAX_EDGE = 1024
 PADDING_RATIO = 0.045
+COAT_UNDERLAYER_EXCLUSIONS = [
+    [(402, 278), (438, 274), (447, 310), (429, 342), (426, 384), (430, 428), (440, 466), (457, 500), (486, 527), (514, 551), (527, 588), (506, 617), (475, 633), (438, 639), (412, 620), (400, 587), (395, 551), (394, 514), (393, 477), (393, 440), (392, 403), (395, 365), (400, 331)],
+    [(267, 671), (306, 671), (310, 701), (293, 712), (271, 703)],
+]
 
 
 def foreground_bounds(alpha):
@@ -33,6 +38,15 @@ def open_rgb(source):
         background = Image.new("RGBA", image.size, (128, 128, 128, 255))
         image = Image.alpha_composite(background, image)
     return image.convert("RGB")
+
+def remove_coat_underlayers(mask):
+    draw = ImageDraw.Draw(mask)
+    scale_x = mask.width / 512
+    scale_y = mask.height / 768
+    for polygon in COAT_UNDERLAYER_EXCLUSIONS:
+        points = [(round(x * scale_x), round(y * scale_y)) for x, y in polygon]
+        draw.polygon(points, fill=0)
+    return mask
 
 
 def prepare_garment(name, source, view):
@@ -75,7 +89,11 @@ def prepare_garment(name, source, view):
 
 
 def segment_inputs():
+    os.environ["USE_TF"] = "0"
+    os.environ["USE_FLAX"] = "0"
     import numpy as np
+    if not hasattr(np, "stringType"):
+        np.stringType = np.bytes_
     import torch
     import torch.nn.functional as functional
     from transformers import SegformerForSemanticSegmentation, SegformerImageProcessor
@@ -93,8 +111,7 @@ def segment_inputs():
     paths.append(("person_upper", PERSON, categories["person_upper"]))
     results = {}
     for name, source, wanted_classes in paths:
-        prepared_path = OUTPUT / f"{name}.png"
-        image_source = prepared_path if name != "person_upper" else source
+        image_source = source
         image = open_rgb(image_source)
         batch = processor(images=image, return_tensors="pt").to(device)
         with torch.inference_mode():
@@ -112,6 +129,8 @@ def segment_inputs():
             allowed |= labels == class_id
         mask = (allowed & (confidence >= 0.42)).to(torch.uint8).cpu().numpy() * 255
         mask_image = Image.fromarray(mask, mode="L")
+        if name == "front_full":
+            mask_image = remove_coat_underlayers(mask_image)
         mask_image.save(OUTPUT / f"{name}-semantic-mask.png")
         tint = Image.new("RGBA", image.size, (91, 217, 172, 0))
         tint.putalpha(mask_image.point(lambda value: value * 112 // 255))
@@ -122,7 +141,7 @@ def segment_inputs():
             agnostic.paste((128, 128, 128), mask=mask_image)
             agnostic.save(OUTPUT / "person-agnostic.png")
         else:
-            prepared = Image.open(prepared_path).convert("RGBA")
+            prepared = ImageOps.exif_transpose(Image.open(source)).convert("RGBA")
             semantic_alpha = mask_image.resize(prepared.size, Image.Resampling.NEAREST)
             alpha = Image.fromarray(
                 (
@@ -133,7 +152,8 @@ def segment_inputs():
                 mode="L",
             )
             prepared.putalpha(alpha)
-            prepared.save(OUTPUT / f"{name}-garment-only.png")
+            garment_only_path = OUTPUT / f"{name}-garment-only.png"
+            prepared.save(garment_only_path)
         results[name] = {
             "source": str(source.relative_to(ROOT)),
             "mask": str((OUTPUT / f"{name}-semantic-mask.png").relative_to(ROOT)),
@@ -154,6 +174,7 @@ def segment_inputs():
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--segment", action="store_true")
+    parser.add_argument("--install-web-mask", action="store_true")
     args = parser.parse_args()
     OUTPUT.mkdir(parents=True, exist_ok=True)
     manifest = {
@@ -188,6 +209,14 @@ def main():
     print(f"Contact sheet: {OUTPUT / 'garment-view-check.jpg'}")
     if args.segment:
         print(json.dumps(segment_inputs(), ensure_ascii=False, indent=2))
+    if args.install_web_mask:
+        mask_path = OUTPUT / "front_full-semantic-mask.png"
+        if not mask_path.exists():
+            parser.error("Run with --segment and visually review the front_full mask first")
+        web_mask = ROOT / "server/public/Одежда/coat/2_coat-mask.png"
+        web_mask.parent.mkdir(parents=True, exist_ok=True)
+        Image.open(mask_path).convert("L").save(web_mask)
+        print(f"Installed reviewed mask: {web_mask.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

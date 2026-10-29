@@ -26,6 +26,10 @@
         'product-coat.html': 'Одежда/coat/2_coat.png'
     };
 
+    const garmentMaskImages = {
+        'product-coat.html': 'Одежда/coat/2_coat-mask.png'
+    };
+
     const fitProfiles = {
         'product-coat.html': { label: 'свободный oversize', ease: 14 },
         'product-bomber.html': { label: 'прямой', ease: 10 },
@@ -73,6 +77,102 @@
         return canvas.toDataURL('image/jpeg', 0.94);
     }
 
+    function clamp(value, minimum, maximum) {
+        return Math.min(maximum, Math.max(minimum, value));
+    }
+
+    function getSizeScale(size, recommendedSize, measurements, fitEase) {
+        const sizes = ['XS', 'S', 'M', 'L'];
+        const selectedIndex = sizes.indexOf(size);
+        const recommendedIndex = sizes.indexOf(recommendedSize);
+        const sizeDelta = selectedIndex >= 0 && recommendedIndex >= 0
+            ? selectedIndex - recommendedIndex
+            : 0;
+        const ease = Number(fitEase) || 10;
+        const selectedEase = clamp(ease + sizeDelta * 4, 2, 24);
+        const chest = Number(measurements.chestCm);
+        const waist = Number(measurements.waistCm);
+        const hips = Number(measurements.hipCm);
+        const weight = Number(measurements.weightKg);
+        const bodyGirth = chest * 0.75 + waist * 0.15 + hips * 0.1;
+        const referenceGirth = 100 * 0.75 + 82 * 0.15 + 106 * 0.1;
+        const girthScale = (bodyGirth + selectedEase) / (referenceGirth + ease);
+        const weightScale = Math.cbrt(weight / 78);
+        const width = clamp(girthScale * 0.88 + weightScale * 0.12, 0.78, 1.12);
+        const height = clamp(1 + ((Number(measurements.heightCm) / 185) - 1) * 0.32 + sizeDelta * 0.005, 0.92, 1.08);
+        return { width, height };
+    }
+
+    async function prepareSizeAwareGarment(source, maskSource, size, recommendedSize, measurements, fitEase) {
+        if (!maskSource) return { image: await imageToDataUrl(source), applied: false };
+        try {
+            const [imageResponse, maskResponse] = await Promise.all([fetch(source), fetch(maskSource)]);
+            if (!imageResponse.ok || !maskResponse.ok) throw new Error('Garment mask unavailable');
+            const [imageBitmap, maskBitmap] = await Promise.all([
+                createImageBitmap(await imageResponse.blob()),
+                createImageBitmap(await maskResponse.blob())
+            ]);
+            const scale = Math.min(1, 1200 / Math.max(imageBitmap.width, imageBitmap.height));
+            const width = Math.max(1, Math.round(imageBitmap.width * scale));
+            const height = Math.max(1, Math.round(imageBitmap.height * scale));
+            const sourceCanvas = document.createElement('canvas');
+            const maskCanvas = document.createElement('canvas');
+            sourceCanvas.width = maskCanvas.width = width;
+            sourceCanvas.height = maskCanvas.height = height;
+            const sourceContext = sourceCanvas.getContext('2d', { willReadFrequently: true });
+            const maskContext = maskCanvas.getContext('2d', { willReadFrequently: true });
+            sourceContext.drawImage(imageBitmap, 0, 0, width, height);
+            maskContext.drawImage(maskBitmap, 0, 0, width, height);
+            imageBitmap.close();
+            maskBitmap.close();
+            const pixels = sourceContext.getImageData(0, 0, width, height);
+            const mask = maskContext.getImageData(0, 0, width, height);
+            let left = width;
+            let top = height;
+            let right = -1;
+            let bottom = -1;
+            let foreground = 0;
+            for (let y = 0; y < height; y += 1) {
+                for (let x = 0; x < width; x += 1) {
+                    const index = (y * width + x) * 4;
+                    const alpha = Math.round(pixels.data[index + 3] * mask.data[index] / 255);
+                    pixels.data[index + 3] = alpha;
+                    if (alpha < 16) continue;
+                    foreground += 1;
+                    left = Math.min(left, x);
+                    top = Math.min(top, y);
+                    right = Math.max(right, x);
+                    bottom = Math.max(bottom, y);
+                }
+            }
+            const boundsWidth = right - left + 1;
+            const boundsHeight = bottom - top + 1;
+            const maskFraction = foreground / (width * height);
+            if (maskFraction < 0.06 || maskFraction > 0.55 || boundsWidth / width < 0.16 || boundsHeight / height < 0.28) {
+                throw new Error('Garment mask failed validation');
+            }
+            sourceContext.putImageData(pixels, 0, 0);
+            const scaleFactors = getSizeScale(size, recommendedSize, measurements, fitEase);
+            const output = document.createElement('canvas');
+            output.width = width;
+            output.height = height;
+            const outputContext = output.getContext('2d');
+            outputContext.fillStyle = '#888888';
+            outputContext.fillRect(0, 0, width, height);
+            outputContext.translate((left + right + 1) / 2, top);
+            outputContext.scale(scaleFactors.width, scaleFactors.height);
+            outputContext.drawImage(sourceCanvas, left, top, boundsWidth, boundsHeight, -boundsWidth / 2, 0, boundsWidth, boundsHeight);
+            return {
+                image: output.toDataURL('image/jpeg', 0.94),
+                applied: true,
+                width: scaleFactors.width,
+                height: scaleFactors.height
+            };
+        } catch {
+            return { image: await imageToDataUrl(source), applied: false };
+        }
+    }
+
     function getProduct(button) {
         const page = document.querySelector('.product-page');
         if (page) {
@@ -84,6 +184,9 @@
                     ? new URL(garmentReferenceImages[file], location.href).href
                     : image?.src,
                 garmentDescription: garmentDescriptions[file] || 'upper-body clothing',
+                garmentMask: garmentMaskImages[file]
+                    ? new URL(garmentMaskImages[file], location.href).href
+                    : '',
                 category: categories[file] || null,
                 fit: fitProfiles[file] || { label: 'стандартный', ease: 6 },
                 sizes: [...page.querySelectorAll('.size')].map(item => item.textContent.trim()),
@@ -101,6 +204,9 @@
                 ? new URL(garmentReferenceImages[file], location.href).href
                 : image?.src,
             garmentDescription: garmentDescriptions[file] || 'upper-body clothing',
+            garmentMask: garmentMaskImages[file]
+                ? new URL(garmentMaskImages[file], location.href).href
+                : '',
             category: categories[file] || null,
             fit: fitProfiles[file] || { label: 'стандартный', ease: 6 },
             sizes: ['XS', 'S', 'M', 'L']
@@ -160,7 +266,7 @@
                     </div>
                 <label class="tryon-size-label"><span>03</span>Размер для генерации<select class="tryon-size"></select></label>
                 </div>
-                <p class="tryon-fit-note">Размер и параметры тела передаются IDM-VTON только как текстовая подсказка. Модель может их не учесть; это не расчёт точной посадки.</p>
+                <p class="tryon-fit-note">Экспериментальный масштаб референса рассчитан от каталожного эталона: рост 185 см и размер L. Без проверенной маски вещи масштабирование не применяется; точную посадку это не гарантирует.</p>
                 <label class="tryon-consent"><input type="checkbox" required><span>Я согласен(на) передать фото в Hugging Face для генерации. Фото не сохраняется в профиле Silver.Vy.</span></label>
                 <button class="tryon-generate" type="button"><span>✦</span> Создать примерку</button>
                 <p class="tryon-status" role="status"></p>
@@ -219,6 +325,7 @@
         modal.dataset.fit = product.fit?.label || 'стандартный';
         modal.dataset.ease = product.fit?.ease || 6;
         modal.dataset.image = product.image || '';
+        modal.dataset.garmentMask = product.garmentMask || '';
         modal.dataset.garmentDescription = product.garmentDescription || 'upper-body clothing';
         modal.dataset.product = product.name;
         modal.querySelector('.tryon-product').textContent = product.name;
@@ -267,7 +374,7 @@
         const recommendation = chooseRecommendedSize(values, product.category || modal.dataset.category);
         const select = modal.querySelector('.tryon-size');
         const visibleSizes = [...select.options].map(option => option.value);
-        modal.querySelector('.tryon-fit-note').textContent = `Мерки и размер передаются IDM-VTON только текстом; структурных параметров посадки и пользовательских масок у публичного сервиса нет. Крой ${modal.dataset.fit} и прибавка ${modal.dataset.ease} см — ориентировочная подсказка, не замеры изделия.`;
+        modal.querySelector('.tryon-fit-note').textContent = `Масштабирование референса — экспериментальная оценка от эталона 185 см / L по меркам и прибавке ${modal.dataset.ease} см для кроя «${modal.dataset.fit}». Оно сработает только при наличии проверенной маски вещи; точные замеры изделия и 3D-посадка отсутствуют.`;
         if (recommendation && visibleSizes.includes(recommendation)) {
             label.textContent = `Предварительная рекомендация: ${recommendation}`;
             if (!select.dataset.userChanged) select.value = recommendation;
@@ -329,7 +436,16 @@
         status.textContent = 'Проверяем фото и подготавливаем его для IDM-VTON…';
         try {
             const personImage = await compressImage(file);
-            const garmentImage = await imageToDataUrl(modal.dataset.image);
+            const recommendedSize = chooseRecommendedSize(measurements, modal.dataset.category);
+            const garmentPreparation = await prepareSizeAwareGarment(
+                modal.dataset.image,
+                modal.dataset.garmentMask,
+                size,
+                recommendedSize,
+                measurements,
+                modal.dataset.ease
+            );
+            const garmentImage = garmentPreparation.image;
             const saveResponse = await fetch('https://silvervy-backend.onrender.com/api/auth/profile', {
                 method: 'PUT',
                 headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
@@ -338,7 +454,6 @@
             const saveData = await saveResponse.json().catch(() => ({}));
             if (!saveResponse.ok) throw new Error(saveData.message || 'Не удалось сохранить параметры профиля');
 
-            const recommendedSize = chooseRecommendedSize(measurements, modal.dataset.category);
             const response = await fetch('https://silvervy-backend.onrender.com/api/try-on', {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
@@ -357,7 +472,10 @@
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Не удалось создать примерку');
             status.textContent = 'Готово. Это визуальный эскиз, а не точный расчёт посадки.';
-            result.innerHTML = `<img alt="Результат виртуальной примерки" src="${data.image}"><a class="tryon-download" download="silvervy-try-on.png" href="${data.image}">Скачать результат</a><small>${data.provider || 'IDM-VTON'} строит маску самостоятельно. Размер и мерки влияют только на текстовую инструкцию; пользовательские маски и дополнительные ракурсы не передаются.</small>`;
+            const scaleNote = garmentPreparation.applied
+                ? ` Маска вещи выделена отдельно; масштаб референса ${garmentPreparation.width.toFixed(3)} по ширине и ${garmentPreparation.height.toFixed(3)} по длине.`
+                : ' Масштабирование пропущено: проверенная маска вещи пока недоступна.';
+            result.innerHTML = `<img alt="Результат виртуальной примерки" src="${data.image}"><a class="tryon-download" download="silvervy-try-on.png" href="${data.image}">Скачать результат</a><small>${data.provider || 'IDM-VTON'} принимает один изменённый референс. Масштаб не заменяет реальную примерку и требует визуальной проверки.${scaleNote}</small>`;
         } catch (error) {
             status.textContent = error.message || 'Сервис примерки временно недоступен.';
         } finally {
