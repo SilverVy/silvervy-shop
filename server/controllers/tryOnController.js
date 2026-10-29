@@ -117,9 +117,14 @@ exports.generate = async (req, res) => {
         res.status(200).json({ image, provider: 'FASHN VTON 1.5' });
     } catch (error) {
         console.error('Try-on provider error:', error.name, error.message);
-        const status = /timeout|timed out/i.test(error.message) ? 504 : 502;
+        const emptyResult = error.code === 'EMPTY_MODEL_RESULT';
+        const status = emptyResult ? 422 : /timeout|timed out/i.test(error.message) ? 504 : 502;
         res.status(status).json({
-            message: status === 504 ? 'Генерация заняла слишком много времени. Попробуйте ещё раз.' : 'Сервис примерки временно не ответил. Попробуйте позже.',
+            message: emptyResult
+                ? 'Модель не смогла обработать это фото. Попробуйте вертикальный снимок одного человека в полный рост, где фигура хорошо видна.'
+                : status === 504
+                    ? 'Генерация заняла слишком много времени. Попробуйте ещё раз.'
+                    : 'Сервис примерки временно не ответил. Попробуйте позже.',
             details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }

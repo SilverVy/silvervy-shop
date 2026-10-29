@@ -119,7 +119,7 @@
                 <button class="tryon-close" type="button" aria-label="Закрыть">×</button>
                 <div class="tryon-heading"><span class="tryon-orb">✦</span><p>Виртуальная примерка</p><h2 id="tryonTitle">Ваш образ, созданный для вас</h2><span class="tryon-product"></span></div>
                 <div class="tryon-steps">
-                    <label class="tryon-upload" for="tryonPhoto"><span>01</span><strong>Загрузите фото в полный рост</strong><small>Анфас, ровный свет, однотонный фон</small><input id="tryonPhoto" type="file" accept="image/jpeg,image/png,image/webp" required><span class="tryon-file-name">Файл не выбран</span></label>
+                    <label class="tryon-upload" for="tryonPhoto"><span>01</span><strong>Загрузите фото в полный рост</strong><small>Один человек, анфас, фигура целиком; вертикальный кадр около 2:3</small><input id="tryonPhoto" type="file" accept="image/jpeg,image/png,image/webp" required><span class="tryon-file-name">Файл не выбран</span></label>
                     <div class="tryon-measurements">
                         <div><span>02</span><strong>Ваши параметры</strong></div>
                         <div class="tryon-measure-grid">
