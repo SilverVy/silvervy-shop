@@ -1,2 +1,3 @@
 - [Word-template hyperlinks](word-template-hyperlinks.md) — clear paragraph XML to remove embedded hyperlinks when replacing text with python-docx.
 - [Silver.Vy project context](silvervy-project-context.md) — Silver.Vy is an educational project, not a commercial store.
+- [Hugging Face try-on quotas](huggingface-tryon-quotas.md) — public ZeroGPU Spaces can return empty results when shared inference quota is exhausted.
