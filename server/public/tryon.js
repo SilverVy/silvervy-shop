@@ -256,9 +256,9 @@
         modal.innerHTML = `
             <div class="tryon-dialog" role="dialog" aria-modal="true" aria-labelledby="tryonTitle">
                 <button class="tryon-close" type="button" aria-label="Закрыть">×</button>
-                <div class="tryon-heading"><span class="tryon-orb">✦</span><p>Виртуальная примерка</p><h2 id="tryonTitle">Ваш образ, созданный для вас</h2><span class="tryon-product"></span></div>
+                <div class="tryon-heading"><span class="tryon-orb">✦</span><p>Виртуальная примерка</p><h2 id="tryonTitle">Образ, созданный для вас</h2><span class="tryon-product"></span></div>
                 <div class="tryon-steps">
-                    <label class="tryon-upload" for="tryonPhoto"><span>01</span><strong>Загрузите фото в полный рост</strong><small>Один человек, анфас, фигура целиком; вертикальный кадр около 2:3</small><input id="tryonPhoto" type="file" accept="image/jpeg,image/png,image/webp" required><span class="tryon-file-name">Файл не выбран</span></label>
+                    <label class="tryon-upload" for="tryonPhoto"><span>01</span><strong>Загрузите фото в полный рост</strong><small>Один человек, анфас, фигура целиком.</small><input id="tryonPhoto" type="file" accept="image/jpeg,image/png,image/webp" required><span class="tryon-file-name">Файл не выбран</span></label>
                     <div class="tryon-measurements">
                         <div><span>02</span><strong>Ваши параметры</strong></div>
                         <div class="tryon-measure-grid">
@@ -276,8 +276,8 @@
                     </div>
                 <label class="tryon-size-label"><span>03</span>Размер для генерации<select class="tryon-size"></select></label>
                 </div>
-                <p class="tryon-fit-note">Экспериментальный масштаб референса рассчитан от каталожного эталона: рост 185 см и размер L. Без проверенной маски вещи масштабирование не применяется; точную посадку это не гарантирует.</p>
-                <label class="tryon-consent"><input type="checkbox" required><span>Я согласен(на) передать фото в Hugging Face для генерации. Фото не сохраняется в профиле Silver.Vy.</span></label>
+                <p class="tryon-fit-note">Точную посадку это не гарантирует.</p>
+                <label class="tryon-consent"><input type="checkbox" required><span>Я согласен(на) передать фото для генерации. Фото не сохраняется в профиле Silver.Vy.</span></label>
                 <button class="tryon-generate" type="button"><span>✦</span> Создать примерку</button>
                 <p class="tryon-status" role="status"></p>
                 <div class="tryon-result"></div>
@@ -353,7 +353,7 @@
         modal.classList.add('open');
 
         if (!product.category) {
-            modal.querySelector('.tryon-status').textContent = 'Для обуви визуальная примерка этой моделью не поддерживается.';
+            modal.querySelector('.tryon-status').textContent = 'Для обуви визуальная примерка не поддерживается.';
             modal.querySelector('.tryon-generate').disabled = true;
         } else {
             modal.querySelector('.tryon-generate').disabled = false;
@@ -384,7 +384,6 @@
         const recommendation = chooseRecommendedSize(values, product.category || modal.dataset.category);
         const select = modal.querySelector('.tryon-size');
         const visibleSizes = [...select.options].map(option => option.value);
-        modal.querySelector('.tryon-fit-note').textContent = `Масштабирование референса — экспериментальная оценка от эталона 185 см / L по меркам и прибавке ${modal.dataset.ease} см для кроя «${modal.dataset.fit}». Оно сработает только при наличии проверенной маски вещи; точные замеры изделия и 3D-посадка отсутствуют.`;
         if (recommendation && visibleSizes.includes(recommendation)) {
             label.textContent = `Предварительная рекомендация: ${recommendation}`;
             if (!select.dataset.userChanged) select.value = recommendation;
@@ -443,7 +442,7 @@
         button.disabled = true;
         button.classList.add('generating');
         result.innerHTML = '';
-        status.textContent = 'Проверяем фото и подготавливаем его для IDM-VTON…';
+        status.textContent = 'Проверяем фото и подготавливаем его для генерации';
         try {
             const personImage = await compressImage(file);
             const recommendedSize = chooseRecommendedSize(measurements, modal.dataset.category);
