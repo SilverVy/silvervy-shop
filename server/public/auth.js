@@ -50,6 +50,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             <label>Обхват талии, см<input name="waistCm" type="number" min="45" max="170" step="0.1" required></label>
                             <label>Обхват бёдер, см<input name="hipCm" type="number" min="65" max="190" step="0.1" required></label>
                             <label>Длина внутреннего шва, см<input name="inseamCm" type="number" min="45" max="110" step="0.1"></label>
+                            <label>Ширина плеч, см · необязательно<input name="shoulderCm" type="number" min="28" max="70" step="0.1"></label>
+                            <small>По спине между плечевыми точками, не по швам одежды.</small>
+                            <label>Длина руки, см · необязательно<input name="armLengthCm" type="number" min="35" max="90" step="0.1"></label>
+                            <small>От плечевой точки через слегка согнутый локоть до запястья. Здесь и в лаборатории используйте одну методику.</small>
+                            <label>Длина кисти, см · необязательно<input name="handLengthCm" type="number" min="12" max="26" step="0.1"></label>
+                            <small>От запястья до конца среднего пальца, а не только длина ладони.</small>
                             <button type="submit" class="cta-button">Сохранить параметры</button>
                             <span id="measurementsStatus" role="status"></span>
                         </form>

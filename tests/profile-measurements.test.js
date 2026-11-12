@@ -7,4 +7,8 @@ test('profile prefills laboratory but never replaces currently edited values', (
     assert.equal(merged.waistCm, '83');
     assert.equal(merged.heightCm, '180');
     assert.equal(mergeProfile({}, { chestCm: null, waistCm: 'NaN' }).waistCm, undefined);
+    const arm = mergeProfile({ armLengthCm: '56' }, { shoulderCm: 36, armLengthCm: 54, handLengthCm: 17 }, new Set(['armLengthCm']));
+    assert.equal(arm.armLengthCm, '56');
+    assert.equal(arm.shoulderCm, '36');
+    assert.equal(arm.handLengthCm, '17');
 });

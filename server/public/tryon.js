@@ -30,7 +30,7 @@
   const editedKeys = new Set();
   let profileRequest = 0;
   let photoRevision = 0;
-  const bodyKeys = ['chestCm', 'waistCm', 'hipCm', 'heightCm', 'inseamCm'];
+  const bodyKeys = window.SilverVyMeasurements.keys;
   const labels = { chestCm: 'Обхват груди', waistCm: 'Обхват талии', hipCm: 'Обхват бёдер', shoulderCm: 'Ширина плеч', lengthCm: 'Длина изделия', sleeveCm: 'Длина рукава', thighCm: 'Обхват бедра', inseamCm: 'Внутренний шов' };
   const dimensionKeys = ['chestCm', 'waistCm', 'hipCm', 'shoulderCm', 'lengthCm', 'sleeveCm', 'thighCm', 'inseamCm'];
   const statusText = { tight: 'Отрицательная прибавка', close: 'Ниже целевого диапазона', intended: 'В целевом диапазоне', loose: 'Выше целевого диапазона', unknown: 'Нет сравнения' };
@@ -93,7 +93,7 @@
     renderSchematic(latestFit);
     calibration.refresh();
     const values = bodyValues();
-    byId('photoRequestMeta').textContent = `${product.name} · выбран ${selectedSize}. В генерацию пойдут текущие мерки лаборатории: грудь ${values.chestCm || '—'}, талия ${values.waistCm || '—'}, бёдра ${values.hipCm || '—'}, рост ${values.heightCm || '—'} см. Предпочтение прибавки влияет на рекомендацию; геометрия выбранного размера берётся из его собственных обмеров.`;
+    byId('photoRequestMeta').textContent = `${product.name} · выбран ${selectedSize}. В генерацию пойдут текущие мерки лаборатории: грудь ${values.chestCm || '—'}, талия ${values.waistCm || '—'}, бёдра ${values.hipCm || '—'}, рост ${values.heightCm || '—'}, плечи ${values.shoulderCm || '—'}, рука ${values.armLengthCm || '—'}, кисть ${values.handLengthCm || '—'} см. При отсутствии мерок руки применяется приближённая оценка по фото. Предпочтение прибавки влияет на рекомендацию по окружностям; оценка рукава показана отдельно.`;
     requestVersion += 1;
     return latestFit;
   }
@@ -140,6 +140,12 @@
     if (product.category === 'bottoms') {
       dataRows.push(`<tr><th>Разница внутреннего шва, см</th>${result.rows.map(row => `<td>${row.inseamDifferenceCm === null ? 'не оценивается' : `${row.inseamDifferenceCm > 0 ? '+' : ''}${row.inseamDifferenceCm.toFixed(1)}`}</td>`).join('')}</tr>`);
     }
+    if (product.category === 'tops') {
+      const number = value => value == null ? 'не оценивается' : value.toFixed(1);
+      dataRows.push(`<tr><th>Спуск плеча, см · условная оценка</th>${result.rows.map(row => `<td>${number(row.sleeve.shoulderDropCm)}</td>`).join('')}</tr>`);
+      dataRows.push(`<tr><th>Манжета относительно запястья, см<br><small>+ за запястьем; − выше него</small></th>${result.rows.map(row => `<td>${number(row.sleeve.cuffOffsetCm)}</td>`).join('')}</tr>`);
+      dataRows.push(`<tr><th>Положение рукава · расчёт</th>${result.rows.map(row => `<td>${row.sleeve.label}</td>`).join('')}</tr>`);
+    }
     const sizes = result.rows.map(row => `<th>${row.size}${row.size === result.recommendedSize ? '<br><small>ближайший*</small>' : ''}</th>`).join('');
     const fitRows = result.rows.map(row => `<td>${row.compatible ? 'Совместим' : 'Не прошёл порог'}</td>`).join('');
     compare.innerHTML = `<table><thead><tr><th>Параметр</th>${sizes}</tr></thead><tbody>${dataRows.join('')}<tr class="selected"><th>Результат движка</th>${fitRows}</tr></tbody></table><p class="sv-note">* Ближайший размер среди прошедших порог совместимости. Значение прибавки = мерка изделия − мерка тела; отрицательное число означает меньшее изделие в окружности. Статусы отображают каждый критерий отдельно.</p>`;
@@ -147,7 +153,8 @@
   function renderSchematic(result) {
     const rendered = window.SilverVySchematic.render({ product, size: selectedSize, result, body: bodyValues() });
     schematicCanvas.innerHTML = rendered.svg;
-    schematicCopy.innerHTML = rendered.copy;
+    const sleeve = result.rows?.find(row => row.size === selectedSize)?.sleeve;
+    schematicCopy.innerHTML = rendered.copy + (sleeve ? `<section class="sv-sleeve-summary"><h3>Манжета выбранного размера · расчёт</h3><p>${sleeve.label}.</p>${sleeve.status === 'estimated' ? `<p>Спуск плеча: ${sleeve.shoulderDropCm.toFixed(1)} см; манжета относительно запястья: ${sleeve.cuffOffsetCm > 0 ? '+' : ''}${sleeve.cuffOffsetCm.toFixed(1)} см.</p><p class="sv-note">${sleeve.assumption} Это не измерение сгенерированного фото. Рекомендация размера по окружностям не гарантирует подходящую длину рукава.</p>` : '<p class="sv-note">Старые профили поддерживаются: новые мерки необязательны. На фото ориентир можно приближённо рассчитать по проверенным точкам и росту.</p>'}</section>` : '');
   }
 
   renderProductOptions();

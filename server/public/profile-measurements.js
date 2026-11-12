@@ -4,7 +4,7 @@
     else root.SilverVyMeasurements = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
     'use strict';
-    const keys = ['chestCm', 'waistCm', 'hipCm', 'heightCm', 'inseamCm'];
+    const keys = ['chestCm', 'waistCm', 'hipCm', 'heightCm', 'inseamCm', 'shoulderCm', 'armLengthCm', 'handLengthCm'];
     function mergeProfile(current, profile, edited = new Set()) {
         const merged = { ...current };
         for (const key of keys) {

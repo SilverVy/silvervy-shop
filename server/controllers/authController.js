@@ -80,7 +80,7 @@ exports.updateProfile = async (req, res) => {
     if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
         return res.status(400).json({ message: 'Передайте объект с мерками.' });
     }
-    const allowed = ['heightCm', 'weightKg', 'chestCm', 'waistCm', 'hipCm', 'inseamCm'];
+    const allowed = ['heightCm', 'weightKg', 'chestCm', 'waistCm', 'hipCm', 'inseamCm', 'shoulderCm', 'armLengthCm', 'handLengthCm'];
     const ranges = { ...require('../public/fit-engine').ranges, weightKg: [30, 250] };
     const measurements = {};
 

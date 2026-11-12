@@ -38,3 +38,9 @@ Current laboratory fields must determine generation; profile values are only an 
 **Why:** the user explicitly emphasized that parameters entered in the laboratory must be accounted for in size-based try-on.
 
 **How to apply:** never substitute stored profile measurements for the user's visible edited laboratory values.
+
+Sleeve-control examples must include small people with short arms, not only an average-height reference subject. The user expects XL on someone who normally wears XS to be capable of covering the whole palm.
+
+**Why:** the user explicitly rejected nearly identical sleeve examples and described this real-world oversized-fit scenario.
+
+**How to apply:** check small-body scenarios and shoulder drop when assessing the result. Do not exaggerate the catalog's grading just to manufacture a visible difference, and do not present calculated hand coverage as observed photo accuracy.

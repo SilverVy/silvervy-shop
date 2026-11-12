@@ -6,9 +6,31 @@
     'use strict';
     const ranges = {
         heightCm: [120, 220], chestCm: [60, 180], waistCm: [45, 170], hipCm: [65, 190],
-        shoulderCm: [28, 70], armLengthCm: [35, 90], inseamCm: [45, 110]
+        shoulderCm: [28, 70], armLengthCm: [35, 90], handLengthCm: [12, 26], inseamCm: [45, 110]
     };
     const labels = { chestCm: 'Грудь', waistCm: 'Талия', hipCm: 'Бёдра' };
+    function evaluateSleeve(garment, body) {
+        const names = { shoulderCm: 'ширину плеч', armLengthCm: 'длину руки' };
+        const missing = Object.keys(names).filter(key => !Number(body?.[key]));
+        if (missing.length || !Number.isFinite(garment?.sleeveCm) || !Number.isFinite(garment?.shoulderCm)) {
+            return { status: 'unknown', label: `Для оценки манжеты укажите ${missing.map(key => names[key]).join(' и ') || 'обмеры рукава изделия'}.`,
+                cuffOffsetCm: null, handCoverageRatio: null };
+        }
+        const shoulderShiftCm = (garment.shoulderCm - Number(body.shoulderCm)) / 2;
+        const offset = shoulderShiftCm + garment.sleeveCm - Number(body.armLengthCm);
+        const hand = Number(body.handLengthCm) || null;
+        const coverage = hand ? Math.max(0, Math.min(1, offset / hand)) : null;
+        const signed = `${offset >= 0 ? '+' : ''}${offset.toFixed(1)}`;
+        const label = offset < -1 ? `Манжета выше запястья на ${Math.abs(offset).toFixed(1)} см`
+            : offset <= 1 ? `Манжета около запястья (${signed} см)`
+                : !hand ? `Манжета за запястьем на ${offset.toFixed(1)} см; для оценки перекрытия укажите длину кисти`
+                    : offset >= hand ? `Расчётно перекрывает всю кисть${offset > hand + 1 ? ` и выходит за её конец на ${(offset - hand).toFixed(1)} см` : ''}`
+                        : `Расчётно перекрывает ${Math.round(coverage * 100)}% длины кисти (${offset.toFixed(1)} см)`;
+        return { status: 'estimated', shoulderShiftCm, shoulderDropCm: Math.max(0, shoulderShiftCm),
+            cuffOffsetCm: Math.round(offset * 10) / 10, handCoverageRatio: coverage,
+            handLengthCm: hand, label,
+            assumption: 'Условная цепочка: рукав + половина разницы плеч − длина руки. Прибавка плеча отнесена к спуску вдоль руки; драпировка не моделируется.' };
+    }
     function validate(body, category) {
         const errors = {};
         const required = category === 'bottoms' ? ['waistCm', 'hipCm'] : ['chestCm', 'waistCm', 'hipCm'];
@@ -60,7 +82,8 @@
             const inseamDifferenceCm = product.category === 'bottoms' && Number(body.inseamCm)
                 ? Math.round((garment.inseamCm - Number(body.inseamCm)) * 10) / 10 : null;
             if (inseamDifferenceCm !== null) score += Math.max(0, Math.abs(inseamDifferenceCm) - 3) * 0.5;
-            return { size: garment.size, garment, checks, score: Math.round(score * 100) / 100, compatible, inseamDifferenceCm };
+            return { size: garment.size, garment, checks, score: Math.round(score * 100) / 100, compatible, inseamDifferenceCm,
+                sleeve: product.category === 'tops' ? evaluateSleeve(garment, body) : null };
         });
         const best = rows.filter(row => row.compatible).sort((a, b) => a.score - b.score)[0];
         const recommendationKind = best
@@ -76,5 +99,5 @@
             ]
         };
     }
-    return { evaluate, validate, ranges };
+    return { evaluate, validate, ranges, evaluateSleeve };
 });

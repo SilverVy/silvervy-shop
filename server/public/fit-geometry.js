@@ -1,22 +1,30 @@
 (function (root, factory) {
-    const api = factory();
+    const common = typeof module === 'object' && module.exports;
+    const api = factory(common ? require('./arm-geometry') : root.SilverVyArmGeometry,
+        common ? require('./fit-engine') : root.SilverVyFit);
     if (typeof module === 'object' && module.exports) module.exports = api;
     else root.SilverVyGeometry = api;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (arms, fit) {
     'use strict';
     const defaults = {
         crown: { x: .5, y: .04 }, feet: { x: .5, y: .96 }, neck: { x: .5, y: .18 },
         chestLeft: { x: .39, y: .28 }, chestRight: { x: .61, y: .28 },
         waistLeft: { x: .40, y: .40 }, waistRight: { x: .60, y: .40 },
         hipLeft: { x: .37, y: .51 }, hipRight: { x: .63, y: .51 },
-        wristLeft: { x: .25, y: .53 }, wristRight: { x: .75, y: .53 }
+        wristLeft: { x: .25, y: .53 }, wristRight: { x: .75, y: .53 },
+        shoulderLeft: { x: .37, y: .21 }, shoulderRight: { x: .63, y: .21 },
+        elbowLeft: { x: .30, y: .37 }, elbowRight: { x: .70, y: .37 },
+        handTipLeft: { x: .23, y: .61 }, handTipRight: { x: .77, y: .61 }
     };
     const labels = {
         crown: 'Макушка', feet: 'Уровень подошв', neck: 'Основание шеи',
         chestLeft: 'Граница груди слева на фото', chestRight: 'Граница груди справа на фото',
         waistLeft: 'Граница талии слева на фото', waistRight: 'Граница талии справа на фото',
         hipLeft: 'Граница бёдер слева на фото', hipRight: 'Граница бёдер справа на фото',
-        wristLeft: 'Запястье слева на фото', wristRight: 'Запястье справа на фото'
+        wristLeft: 'Запястье слева на фото', wristRight: 'Запястье справа на фото',
+        shoulderLeft: 'Плечевая точка тела слева', shoulderRight: 'Плечевая точка тела справа',
+        elbowLeft: 'Локоть слева на фото', elbowRight: 'Локоть справа на фото',
+        handTipLeft: 'Конец среднего пальца слева', handTipRight: 'Конец среднего пальца справа'
     };
     function validate(points, body) {
         if (!Number.isFinite(Number(body?.heightCm)) || Number(body.heightCm) < 120 || Number(body.heightCm) > 220) {
@@ -48,6 +56,20 @@
             points.wristLeft.y <= points.neck.y || points.wristRight.y <= points.neck.y) {
             throw new Error('Нужен фронтальный снимок с прямыми, немного отведёнными руками; отметьте запястья по сторонам от тела.');
         }
+        for (const key of ['shoulderCm', 'armLengthCm', 'handLengthCm']) {
+            if (body[key] !== '' && body[key] != null && (!Number.isFinite(Number(body[key])) ||
+                Number(body[key]) < fit.ranges[key][0] || Number(body[key]) > fit.ranges[key][1])) {
+                throw new Error('Проверьте диапазоны ширины плеч, длины руки и кисти в лаборатории.');
+            }
+        }
+        for (const side of ['Left', 'Right']) {
+            const shoulder = points[`shoulder${side}`], elbow = points[`elbow${side}`];
+            const wrist = points[`wrist${side}`], tip = points[`handTip${side}`];
+            if (!(shoulder.y > points.neck.y && shoulder.y < elbow.y && elbow.y < wrist.y && wrist.y < tip.y) ||
+                (side === 'Left' ? shoulder.x >= points.neck.x : shoulder.x <= points.neck.x)) {
+                throw new Error('Для каждой руки отметьте по порядку сверху вниз: плечевая точка тела → локоть → запястье → конец среднего пальца. Не отмечайте шов одежды вместо плеча.');
+            }
+        }
     }
     function build({ product, garment, body, points, width, height }) {
         validate(points, body);
@@ -67,7 +89,6 @@
         const chestY = (p.chestLeft.y + p.chestRight.y) / 2;
         const chestX = (p.chestLeft.x + p.chestRight.x) / 2;
         const neckY = p.neck.y;
-        const shoulderY = neckY + 3 * pxCm;
         const shoulderHalf = garment.shoulderCm * pxCm / 2;
         const hemY = neckY + garment.lengthCm * pxCm;
         const warnings = [
@@ -78,6 +99,11 @@
         if (hemY >= p.feet.y || hemY >= height - 2 || shoulderHalf * 2 >= width * .85) {
             throw new Error('Контур не помещается в фото. Проверьте рост, макушку, подошвы и основание шеи.');
         }
+        if (!Number.isFinite(garment.sleeveCm) || garment.sleeveCm <= 0) throw new Error('Для размерной примерки нужна длина рукава изделия.');
+        const armPlans = ['Left', 'Right'].map(side => arms.trace({ points: p, side, body, garment, pxCm, chestSpan, circumScale }));
+        warnings.push(...armPlans.flatMap(plan => plan.warnings));
+        const [leftArm, rightArm] = armPlans;
+        const shoulderY = Math.max(leftArm.seam.y, rightArm.seam.y);
         const half = key => {
             const zone = key === 'chestCm' ? 'chest' : key === 'waistCm' ? 'waist' : 'hip';
             const observedWidth = p[`${zone}Right`].x - p[`${zone}Left`].x;
@@ -103,45 +129,23 @@
         edges.push({ ...at(hemY), y: hemY });
         const torso = [
             [p.neck.x - 6 * pxCm, neckY], [p.neck.x + 6 * pxCm, neckY],
-            [p.neck.x + shoulderHalf, shoulderY],
+            [rightArm.seam.x, rightArm.seam.y],
             ...edges.map(z => [z.x + z.half, z.y]),
             ...edges.slice().reverse().map(z => [z.x - z.half, z.y]),
-            [p.neck.x - shoulderHalf, shoulderY]
+            [leftArm.seam.x, leftArm.seam.y]
         ];
-        const sleeves = [];
-        if (!Number.isFinite(garment.sleeveCm) || garment.sleeveCm <= 0) throw new Error('Для размерной примерки нужна длина рукава изделия.');
-        function sleeve(side, fullArm) {
-            const direction = side === 'Left' ? -1 : 1;
-            const start = { x: p.neck.x + direction * shoulderHalf, y: shoulderY };
-            const wrist = p[`wrist${side}`];
-            const dx = wrist.x - start.x, dy = wrist.y - start.y;
-            const distance = Math.hypot(dx, dy);
-            if (distance < 15 * pxCm) throw new Error('Проверьте запястья: они слишком близко к плечам.');
-            const requested = garment.sleeveCm * pxCm;
-            const len = fullArm ? distance : requested;
-            if (!fullArm && requested > distance) warnings.push('Рукав выходит за запястье: область кисти может попасть в маску и быть изменена моделью. Длина не обрезается искусственно.');
-            const ux = dx / distance, uy = dy / distance;
-            const topHalf = chestSpan * .16 + Math.max(0, garment.chestCm - Number(body.chestCm)) * circumScale * .06;
-            const cuffHalf = topHalf * .65;
-            const end = { x: start.x + ux * len, y: start.y + uy * len };
-            if (!fullArm) sleeves.push({ side, lengthCm: garment.sleeveCm, projectedLengthPx: len,
-                wristOffsetCm: (requested - distance) / pxCm, start, cuff: end, wrist });
-            return [[start.x - uy * topHalf, start.y + ux * topHalf],
-                [end.x - uy * cuffHalf, end.y + ux * cuffHalf],
-                [end.x + uy * cuffHalf, end.y - ux * cuffHalf],
-                [start.x + uy * topHalf, start.y - ux * topHalf]];
-        }
-        const target = [torso, sleeve('Left', false), sleeve('Right', false)];
+        const sleeves = armPlans.map(plan => plan.metadata);
+        const target = [torso, ...armPlans.map(plan => plan.target)];
         // Also repaint the existing upper-body clothing, including old long sleeves.
         // Otherwise a short target garment would leave the previous garment visible.
-        const originalTorso = [[p.neck.x - shoulderHalf, shoulderY], [p.neck.x + shoulderHalf, shoulderY],
+        const originalTorso = [[p.shoulderLeft.x, p.shoulderLeft.y], [p.shoulderRight.x, p.shoulderRight.y],
             [p.hip.x + chestSpan * .56, p.hip.y], [p.hip.x - chestSpan * .56, p.hip.y]];
-        const erase = [originalTorso, sleeve('Left', true), sleeve('Right', true)];
+        const erase = [originalTorso, ...armPlans.map(plan => plan.erase)];
         const polygons = [...erase, ...target];
         if (polygons.some(poly => poly.some(([x, y]) => x < 0 || x > width || y < neckY - 2 * pxCm || y > height))) {
             throw new Error('Маска выходит за кадр. Отодвиньтесь от камеры или исправьте точки.');
         }
-        return { width, height, target, polygons, sleeves, pxPerCm: pxCm, projectedChestPx: garment.chestCm * circumScale,
+        return { width, height, target, polygons, sleeves, armCalibration: 'anatomical-trace-v1', pxPerCm: pxCm, projectedChestPx: garment.chestCm * circumScale,
             hemY, warnings: [...new Set(warnings)], method: 'calibrated-mask-reference-v1' };
     }
     function svg(geometry, preview = false) {

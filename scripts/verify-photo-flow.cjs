@@ -37,7 +37,8 @@ async function verify() {
     }
     try {
         await page.goto(`${base}/fitting.html?product=shirt&size=M`, { waitUntil: 'networkidle' });
-        for (const [key, value] of Object.entries({ chestCm: '100', waistCm: '84', hipCm: '100', heightCm: '178' })) {
+        for (const [key, value] of Object.entries({ chestCm: '100', waistCm: '84', hipCm: '100', heightCm: '178',
+            shoulderCm: '36', armLengthCm: '54', handLengthCm: '17' })) {
             await page.locator(`[name="${key}"]`).fill(value);
         }
         await page.locator('#photoTitle').click();
@@ -65,7 +66,10 @@ async function verify() {
         assert.equal(requests[0].size, 'M');
         assert.equal(requests[0].measurements.chestCm, 100);
         assert.equal(requests[0].calibration.confirmed, true);
-        assert.equal(Object.keys(requests[0].calibration.points).length, 11);
+        assert.equal(Object.keys(requests[0].calibration.points).length, 17);
+        assert.equal(requests[0].measurements.shoulderCm, 36);
+        assert.equal(requests[0].measurements.armLengthCm, 54);
+        assert.equal(requests[0].measurements.handLengthCm, 17);
         assert.equal(requests[0].garmentImage, undefined);
         assert.match(requests[0].personImage, /^data:image\/jpeg;base64,/);
         await page.locator('[name="waistCm"]').fill('85');

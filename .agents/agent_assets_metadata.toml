@@ -210,3 +210,17 @@ mtime_ms = 1794490405657
 storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/64943a95-7d67-4e10-bff5-611201909dab/2b2a22e7-93bd-4d09-b91d-c42cb2538771"
 storage_version_token = "1794490448940577"
 content_type = "image/png"
+
+[[outputs]]
+id = "-ykGKRdhe1fWz0lkAwUmO"
+uri = "file://generated-artifacts/arm-schematic-desktop.jpg"
+type = "image"
+title = "XL и перекрытие кисти в обновлённой лаборатории"
+description = "Скриншот расчёта с условными мерками коротких рук. Показывает новую оценку манжеты с учётом спуска плеча; это интерфейс расчёта, а не доказательство точности фотогенерации."
+logical_id = "d77c775d-ac92-4b43-a8b7-c119183fe38b"
+content_hash = "sha256:86c8ca1c8590470027a004a263d42ec2bdc94109b618d01d77a901918a20f55d"
+size = 126780
+mtime_ms = 1794491534789
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/d77c775d-ac92-4b43-a8b7-c119183fe38b/49e6230a-b667-4bdd-9736-83d9f02b3cdb"
+storage_version_token = "1794491633718686"
+content_type = "image/jpeg"

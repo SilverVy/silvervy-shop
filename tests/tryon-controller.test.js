@@ -4,7 +4,7 @@ const fs = require('node:fs/promises');
 const sharp = require('sharp');
 const geometry = require('../server/public/fit-geometry');
 const { generate } = require('../server/controllers/tryOnController');
-const measurements = { heightCm: 178, chestCm: 100, waistCm: 84, hipCm: 100 };
+const measurements = { heightCm: 178, chestCm: 100, waistCm: 84, hipCm: 100, shoulderCm: 42, armLengthCm: 70, handLengthCm: 18 };
 
 function response() {
     return {
@@ -72,6 +72,10 @@ test('IDM adapter sends different measured masks AND references, live laboratory
         assert.equal(res.data.geometry.measurements.heightCm, 178);
         assert.equal(res.data.geometry.sleeveControl, 'independent-axis-v1');
         assert.equal(res.data.geometry.sleeves[0].lengthCm, size === 'XS' ? 59.6 : 62.4);
+        assert.equal(res.data.geometry.armCalibration, 'anatomical-trace-v1');
+        assert.equal(res.data.geometry.measurements.armLengthCm, 70);
+        assert.equal(res.data.geometry.sleeves[0].sources.armLengthCm, 'laboratory');
+        assert.equal(res.data.geometry.sleeves[0].wristOffsetCm.toFixed(1), size === 'XS' ? '-6.4' : '-0.6');
         assert.match(res.data.image, /^data:image\/png;base64,/);
     }
     assert.notEqual(payloads[0].data[2], payloads[1].data[2]);
