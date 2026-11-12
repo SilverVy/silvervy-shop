@@ -81,7 +81,7 @@ test('missing and invalid measurements do not silently get defaults', () => {
 });
 
 test('no supported sizes results in no recommendation, not XL as fallback', () => {
-    const result = fit.evaluate(catalog.getProduct('shirt'), { chestCm: 175, waistCm: 165, hipCm: 180 });
+    const result = fit.evaluate(catalog.getProduct('shirt'), { chestCm: 120, waistCm: 54, hipCm: 126 });
     assert.equal(result.status, 'ready');
     assert.equal(result.recommendedSize, null);
     assert.ok(result.rows.every(row => !row.compatible));

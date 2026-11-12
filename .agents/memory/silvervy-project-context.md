@@ -19,7 +19,7 @@ The project is for a diploma, and the user requires rigorous, carefully justifie
 
 **Why:** the user explicitly clarified that this is for their diploma and everything must be carefully measured and correct.
 
-**How to apply:** distinguish designed demo specifications from empirical measurements, document formulas and limitations, and test reproducibility and edge cases instead of claiming unverified physical accuracy.
+**How to apply:** distinguish designed demo specifications from empirical measurements, document formulas and limitations, and test reproducibility instead of claiming unverified physical accuracy. Treat input ranges as software support limits, not claims about what bodies can be; derive circumference limits from the full chart and keep profile, lab, API, and schematic validation aligned.
 
 The clothing direction is men's oversized apparel in natural tones such as beige, brown, white, and blue, without garment logos. Virtual try-on should cover clothing except shoes, including tops and bottoms.
 

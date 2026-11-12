@@ -14,9 +14,27 @@ async function verify() {
     page.on('pageerror', error => errors.push(error.stack || error.message));
     const image = 'data:image/jpeg;base64,' + (await fs.readFile('server/public/media/collection/shirt-model.jpg')).toString('base64');
     const requests = [];
+    const profileWrites = [];
     let scenario = 'success';
     let finishDelay;
     let startDelay;
+    await page.route('**/photo-landmarks.js', route => route.fulfill({
+        contentType: 'application/javascript',
+        body: `window.SilverVyPhotoLandmarks = { estimate: async (_image, defaults) => {
+            const automaticKeys = ['shoulderLeft', 'shoulderRight', 'elbowLeft', 'elbowRight', 'wristLeft', 'wristRight'];
+            return { points: structuredClone(defaults), automaticKeys,
+                estimatedKeys: Object.keys(defaults).filter(key => !automaticKeys.includes(key)), warnings: ['Browser-test estimate'] };
+        } };`
+    }));
+    await page.route('**/api/auth/profile', async route => {
+        if (route.request().method() === 'GET') return route.fulfill({ json: { user: { bodyMeasurements: {
+            chestCm: 100, waistCm: 84, hipCm: 100, heightCm: 178, shoulderCm: 36,
+            armLengthCm: 54, handLengthCm: 17, weightKg: 85
+        } } } });
+        const payload = route.request().postDataJSON();
+        profileWrites.push(payload);
+        return route.fulfill({ json: { message: 'Параметры сохранены', bodyMeasurements: payload } });
+    });
     await page.route('**/api/status', route => route.fulfill({
         json: { mode: 'full', tryOnAvailable: true, message: 'Controlled browser-test fixture; not a live provider.' }
     }));
@@ -46,6 +64,12 @@ async function verify() {
         await waitText('войдите в аккаунт');
         assert.equal(requests.length, 0);
         await page.evaluate(() => localStorage.setItem('token', 'browser-fixture-only-not-a-real-token'));
+        await page.evaluate(() => localStorage.setItem('user', JSON.stringify({
+            id: 'browser-fixture', name: 'Test', email: 'test@example.invalid'
+        })));
+        await page.locator('#importProfile').click();
+        await page.waitForFunction(() => document.querySelector('[name="handLengthCm"]').value === '17');
+        assert.equal(await page.locator('[name="weightKg"]').count(), 0, 'profile-only weight must stay out of lab inputs');
         await page.locator('#generatePhoto').click();
         await waitText('подтвердите отдельное согласие');
         await page.locator('#personPhoto').setInputFiles('server/public/media/collection/shirt-model.jpg');
@@ -53,16 +77,18 @@ async function verify() {
         assert.equal(requests.length, 0, 'photo must not be sent before consent');
         await page.locator('#photoConsent').check();
         await page.locator('.calibration-stage svg').waitFor();
+        await page.waitForFunction(() => !document.querySelector('.calibration-detection-status').textContent.includes('Выполняется'));
         assert.match(await page.locator('.calibration-status').textContent(), /рукав 61 см/);
         await page.locator('#generatePhoto').click();
-        await waitText('подтвердите калибровку');
+        await waitText('опорные точки на фото');
         assert.equal(requests.length, 0);
-        assert.ok(await page.locator('.calibration-confirm').isDisabled(), 'initial template cannot be confirmed with one checkbox');
+        assert.ok(await page.locator('.calibration-confirm').isDisabled(), 'automatic suggestions still require review');
         for (let i = 0; i < 17; i++) await page.locator('.calibration-review').click();
         assert.ok(await page.locator('.calibration-confirm').isEnabled());
+        assert.match(await page.locator('.calibration-reference img').getAttribute('src'), /coat-calibrated-XL\.png/);
         await page.locator('.calibration-reset').click();
         assert.ok(await page.locator('.calibration-confirm').isDisabled());
-        assert.match(await page.locator('.calibration-review-status').textContent(), /Проверено 0 из 17/);
+        assert.match(await page.locator('.calibration-review-status').textContent(), /отмечено: 0 из 17/);
         for (let i = 0; i < 17; i++) await page.locator('.calibration-review').click();
         await page.locator('.calibration-confirm').check();
         await page.locator('#photoCalibration').screenshot({ path: 'generated-artifacts/calibration-desktop.jpg' });
@@ -84,8 +110,18 @@ async function verify() {
         assert.match(requests[0].personImage, /^data:image\/jpeg;base64,/);
         await page.locator('[name="waistCm"]').fill('85');
         assert.equal(await page.locator('#photoResult img').count(), 0, 'previous photo must disappear when measurements change');
+        await page.waitForFunction(() => document.querySelector('#profileSource').textContent.includes('синхронизированы'));
+        assert.equal(profileWrites.at(-1).waistCm, 85);
+        assert.equal(Object.hasOwn(profileWrites.at(-1), 'weightKg'), false, 'lab sync must not overwrite profile-only weight');
         await page.locator('[data-size="XL"]').click();
         assert.match(await page.locator('.calibration-status').textContent(), /рукав 62.4 см/);
+        await page.locator('[name="chestCm"]').fill('118');
+        await page.locator('[data-size="XS"]').click();
+        assert.equal(await page.locator('#generatePhoto').isDisabled(), true);
+        assert.match(await page.locator('#photoSizeFitNotice').textContent(), /меньше тела/);
+        await page.locator('[name="chestCm"]').fill('100');
+        await page.locator('[data-size="XL"]').click();
+        assert.equal(await page.locator('#generatePhoto').isEnabled(), true);
         for (const [selected, text] of [['quota', 'исчерпана квота'], ['expired', 'Войдите заново'], ['invalid', 'не вернул корректное изображение']]) {
             await page.evaluate(() => localStorage.setItem('token', 'browser-fixture-only-not-a-real-token'));
             scenario = selected;
@@ -112,7 +148,7 @@ async function verify() {
         const stored = await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }));
         assert.ok(!stored.includes('data:image/'), 'photo must never be put in browser storage');
         assert.deepEqual(errors, []);
-        console.log('Photo UI fixture checks passed: login required, consent required, payload, success, quota, expired session, malformed result, stale-result suppression, bottoms restriction and no stored photos. No live inference request was made.');
+        console.log('Photo UI fixture checks passed: profile import/save, calibration review, reference image, consent, payload, too-small-size block, provider failure states, stale-result suppression, bottoms restriction and no photo storage. No live inference request was made.');
     } finally {
         if (finishDelay) finishDelay();
         await context.close();
