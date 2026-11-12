@@ -35,6 +35,26 @@ test('sleeve endpoints follow sleeve centimetres without collapsing at the wrist
     assert.deepEqual(short.target[0], long.target[0], 'torso must not change when only sleeve length changes');
     assert.notEqual(geometry.svg(short), geometry.svg(long), 'the actual editable mask must change beyond the wrist too');
 });
+test('garment mask bridges the verified anatomical shoulder to the dropped seam', async () => {
+    const guide = build('XL', body, {
+        ...geometry.defaults,
+        shoulderLeft: { x: .33, y: .22 }, shoulderRight: { x: .67, y: .22 },
+        elbowLeft: { x: .29, y: .38 }, elbowRight: { x: .71, y: .38 },
+        wristLeft: { x: .25, y: .53 }, wristRight: { x: .75, y: .53 }
+    });
+    const targetTorso = guide.target[0];
+    assert.ok(targetTorso.some(([x, y]) => Math.abs(x - .33 * 768) < 1e-6 && Math.abs(y - .22 * 1024) < 1e-6));
+    assert.ok(targetTorso.some(([x, y]) => Math.abs(x - .67 * 768) < 1e-6 && Math.abs(y - .22 * 1024) < 1e-6));
+    const previous = { ...guide, polygons: guide.polygons.map(poly => poly === targetTorso
+        ? poly.filter((_, index) => index !== 2 && index !== poly.length - 1) : poly) };
+    const raster = value => sharp(Buffer.from(geometry.svg(value))).removeAlpha().extractChannel(0).raw().toBuffer();
+    const [before, after] = await Promise.all([raster(previous), raster(guide)]);
+    let newlyEditable = 0;
+    for (let i = 0; i < after.length; i++) if (before[i] === 0 && after[i] === 255) newlyEditable++;
+    assert.ok(newlyEditable > 100, 'shoulder fabric previously outside the mask must actually become editable');
+    assert.ok(after.subarray(0, Math.floor(geometry.defaults.neck.y * 1024 - 2) * 768).every(value => value === 0),
+        'shoulder expansion must not expose the face region to editing');
+});
 test('sleeve-only changes alter trusted reference pixels without stretching the torso', async () => {
     const person = { buffer: await sharp({ create: { width: 768, height: 1024, channels: 3, background: '#123456' } }).png().toBuffer() };
     const reference = await fs.readFile('server/public/media/collection/shirt-front.jpg');

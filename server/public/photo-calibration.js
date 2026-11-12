@@ -4,6 +4,7 @@
         const geometry = root.SilverVyGeometry;
         let image = null, source = '', points = structuredClone(geometry.defaults), selected = 'crown', dragging = false;
         let current = null, loadVersion = 0;
+        const reviewed = new Set();
         container.innerHTML = `<h4>Калибровка фото по вашим меркам</h4>
           <p class="sv-note">Это не автоматическое распознавание. Начальные точки условные: переместите их на человека. Нужен полный рост, фронтальная поза, опущенные и немного отведённые руки со слегка согнутыми локтями, по возможности облегающая одежда. Плечевые точки отмечайте на теле, не на спущенных швах одежды; конец кисти — конец среднего пальца. Кисти, лицо и фон вне маски сохраняются из оригинала.</p>
           <div class="calibration-stage" tabindex="0" aria-label="Фото с опорными точками и областью перерисовки"></div>
@@ -11,6 +12,8 @@
           <label>X, % ширины<input class="calibration-x" type="number" min="0" max="100" step="0.1"></label>
           <label>Y, % высоты<input class="calibration-y" type="number" min="0" max="100" step="0.1"></label></div>
           <p class="sv-note">Выберите точку и нажмите на фото или перетащите маркер. Координаты можно вводить с клавиатуры. Коричневая область — вся зона перерисовки, включая удаление прежней одежды; светлый контур — ориентир выбранного размера, красные пунктиры — расчётные манжеты. Это не обещание точной формы результата.</p>
+          <button class="calibration-review" type="button">Точка на месте — проверить следующую</button>
+          <p class="calibration-review-status" role="status">Проверьте каждую точку отдельно. Шаблон не распознаёт человека.</p>
           <button class="calibration-reset" type="button">Сбросить точки</button>
           <p class="calibration-status" role="status"></p>
           <label class="photo-consent"><input class="calibration-confirm" type="checkbox"><span>Я проверил все ${Object.keys(geometry.defaults).length} точек: они соответствуют человеку на фото. Масштаб торса рассчитан по росту; для рук используются текущие мерки лаборатории, а при их отсутствии — приближённая оценка по фото.</span></label>`;
@@ -24,6 +27,10 @@
             selector.value = selected;
             xInput.value = (points[selected].x * 100).toFixed(1);
             yInput.value = (points[selected].y * 100).toFixed(1);
+            confirm.disabled = reviewed.size !== Object.keys(points).length;
+            if (confirm.disabled) confirm.checked = false;
+            container.querySelector('.calibration-review-status').textContent =
+                `Проверено ${reviewed.size} из ${Object.keys(points).length}. ${confirm.disabled ? 'Исправьте положение выбранной точки или подтвердите, что она на месте.' : 'Теперь можно подтвердить калибровку.'}`;
         }
         function refresh() {
             if (!image) { container.hidden = true; return; }
@@ -60,7 +67,7 @@
             const rect = stage.querySelector('svg').getBoundingClientRect();
             points[selected] = { x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
                 y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)) };
-            confirm.checked = false; refresh(); onChange();
+            reviewed.add(selected); confirm.checked = false; refresh(); onChange();
         }
         stage.addEventListener('pointerdown', event => {
             if (!image) return;
@@ -76,10 +83,17 @@
             if (xInput.value === '' || yInput.value === '') return;
             const x = Number(xInput.value) / 100, y = Number(yInput.value) / 100;
             if (![x, y].every(n => Number.isFinite(n) && n >= 0 && n <= 1)) return;
-            points[selected] = { x, y }; confirm.checked = false; refresh(); onChange();
+            points[selected] = { x, y }; reviewed.add(selected); confirm.checked = false; refresh(); onChange();
         }));
         confirm.addEventListener('change', onChange);
-        container.querySelector('button').addEventListener('click', () => {
+        container.querySelector('.calibration-review').addEventListener('click', () => {
+            if (!image) return;
+            reviewed.add(selected);
+            selected = Object.keys(points).find(key => !reviewed.has(key)) || selected;
+            confirm.checked = false; refresh(); onChange();
+        });
+        container.querySelector('.calibration-reset').addEventListener('click', () => {
+            reviewed.clear(); selected = 'crown';
             points = structuredClone(geometry.defaults); confirm.checked = false; refresh(); onChange();
         });
         container.hidden = true;
@@ -90,16 +104,16 @@
                 next.src = dataUrl;
                 await next.decode();
                 if (version !== loadVersion) return;
-                image = next; source = dataUrl; points = structuredClone(geometry.defaults); confirm.checked = false;
+                image = next; source = dataUrl; points = structuredClone(geometry.defaults); reviewed.clear(); selected = 'crown'; confirm.checked = false;
                 refresh();
             },
             refresh,
-            clear() { loadVersion += 1; image = null; source = ''; current = null; confirm.checked = false; stage.replaceChildren(); container.hidden = true; },
+            clear() { loadVersion += 1; image = null; source = ''; current = null; reviewed.clear(); confirm.checked = false; stage.replaceChildren(); container.hidden = true; },
             get image() { return source; },
             payload() {
                 refresh();
                 if (!current) throw new Error(status.textContent || 'Загрузите и откалибруйте фото.');
-                if (!confirm.checked) throw new Error('Проверьте все опорные точки и подтвердите калибровку фото.');
+                if (reviewed.size !== Object.keys(points).length || !confirm.checked) throw new Error('Проверьте каждую опорную точку отдельно и подтвердите калибровку фото.');
                 return { points: structuredClone(points), confirmed: true };
             }
         };

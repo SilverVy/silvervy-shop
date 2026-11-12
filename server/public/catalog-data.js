@@ -16,7 +16,7 @@
     const definitions = [
         {
             id: 'coat', page: 'product-coat.html', name: 'Туман · пальто oversize', category: 'tops', group: 'outerwear',
-            color: 'Тёплый серо-бежевый', tone: '#b5a28d', price: 15900, garmentDescription: 'long wool coat',
+            color: 'Тёплый серо-бежевый', tone: '#b5a28d', tryOnColor: 'warm muted taupe beige', price: 15900, garmentDescription: 'long wool coat',
             composition: '70% шерсть, 30% полиэстер; подкладка: 100% вискоза',
             description: 'Однобортное пальто со спущенным плечом, широким лацканом и двумя прорезными карманами. Свободный силуэт рассчитан на дополнительный слой одежды.',
             base: { chestCm: 126, waistCm: 122, hipCm: 130, shoulderCm: 56, lengthCm: 114, sleeveCm: 60 },

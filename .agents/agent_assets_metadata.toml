@@ -224,3 +224,31 @@ mtime_ms = 1794491534789
 storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/d77c775d-ac92-4b43-a8b7-c119183fe38b/49e6230a-b667-4bdd-9736-83d9f02b3cdb"
 storage_version_token = "1794491633718686"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "tYZeTxdMmfNdSDzBDGQmo"
+uri = "file://generated-artifacts/coat-reproduction-comparison.png"
+type = "image"
+title = "Повторный тест XS и XL на вашем фото"
+description = "Два реальных ответа бесплатного IDM-VTON с уточнёнными точками и исправленной маской плеч. Контроль не пройден: манжеты не соответствуют расчёту, появились искажения кистей."
+logical_id = "35e659f3-8957-4475-9025-2fd05c9f333b"
+content_hash = "sha256:210737d6f289331d40da48abbdb2814743785f90023c99918d48df20753283a9"
+size = 321378
+mtime_ms = 1794493992435
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/35e659f3-8957-4475-9025-2fd05c9f333b/88a16709-5df3-46ca-994f-1c45caf813da"
+storage_version_token = "1794494181103390"
+content_type = "image/png"
+
+[[outputs]]
+id = "OrO6xyIdYfucqjDdA8-wj"
+uri = "file://generated-artifacts/coat-calibrated-XL.png"
+type = "image"
+title = "Разметка для контрольного теста XL"
+description = "Вручную уточнённые ориентиры и расчётный контур. Это приближённая разметка фотографии с учебными мерками, не измерение реального человека и не доказательство точной посадки."
+logical_id = "0b5117ec-2002-4bc8-b010-91918dce1340"
+content_hash = "sha256:fb315b7985178e361e69be26bde87306bfedb70cb358270dfd1b884065f380f1"
+size = 412693
+mtime_ms = 1794493829659
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/0b5117ec-2002-4bc8-b010-91918dce1340/d3e1d10a-ec3a-4159-aa93-b62b9cfbac12"
+storage_version_token = "1794494181817448"
+content_type = "image/png"

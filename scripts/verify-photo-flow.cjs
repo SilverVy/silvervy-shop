@@ -57,10 +57,20 @@ async function verify() {
         await page.locator('#generatePhoto').click();
         await waitText('подтвердите калибровку');
         assert.equal(requests.length, 0);
+        assert.ok(await page.locator('.calibration-confirm').isDisabled(), 'initial template cannot be confirmed with one checkbox');
+        for (let i = 0; i < 17; i++) await page.locator('.calibration-review').click();
+        assert.ok(await page.locator('.calibration-confirm').isEnabled());
+        await page.locator('.calibration-reset').click();
+        assert.ok(await page.locator('.calibration-confirm').isDisabled());
+        assert.match(await page.locator('.calibration-review-status').textContent(), /Проверено 0 из 17/);
+        for (let i = 0; i < 17; i++) await page.locator('.calibration-review').click();
         await page.locator('.calibration-confirm').check();
         await page.locator('#photoCalibration').screenshot({ path: 'generated-artifacts/calibration-desktop.jpg' });
         await page.locator('#generatePhoto').click();
-        await waitText('Фото-превью готово');
+        await waitText('Модель вернула изображение');
+        assert.match(await page.locator('#photoStatus').textContent(), /посадка не подтверждена/i);
+        assert.match(await page.locator('#photoResult').textContent(),
+            /Проверьте манжеты, кисти, остатки исходной одежды, цвет и силуэт вручную/i);
         assert.equal(await page.locator('#photoResult img').count(), 1);
         assert.equal(requests[0].productId, 'shirt');
         assert.equal(requests[0].size, 'M');

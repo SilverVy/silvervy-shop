@@ -369,13 +369,13 @@
       }
       const image = document.createElement('img');
       image.src = data.image;
-      image.alt = `Иллюстративное фото-превью изделия ${product.name}, размер ${selectedSize}`;
+      image.alt = `Экспериментальная иллюстрация изделия ${product.name}, размер ${selectedSize}; посадка не подтверждена`;
       const notice = document.createElement('p');
       notice.className = 'sv-note';
       const serverFit = data.fit?.recommendedSize ? ` Серверная проверка: ${data.fit.recommendedSize} — выбран ${selectedSize}.` : '';
-      notice.textContent = `${data.provider || 'Сервис генерации'} · ${data.sizeConditioning || 'метод не указан'}. ${data.fitNotice || 'Приближение посадки, не физическая симуляция.'}${serverFit}${data.geometry?.warnings ? ' ' + data.geometry.warnings.join(' ') : ''}${data.requestId ? ` Код запроса: ${data.requestId}` : ''}`;
+      notice.textContent = `${data.provider || 'Сервис генерации'} · ${data.sizeConditioning || 'метод не указан'}. ${data.fitNotice || 'Экспериментальная иллюстрация, не физическая симуляция.'} Проверьте манжеты, кисти, остатки исходной одежды, цвет и силуэт вручную.${serverFit}${data.geometry?.warnings ? ' ' + data.geometry.warnings.join(' ') : ''}${data.requestId ? ` Код запроса: ${data.requestId}` : ''}`;
       resultArea.append(image, notice);
-      status.textContent = 'Фото-превью готово по текущим меркам и выбранному размеру. Это экспериментальное приближение, не подтверждение физической посадки.';
+      status.textContent = 'Модель вернула изображение. Проверьте манжеты, кисти, остатки одежды, цвет и силуэт: посадка не подтверждена.';
     } catch (error) {
       if (versionAtStart === requestVersion) status.textContent = error.name === 'TimeoutError'
         ? 'Время ожидания фото-превью истекло. Сравнение мерок остаётся доступным.'

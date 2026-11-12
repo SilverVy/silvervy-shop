@@ -129,10 +129,14 @@
         edges.push({ ...at(hemY), y: hemY });
         const torso = [
             [p.neck.x - 6 * pxCm, neckY], [p.neck.x + 6 * pxCm, neckY],
+            // Bridge the neck to the actual anatomical shoulder before the dropped garment seam.
+            // Without this shoulder-cap area, source-shirt fabric can sit outside the generated mask.
+            [p.shoulderRight.x, p.shoulderRight.y],
             [rightArm.seam.x, rightArm.seam.y],
             ...edges.map(z => [z.x + z.half, z.y]),
             ...edges.slice().reverse().map(z => [z.x - z.half, z.y]),
-            [leftArm.seam.x, leftArm.seam.y]
+            [leftArm.seam.x, leftArm.seam.y],
+            [p.shoulderLeft.x, p.shoulderLeft.y]
         ];
         const sleeves = armPlans.map(plan => plan.metadata);
         const target = [torso, ...armPlans.map(plan => plan.target)];

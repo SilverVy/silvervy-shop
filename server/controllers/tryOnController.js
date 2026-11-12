@@ -427,7 +427,9 @@ exports.generate = async (req, res) => {
         const sleeveStyle = meanCuffOffset < -4 ? 'long sleeves with above-wrist cuffs and visible wrists'
             : meanCuffOffset > 1 ? 'extra-long sleeves with cuffs extending over wrists'
                 : 'full-length sleeves with cuffs near wrists';
-        const prompt = `${sleeveStyle}, ${fitWords} ${assessment.product.garmentDescription}, sleeves ${assessment.garment.sleeveCm} cm from shoulder seam, ${cuffGuidance}. Size ${assessment.size}. Preserve the independently graded sleeve and cuff positions. ${assessment.description}`;
+        const appearance = [assessment.product.tryOnColor, assessment.product.garmentDescription].filter(Boolean).join(' ');
+        // The text encoder has a limited context: keep garment color and sleeve style before verbose measurements.
+        const prompt = `${appearance}. Matching reference fabric color across torso, shoulders and sleeves. ${sleeveStyle}; ${fitWords}; size ${assessment.size}; sleeves ${assessment.garment.sleeveCm} cm from shoulder seam, ${cuffGuidance}; preserve the graded cuff positions, collar and pockets. ${assessment.description}`;
         const image = await callIdm(prepared.person, prepared.garment, prompt, prepared);
         console.info(JSON.stringify({ event: 'tryon_completed', requestId, elapsedMs: Date.now() - startedAt }));
 
@@ -439,7 +441,7 @@ exports.generate = async (req, res) => {
             requestId,
             sizeConditioning: prepared.metadata.method,
             geometry: prepared.metadata,
-            fitNotice: 'Размер управляет калиброванной маской, масштабом референса и текстом. Область вне маски сохранена из исходного фото. Это экспериментальное геометрическое приближение, не физическая симуляция ткани и не гарантия посадки.',
+            fitNotice: 'Размер управляет калиброванной маской, масштабом референса и текстом. Область вне маски сохранена из исходного фото. Это экспериментальная иллюстрация: положение манжет, кисти, остатки исходной одежды, цвет и силуэт могут отличаться. Это не физическая симуляция ткани и не гарантия посадки.',
             fit: assessment.fit
         });
     } catch (error) {

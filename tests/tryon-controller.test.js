@@ -83,14 +83,32 @@ test('IDM adapter sends different measured masks AND references, live laboratory
     assert.match(payloads[1].data[2], /garment 132 cm/);
     assert.match(payloads[0].data[2], /sleeves 59.6 cm from shoulder seam/);
     assert.match(payloads[1].data[2], /sleeves 62.4 cm from shoulder seam/);
-    assert.match(payloads[0].data[2], /^long sleeves with above-wrist cuffs and visible wrists/);
-    assert.match(payloads[1].data[2], /^full-length sleeves with cuffs near wrists/);
+    assert.match(payloads[0].data[2], /long sleeves with above-wrist cuffs and visible wrists/);
+    assert.match(payloads[1].data[2], /full-length sleeves with cuffs near wrists/);
     assert.equal(payloads[0].data[6], payloads[1].data[6]);
     assert.equal(payloads[0].data[3], false, 'automatic mask must be disabled, otherwise the size mask is ignored');
     assert.equal(payloads[0].data[0].layers.length, 1);
     assert.ok(!payloads[0].data[2].includes('untrusted client'));
     assert.ok(!uploadedReferences[0].equals(uploadedReferences[1]));
     assert.ok(!uploadedMasks[0].equals(uploadedMasks[1]));
+});
+
+test('coat fabric color is prioritized and short-arm measurements reach the provider', async t => {
+    const original = global.fetch;
+    t.after(() => { global.fetch = original; });
+    let payload;
+    const image = await sharp({ create: { width: 768, height: 1024, channels: 3, background: '#b5a28d' } }).png().toBuffer();
+    global.fetch = providerStub({ image, onJoin: value => { payload = value; } });
+    const req = await request('XL');
+    req.body.productId = 'coat';
+    req.body.measurements = { heightCm: 160, chestCm: 82, waistCm: 64, hipCm: 88, shoulderCm: 36, armLengthCm: 54, handLengthCm: 17 };
+    const res = response();
+    await generate(req, res);
+    assert.equal(res.statusCode, 200);
+    assert.match(payload.data[2], /^warm muted taupe beige long wool coat\. Matching reference fabric color across torso, shoulders and sleeves\./);
+    assert.ok(payload.data[2].indexOf('warm muted taupe beige') < payload.data[2].indexOf('Design measurements'));
+    assert.equal(res.data.geometry.sleeves[0].wristOffsetCm.toFixed(1), '18.9');
+    assert.equal(res.data.geometry.sleeves[0].handCoverageRatio, 1);
 });
 
 test('quota and missing image failures do not return fabricated success', async t => {
