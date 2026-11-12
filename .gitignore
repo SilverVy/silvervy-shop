@@ -10,6 +10,7 @@ dist/
 build/
 
 /generated-artifacts/
+/attached_assets/generated_images/collection/
 
 *.sqlite
 *.db

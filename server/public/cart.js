@@ -1,4 +1,4 @@
-const API_URL = 'https://silvervy-backend.onrender.com/api/cart';
+const API_URL = '/api/cart';
 
 const tryOnScript = document.createElement('script');
 tryOnScript.src = 'tryon.js';
@@ -199,7 +199,7 @@ if (checkoutForm) checkoutForm.addEventListener('submit', async (e) => {
     };
 
     try {
-        const response = await fetch('https://silvervy-backend.onrender.com/api/orders', {
+        const response = await fetch('/api/orders', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -243,7 +243,7 @@ function showErrorModal(message) {
     });
 
     // Закрытие по крестику
-    modal.querySelector('.close-modal').addEventListener('click', () => {
+    modal.querySelector('.close-modal')?.addEventListener('click', () => {
         modal.remove();
     });
 

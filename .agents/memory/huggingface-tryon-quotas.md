@@ -13,8 +13,8 @@ IDM-VTON's public app applies an `upper_body` mask and has no size-conditioning,
 
 **Why:** The user asked for the strongest available fit approximation without switching away from IDM-VTON; its textual garment description is the only exposed field where size guidance can be attempted.
 
-For experimental reference scaling, treat catalog models as 185 cm tall and wearing the largest listed size (L); this is a user-chosen calibration assumption, not verified product metadata.
+The former 185 cm / largest-size-L model calibration is not applicable to the fictional educational collection or AI-generated model images.
 
-**Why:** The user selected this baseline to estimate how a masked garment reference should scale against shopper measurements.
+**Why:** That earlier user-selected baseline was an unverified experimental assumption. The user now permits designed educational specifications but requires rigorous distinction between design assumptions and real measurements for the diploma.
 
-**How to apply:** Keep the scaling conservative, use size-chart/body measurements as proxies, and label the output as an approximation until tested against real garment measurements and generated results.
+**How to apply:** Never infer physical garment dimensions, a model's height or a worn size from generated photographs. Use the declared design specifications for the educational calculation and retain the text-only IDM limitation; empirical accuracy still requires manufactured samples.

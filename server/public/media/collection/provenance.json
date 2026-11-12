@@ -1,0 +1,48 @@
+{
+  "type": "AI-generated educational collection",
+  "generated": "2026-11-12",
+  "notice": "Not photographs of manufactured stock. Model panels do not validate the designed garment measurements or physical fit.",
+  "processing": "Each generated diptych was split at its vertical midpoint; left = clean front reference, right = illustrative model photo.",
+  "products": [
+    {
+      "id": "coat",
+      "front": "media/collection/coat-front.jpg",
+      "model": "media/collection/coat-model.jpg"
+    },
+    {
+      "id": "bomber",
+      "front": "media/collection/bomber-front.jpg",
+      "model": "media/collection/bomber-model.jpg"
+    },
+    {
+      "id": "trench",
+      "front": "media/collection/trench-front.jpg",
+      "model": "media/collection/trench-model.jpg"
+    },
+    {
+      "id": "denim",
+      "front": "media/collection/denim-front.jpg",
+      "model": "media/collection/denim-model.jpg"
+    },
+    {
+      "id": "shirt",
+      "front": "media/collection/shirt-front.jpg",
+      "model": "media/collection/shirt-model.jpg"
+    },
+    {
+      "id": "linen",
+      "front": "media/collection/linen-front.jpg",
+      "model": "media/collection/linen-model.jpg"
+    },
+    {
+      "id": "trousers",
+      "front": "media/collection/trousers-front.jpg",
+      "model": "media/collection/trousers-model.jpg"
+    },
+    {
+      "id": "linen-trousers",
+      "front": "media/collection/linen-trousers-front.jpg",
+      "model": "media/collection/linen-trousers-model.jpg"
+    }
+  ]
+}

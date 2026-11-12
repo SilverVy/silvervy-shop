@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const measurementsForm = document.getElementById('bodyMeasurementsForm');
             const authHeaders = { Authorization: `Bearer ${token}` };
-            fetch('https://silvervy-backend.onrender.com/api/auth/profile', { headers: authHeaders })
+            fetch('/api/auth/profile', { headers: authHeaders })
                 .then(response => response.ok ? response.json() : null)
                 .then(data => {
                     if (!data?.user?.bodyMeasurements) return;
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         .map(input => [input.name, input.value])
                 );
                 try {
-                    const response = await fetch('https://silvervy-backend.onrender.com/api/auth/profile', {
+                    const response = await fetch('/api/auth/profile', {
                         method: 'PUT',
                         headers: { ...authHeaders, 'Content-Type': 'application/json' },
                         body: JSON.stringify(bodyMeasurements)
@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-            const response = await fetch('https://silvervy-backend.onrender.com/api/auth/register', {
+            const response = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-            const response = await fetch('https://silvervy-backend.onrender.com/api/auth/login', {
+            const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)

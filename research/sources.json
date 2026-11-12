@@ -68,5 +68,138 @@
     "published": "Project page accessed 2026-10-29",
     "tier": 1,
     "evidence": "research/sources/primary-source-excerpts.md"
+  },
+  "garmentcodedata-v2-eth": {
+    "title": "GarmentCodeData v2 — ETH Zurich research data record",
+    "url": "https://www.research-collection.ethz.ch/entities/researchdata/9d16a4da-0d30-4963-8842-af20fcf82899",
+    "published": "2024-09-04",
+    "tier": 1,
+    "evidence": "research/sources/patterns-01-garmentcodedata-v2.md"
+  },
+  "kaist-pattern-dataset": {
+    "title": "Dataset of 3D Garments with Sewing Patterns — Zenodo",
+    "url": "https://zenodo.org/records/5267549",
+    "published": "2021-06-08",
+    "tier": 1,
+    "evidence": "research/sources/patterns-02-kaist-zenodo.md"
+  },
+  "kaist-pattern-license": {
+    "title": "Zenodo official record API: dataset license",
+    "url": "https://zenodo.org/api/records/5267549",
+    "published": "Record checked 2026-11-12",
+    "tier": 1,
+    "evidence": "research/sources/patterns-04-kaist-zenodo-api.md"
+  },
+  "cloth3d-official": {
+    "title": "CLOTH3D — author repository",
+    "url": "https://github.com/hbertiche/CLOTH3D",
+    "published": "Accessed 2026-11-12; research originally 2020",
+    "tier": 1,
+    "evidence": "research/sources/patterns-03-cloth3d-official.md"
+  },
+  "cloth3d-texture": {
+    "title": "3D+Texture garment reconstruction — ChaLearn",
+    "url": "https://chalearnlap.cvc.uab.cat/dataset/38/description/",
+    "published": "NeurIPS 2020; snippet checked 2026-11-12",
+    "tier": 1,
+    "evidence": "research/sources/patterns-snippets.md"
+  },
+  "modamica-mens": {
+    "title": "МОДАМИКА — мужской каталог производителя",
+    "url": "https://modamica.ru/mans",
+    "published": "Date not stated; accessed 2026-11-12",
+    "tier": 3,
+    "evidence": "research/sources/retail-04-modamica-catalog.md"
+  },
+  "ergomodels-mens-patterns": {
+    "title": "Ergomodels — graded menswear DXF patterns",
+    "url": "https://ergomodels.com/collections/dxf-sewing-patterns-for-men",
+    "published": "Date not stated; accessed 2026-11-12",
+    "tier": 3,
+    "evidence": "research/sources/retail-05-ergomodels-catalog.md"
+  },
+  "fashion-cloud-image-use": {
+    "title": "Fashion Cloud — Image usage",
+    "url": "https://help.fashion.cloud/en/articles/5917619-image-usage",
+    "published": "2025-10-28",
+    "tier": 2,
+    "evidence": "research/sources/rights-01-fashion-cloud-image-usage.md"
+  },
+  "cc-by-4-legal": {
+    "title": "Creative Commons Attribution 4.0 — Legal Code",
+    "url": "https://creativecommons.org/licenses/by/4.0/legalcode.en",
+    "published": "Stable license text; accessed 2026-11-12",
+    "tier": 1,
+    "evidence": "research/sources/rights-02-cc-by-4-legal-code.md"
+  },
+  "wellesley-web-image-rights": {
+    "title": "Wellesley College — Copyright and Web Images",
+    "url": "https://libguides.wellesley.edu/c.php?g=1360360&p=10289068",
+    "published": "Date not stated; snippet checked 2026-11-12",
+    "tier": 1,
+    "evidence": "research/sources/rights-snippets.md"
+  },
+  "rca-image-copyright": {
+    "title": "Royal College of Art — Re-using images",
+    "url": "https://rca.libguides.com/copyright/images",
+    "published": "Date not stated; snippet checked 2026-11-12",
+    "tier": 1,
+    "evidence": "research/sources/rights-snippets.md"
+  },
+  "bare-thread-pattern-terms": {
+    "title": "Bare Thread Patterns — Pattern Usage and Licensing",
+    "url": "https://www.barethreadpatterns.co.nz/pattern-usage-and-licensing",
+    "published": "Date not stated; snippet checked 2026-11-12",
+    "tier": 3,
+    "evidence": "research/sources/rights-snippets.md"
+  },
+  "predicting-3d-fit": {
+    "title": "Predicting 3D garment fit in digital product development: Selecting input variables",
+    "url": "https://dl.acm.org/doi/full/10.1145/3688671.3688795",
+    "published": "2024",
+    "tier": 1,
+    "evidence": "research/sources/fit-01-predicting-3d-garment-fit.md"
+  },
+  "clo-size-grading": {
+    "title": "CLO — Apparel Size Grading Tools: Compare Roles and Validate Every Size",
+    "url": "https://www.clo3d.com/explore/apparel-size-grading-validation",
+    "published": "Date not established; accessed 2026-11-12",
+    "tier": 3,
+    "evidence": "research/sources/fit-04-clo-size-grading.md"
+  },
+  "fit-dataset-2026": {
+    "title": "FIT: A Large-Scale Dataset for Fit-Aware Virtual Try-On",
+    "url": "https://johannakarras.github.io/FIT/",
+    "published": "SIGGRAPH 2026",
+    "tier": 1,
+    "evidence": "research/sources/fit-03-fit-dataset.md"
+  },
+  "fit-official-code-2026": {
+    "title": "FIT-VTO — official implementation and release scope",
+    "url": "https://github.com/HarryWang355/FIT-VTO",
+    "published": "Accessed 2026-11-12",
+    "tier": 1,
+    "evidence": "research/sources/fit-05-official-code.md"
+  },
+  "sico-size-control": {
+    "title": "SiCo: A Size-Controllable Virtual Try-On Approach for Informed Decision-Making",
+    "url": "https://arxiv.org/html/2408.02803v1",
+    "published": "2024-08-05; preprint version",
+    "tier": 1,
+    "evidence": "research/sources/pilot-03-sico-size-controllable-vton.md"
+  },
+  "garmentcodedata-paper": {
+    "title": "GarmentCodeData — ECCV 2024 paper",
+    "url": "https://igl.ethz.ch/projects/GarmentCodeData/GarmentCodeData-A-Dataset-of-3D-Made-to-Measure-Garments-with-Sewing-patterns-ECCV-2024-Korosteleva-et-al.pdf",
+    "published": "2024",
+    "tier": 1,
+    "evidence": "research/sources/pilot-02-garmentcodedata-eccv2024.md"
+  },
+  "design2garmentcode-paper": {
+    "title": "Design2GarmentCode — CVPR 2025 paper",
+    "url": "https://openaccess.thecvf.com/content/CVPR2025/papers/Zhou_Design2GarmentCode_Turning_Design_Concepts_to_Tangible_Garments_Through_Program_Synthesis_CVPR_2025_paper.pdf",
+    "published": "2025",
+    "tier": 1,
+    "evidence": "research/sources/pilot-04-design2garmentcode-cvpr2025.md"
   }
 }

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Учебная лаборатория Silver.Vy: сопоставление мерок человека и демонстрационных размеров одежды.">
+  <title>Лаборатория мерок — Silver.Vy</title>
+  <link rel="stylesheet" href="styles2.css"><link rel="stylesheet" href="collection.css">
+</head>
+<body>
+  <header><h1>Silver.Vy</h1></header>
+  <nav aria-label="Основная навигация"><a href="index.html">Главная</a><a href="catalog.html">Коллекция</a><a href="about.html">О бренде</a><a href="contact.html">Контакты</a><a href="account.html">Аккаунт</a><a href="cart.html">Корзина</a></nav>
+  <div class="burger-menu"><button class="burger-icon" type="button" aria-label="Открыть меню">МЕНЮ</button><div class="nav-links"><a href="index.html">Главная</a><a href="catalog.html">Коллекция</a><a href="about.html">О бренде</a><a href="account.html">Аккаунт</a><a href="cart.html">Корзина</a></div></div>
+  <main class="lab-shell">
+    <section class="lab-heading">
+      <span class="sv-kicker">Открытая методика / без входа в аккаунт</span>
+      <h2>Лаборатория<br>посадки</h2>
+      <p>Сопоставьте заданные вами окружности с размерными данными учебной коллекции. Результат — сравнение выбранного алгоритма, не гарантия посадки на реальном изделии.</p>
+      <p><a href="fit-methodology.md" download>Скачать методику: формулы, допущения и план проверки</a></p>
+    </section>
+    <div class="lab-layout">
+      <section class="lab-panel" aria-labelledby="measureTitle">
+        <h3 id="measureTitle">Ваши мерки</h3>
+        <p class="sv-note">Измеряйте сантиметровой лентой без натяжения. Грудь — по наиболее выступающим точкам; талия — по естественной линии; бёдра — по наиболее полной части. Рост — справочный параметр и не участвует в балле размера. Введённые мерки сохраняются только на время этой вкладки; в профиль они не отправляются.</p>
+        <form id="bodyForm" novalidate>
+          <div class="lab-fields">
+            <label data-field="chestCm"><span>Обхват груди, см <b>*</b></span><input name="chestCm" inputmode="decimal" type="number" min="60" max="180" step="0.1" aria-describedby="error-chestCm"><small class="field-error" id="error-chestCm"></small></label>
+            <label data-field="waistCm"><span>Обхват талии, см <b>*</b></span><input name="waistCm" inputmode="decimal" type="number" min="45" max="170" step="0.1" aria-describedby="error-waistCm"><small class="field-error" id="error-waistCm"></small></label>
+            <label data-field="hipCm"><span>Обхват бёдер, см <b>*</b></span><input name="hipCm" inputmode="decimal" type="number" min="65" max="190" step="0.1" aria-describedby="error-hipCm"><small class="field-error" id="error-hipCm"></small></label>
+            <label data-field="heightCm"><span>Рост, см <em>необязательно</em></span><input name="heightCm" inputmode="decimal" type="number" min="120" max="220" step="0.1" aria-describedby="error-heightCm"><small class="field-error" id="error-heightCm"></small></label>
+            <label data-field="inseamCm"><span>Внутренний шов, см <em>необязательно</em></span><input name="inseamCm" inputmode="decimal" type="number" min="45" max="110" step="0.1" aria-describedby="error-inseamCm"><small class="field-error" id="error-inseamCm"></small></label>
+          </div>
+          <div class="lab-control"><label for="productSelect">Учебное изделие</label><select class="lab-select" id="productSelect"></select></div>
+          <div class="lab-control"><label>Предпочитаемая прибавка</label><div class="lab-radio-row" role="radiogroup" aria-label="Предпочитаемая прибавка">
+            <label><input type="radio" name="preference" value="closer"><span>Ближе</span></label>
+            <label><input type="radio" name="preference" value="intended" checked><span>Заданная</span></label>
+            <label><input type="radio" name="preference" value="roomier"><span>Свободнее</span></label>
+          </div><p class="sv-note">Параметр изменяет целевые прибавки, заданные движком. Для пояса брюк смещение не применяется.</p></div>
+          <div class="lab-control"><label>Размер для сравнения</label><div class="lab-size-row" id="sizePicker" role="group" aria-label="Размер для сравнения"></div></div>
+        </form>
+        <div class="lab-result" id="recommendation" role="status" aria-live="polite"><strong>Введите мерки</strong><p>Подсказка по размеру появится после заполнения обязательных полей.</p></div>
+        <ul class="lab-warnings" id="warnings" aria-label="Ограничения расчёта"></ul>
+      </section>
+      <div class="lab-right">
+        <section class="lab-panel" aria-labelledby="comparisonTitle">
+          <h3 id="comparisonTitle">Размер изделия и прибавка</h3>
+          <p class="sv-note" id="comparisonIntro">Заполните мерки для сравнения. Каждая строка показывает исходное измерение изделия и вычисленную разницу относительно мерки тела.</p>
+          <div class="lab-compare" id="comparison" aria-live="polite"></div>
+        </section>
+        <section class="lab-panel" aria-labelledby="schemeTitle">
+          <h3 id="schemeTitle">Схема выбранного размера</h3>
+          <div class="schematic">
+            <div class="schematic-canvas" id="schematicCanvas"></div>
+            <div class="schematic-copy" id="schematicCopy"><strong>Плоская схема мерок</strong><br>Выберите размер. Ширина и длина меняются по заданным параметрам изделия.<span class="schematic-caption">Учебная схема · не 3D</span></div>
+          </div>
+          <p class="sv-note">Схема сопоставляет полуобхваты и длину в общей условной шкале. Полуобхват не равен видимой ширине тела; контур не является выкройкой. Схема не реконструирует человека и не моделирует ткань, движение, слои или точную посадку.</p>
+        </section>
+      </div>
+    </div>
+    <section class="photo-panel lab-panel" aria-labelledby="photoTitle">
+      <details>
+        <summary id="photoTitle">Отдельное иллюстративное фото-превью</summary>
+        <div class="photo-controls">
+          <p class="sv-note">Необязательно и отдельно от расчёта мерок. Нужно вертикальное фото анфас в полный рост от 512 × 768 пикселей, до 12 МБ. При запросе фото передаётся внешнему сервису IDM-VTON / Hugging Face. Silver.Vy не записывает фото в профиль или БД; правила хранения внешнего провайдера приложением не контролируются. Результат иллюстративен и не подтверждает фактическую посадку.</p>
+          <label for="personPhoto">Выберите фотографию (JPEG, PNG или WebP)</label>
+          <input id="personPhoto" type="file" accept="image/jpeg,image/png,image/webp">
+          <span id="fileName" class="sv-note">Файл не выбран</span>
+          <label class="photo-consent"><input type="checkbox" id="photoConsent"><span>Я даю согласие на отправку выбранного фото для создания отдельного иллюстративного превью. Фото не сохраняется в профиле или браузерном хранилище.</span></label>
+          <div id="photoAvailability" class="sv-disclaimer" role="status">Проверяем доступность сервиса превью…</div>
+          <p id="photoAuthHint" class="sv-note"></p>
+          <button class="sv-button photo-button" id="generatePhoto" type="button">Создать фото-превью</button>
+          <p class="photo-status" id="photoStatus" role="status" aria-live="polite"></p>
+          <div class="photo-result" id="photoResult"></div>
+        </div>
+      </details>
+    </section>
+  </main>
+  <footer><div class="footer-content"><div class="footer-section"><h3>Контакты</h3><p>Красноярск, ул. Щорса, 41</p><p>info@silvervy.ru</p></div><div class="footer-section"><h3>Навигация</h3><div class="footer-links"><a href="catalog.html">Коллекция</a><a href="account.html">Аккаунт</a></div></div><div class="footer-section"><h3>Принцип</h3><p>Условные данные остаются условными. Сравнение доступно без авторизации.</p></div></div><div class="line"></div><p>&copy; 2026 Silver.Vy · Учебный проект</p></footer>
+  <script src="catalog-data.js"></script><script src="fit-engine.js"></script><script src="tryon.js"></script>
+</body></html>

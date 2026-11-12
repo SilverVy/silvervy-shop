@@ -46,7 +46,7 @@ The web search callbacks returned HTTP 402 during this research. Findings were v
 
 # Research Notes: Rights-cleared catalog and size-fit assets
 
-**Status:** researching
+**Status:** drafting
 **Depth:** Standard
 
 ## Plan
@@ -60,20 +60,20 @@ The web search callbacks returned HTTP 402 during this research. Findings were v
 
 | # | Area | Status | Sources |
 |---|---|---|---|
-| 1 | Public 3D garment and pattern datasets | pending | -- |
-| 2 | Real retail items with matching 3D assets and size specs | pending | -- |
-| 3 | Image, pattern, and data reuse rights | pending | -- |
-| 4 | Size-accurate simulation inputs and limits | pending | -- |
-| 5 | Practical Silver.Vy pilot and integration choices | pending | -- |
+| 1 | Public 3D garment and pattern datasets | done | 6 |
+| 2 | Real retail items with matching 3D assets and size specs | done | 8 |
+| 3 | Image, pattern, and data reuse rights | done | 6 |
+| 4 | Size-accurate simulation inputs and limits | done | 8 |
+| 5 | Practical Silver.Vy pilot and integration choices | done | 7 |
 
 ## Coverage Checklist
 
-- [ ] Which open datasets contain both 3D garment geometry and sewing patterns?
-- [ ] Are there real retail garments whose photos, compositions, size charts, and 3D/pattern assets can all be reused?
-- [ ] What does each relevant dataset license permit for this educational website?
-- [ ] What garment and body measurements, fabric properties, and validation are required for defensible size fit?
-- [ ] Can a coherent natural-tone oversized men's collection be assembled without inventing product data?
-- [ ] What practical choices should the owner approve before replacing the existing apparel catalog?
+- [x] Which open datasets contain both 3D garment geometry and sewing patterns?
+- [x] Are there real retail garments whose photos, compositions, size charts, and 3D/pattern assets can all be reused?
+- [x] What does each relevant dataset license permit for this educational website?
+- [x] What garment and body measurements, fabric properties, and validation are required for defensible size fit?
+- [x] Can a coherent natural-tone oversized men's collection be assembled without inventing product data?
+- [x] What practical choices should the owner approve before replacing the existing apparel catalog?
 
 ## Findings Log
 
@@ -93,3 +93,13 @@ _[@key] markers reference sources in research/sources.json._
 
 - Verify the actual data schemas, garment classes, license scope, and storage/compute demands of candidate datasets.
 - Find or rule out real apparel products with all required assets and reuse rights.
+
+## Verified synthesis
+
+- Matching retail bundle: not found within checked sources; this is not proof of nonexistence. Supplier and pattern offerings provide different partial datasets [@modamica-mens] [@ergomodels-mens-patterns].
+- Open pattern datasets support synthetic collection research, not verified retail fiber labels [@garmentcodedata-v2-eth] [@kaist-pattern-dataset] [@cloth3d-official].
+- KAIST license uncertainty resolved with official API: cc-by-4.0 [@kaist-pattern-license].
+- FIT release reviewed: data-generation pipeline, not ready VTON API; preview CC BY-NC-ND 4.0 and code license not established on reviewed page [@fit-official-code-2026].
+- Physical fit accuracy requires garment/body/material inputs and product-specific physical validation [@predicting-3d-fit] [@clo-size-grading].
+- Two targeted gap-search attempts did not establish a complete retail asset bundle; remaining product provenance and permissions moved to report Limitations.
+- Choice required before catalog replacement: synthetic educational collection, real products with approximate VTON, or manufacturer-supplied digital twins.

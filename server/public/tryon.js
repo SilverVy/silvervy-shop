@@ -1,494 +1,320 @@
 (() => {
-    const categories = {
-        'product-boots.html': null,
-        'product-loafers.html': null,
-        'product-shirt.html': 'tops',
-        'product-linen_shirt.html': 'tops',
-        'product-coat.html': 'tops',
-        'product-bomber.html': 'tops',
-        'product-trench.html': 'tops',
-        'product-jean_coat.html': 'tops'
-    };
+  'use strict';
+  const catalog = window.SilverVyCatalog;
+  const fit = window.SilverVyFit;
+  const byId = id => document.getElementById(id);
+  if (!catalog || !fit || !byId('bodyForm')) return;
 
-    const garmentDescriptions = {
-        'product-coat.html': 'long wool coat',
-        'product-bomber.html': 'bomber jacket',
-        'product-trench.html': 'trench coat',
-        'product-jean_coat.html': 'denim jacket',
-        'product-shirt.html': 'shirt',
-        'product-linen_shirt.html': 'linen shirt'
-    };
+  const form = byId('bodyForm');
+  const productSelect = byId('productSelect');
+  const sizePicker = byId('sizePicker');
+  const compare = byId('comparison');
+  const recommendation = byId('recommendation');
+  const warnings = byId('warnings');
+  const schematicCanvas = byId('schematicCanvas');
+  const schematicCopy = byId('schematicCopy');
+  const products = catalog.products;
+  const params = new URLSearchParams(location.search);
+  let product = catalog.getProduct(params.get('product')) || products[0];
+  let selectedSize = params.get('size') || 'M';
+  let latestFit = null;
+  let requestVersion = 0;
+  let serviceStatus = null;
+  const storedKey = 'silvervy-fitting-body-v1';
+  const bodyKeys = ['chestCm', 'waistCm', 'hipCm', 'heightCm', 'inseamCm'];
+  const labels = { chestCm: 'Обхват груди', waistCm: 'Обхват талии', hipCm: 'Обхват бёдер', shoulderCm: 'Ширина плеч', lengthCm: 'Длина изделия', sleeveCm: 'Длина рукава', thighCm: 'Обхват бедра', inseamCm: 'Внутренний шов' };
+  const dimensionKeys = ['chestCm', 'waistCm', 'hipCm', 'shoulderCm', 'lengthCm', 'sleeveCm', 'thighCm', 'inseamCm'];
+  const statusText = { tight: 'Отрицательная прибавка', close: 'Ниже целевого диапазона', intended: 'В целевом диапазоне', loose: 'Выше целевого диапазона', unknown: 'Нет сравнения' };
 
-    const garmentReferenceImages = {
-        'product-coat.html': 'Одежда/coat/2_coat.png',
-        'product-bomber.html': 'Одежда/bomber/1_bomber.png',
-        'product-trench.html': 'Одежда/trench/1_trench.png',
-        'product-shirt.html': 'Одежда/shirt/1_shirt.png',
-        'product-linen_shirt.html': 'Одежда/linen_shirt/1_linen_shirt.png',
-        'product-jean_coat.html': 'Одежда/jean_coat/1_jean_coat.png'
-    };
-
-    const garmentMaskImages = {
-        'product-coat.html': 'Одежда/coat/2_coat-mask.png',
-        'product-bomber.html': 'Одежда/bomber/1_bomber-mask.png',
-        'product-trench.html': 'Одежда/trench/1_trench-mask.png',
-        'product-shirt.html': 'Одежда/shirt/1_shirt-mask.png',
-        'product-linen_shirt.html': 'Одежда/linen_shirt/1_linen_shirt-mask.png',
-        'product-jean_coat.html': 'Одежда/jean_coat/1_jean_coat-mask.png'
-    };
-
-    const fitProfiles = {
-        'product-coat.html': { label: 'свободный oversize', ease: 14 },
-        'product-bomber.html': { label: 'прямой', ease: 10 },
-        'product-trench.html': { label: 'свободный прямой', ease: 12 },
-        'product-shirt.html': { label: 'свободный прямой', ease: 8 },
-        'product-jean_coat.html': { label: 'свободный', ease: 10 },
-        'product-linen_shirt.html': { label: 'свободный', ease: 8 }
-    };
-
-    const chart = {
-        tops: [
-            { size: 'XS', chest: [76, 82], waist: [58, 64], hip: [82, 88], height: [150, 165], weight: [42, 54] },
-            { size: 'S', chest: [82, 88], waist: [64, 70], hip: [88, 94], height: [158, 172], weight: [50, 62] },
-            { size: 'M', chest: [88, 96], waist: [70, 78], hip: [94, 102], height: [165, 178], weight: [58, 74] },
-            { size: 'L', chest: [96, 104], waist: [78, 86], hip: [102, 110], height: [170, 185], weight: [68, 88] }
-        ]
-    };
-
-    function token() {
-        return localStorage.getItem('token');
+  function readStored() {
+    try {
+      const parsed = JSON.parse(sessionStorage.getItem(storedKey) || '{}');
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch { return {}; }
+  }
+  function bodyValues() {
+    return Object.fromEntries(bodyKeys.map(key => [key, form.elements[key].value]));
+  }
+  function saveBody() {
+    try { sessionStorage.setItem(storedKey, JSON.stringify(bodyValues())); } catch { /* session storage may be unavailable */ }
+  }
+  function renderProductOptions() {
+    productSelect.innerHTML = products.map(item => `<option value="${item.id}">${item.name} · ${item.category === 'tops' ? 'верх' : 'низ'}</option>`).join('');
+    productSelect.value = product.id;
+    const chestLabel = form.querySelector('[data-field="chestCm"] span');
+    if (chestLabel) chestLabel.innerHTML = product.category === 'tops'
+      ? 'Обхват груди, см <b>*</b>'
+      : 'Обхват груди, см <em>необязательно для низа</em>';
+    renderPhotoAvailability();
+  }
+  function renderSizePicker() {
+    if (!product.sizes.some(row => row.size === selectedSize)) selectedSize = 'M';
+    sizePicker.innerHTML = product.sizes.map(row => `<button type="button" data-size="${row.size}" aria-pressed="${row.size === selectedSize}">${row.size}</button>`).join('');
+  }
+  function renderErrors(errors = {}) {
+    bodyKeys.forEach(key => {
+      const input = form.elements[key];
+      const error = byId(`error-${key}`);
+      const message = errors[key] || '';
+      input.setAttribute('aria-invalid', message ? 'true' : 'false');
+      error.textContent = message;
+    });
+  }
+  function evaluateNow() {
+    const preference = form.elements.preference.value;
+    latestFit = fit.evaluate(product, bodyValues(), preference);
+    renderErrors(latestFit.errors);
+    renderRecommendation(latestFit);
+    renderWarnings(latestFit.warnings || []);
+    renderComparison(latestFit);
+    renderSchematic(latestFit);
+    requestVersion += 1;
+    return latestFit;
+  }
+  function renderRecommendation(result) {
+    if (result.status === 'invalid') {
+      recommendation.innerHTML = '<strong>Нужны корректные мерки</strong><p>Проверьте обязательные поля и диапазоны, указанные под ними.</p>';
+    } else if (result.status === 'unavailable') {
+      recommendation.innerHTML = '<strong>Сравнение недоступно</strong><p>Для этого изделия нет учебных размерных данных.</p>';
+    } else if (!result.recommendedSize) {
+      recommendation.innerHTML = '<strong>Совместимый размер не найден</strong><p>По условиям движка ни один размер не прошёл порог совместимости. Посмотрите отдельные отрицательные и положительные прибавки в таблице.</p>';
+    } else {
+      const row = result.rows.find(item => item.size === result.recommendedSize);
+      const notAllTarget = row?.checks.some(check => check.status !== 'intended');
+      recommendation.innerHTML = `<strong>Ближайший совместимый размер: ${result.recommendedSize}</strong><p>Это выбор по правилам движка, а не гарантия идеальной посадки.${notAllTarget ? ' Некоторые проверки вне целевого диапазона — смотрите строки ниже.' : ''}</p>`;
     }
+  }
+  function renderWarnings(items) {
+    warnings.innerHTML = items.map(item => `<li>${item}</li>`).join('');
+  }
+  function renderComparison(result) {
+    if (result.status !== 'ready') {
+      compare.innerHTML = '<p class="sv-note">После ввода обязательных мерок здесь появятся все размеры изделия, разницы окружностей и результаты проверок.</p>';
+      return;
+    }
+    const dataRows = [];
+    dimensionKeys.forEach(key => {
+      if (product.sizes.some(row => Number.isFinite(row[key]))) {
+        dataRows.push(`<tr><th>${labels[key] || key}, см</th>${result.rows.map(row => `<td>${Number.isFinite(row.garment[key]) ? row.garment[key].toFixed(1) : '—'}</td>`).join('')}</tr>`);
+      }
+      const checkRow = result.rows[0]?.checks.find(check => check.key === key);
+      if (checkRow) {
+        const bodyValue = checkRow.bodyCm;
+        dataRows.push(`<tr class="ease-row"><th>Тело: ${labels[key] || key}, см</th>${result.rows.map(row => {
+          const check = row.checks.find(item => item.key === key);
+          return `<td>${check?.bodyCm?.toFixed(1) ?? bodyValue?.toFixed(1) ?? '—'}</td>`;
+        }).join('')}</tr>`);
+        dataRows.push(`<tr><th>Прибавка: ${labels[key] || key}, см</th>${result.rows.map(row => {
+          const check = row.checks.find(item => item.key === key);
+          if (!check || check.easeCm === null) return '<td>—</td>';
+          return `<td><strong>${check.easeCm > 0 ? '+' : ''}${check.easeCm.toFixed(1)}</strong><br><span class="status-tag ${check.status}">${statusText[check.status]}</span><br><small>цель ${check.target[0]}–${check.target[1]}</small></td>`;
+        }).join('')}</tr>`);
+      }
+    });
+    if (product.category === 'bottoms') {
+      dataRows.push(`<tr><th>Разница внутреннего шва, см</th>${result.rows.map(row => `<td>${row.inseamDifferenceCm === null ? 'не оценивается' : `${row.inseamDifferenceCm > 0 ? '+' : ''}${row.inseamDifferenceCm.toFixed(1)}`}</td>`).join('')}</tr>`);
+    }
+    const sizes = result.rows.map(row => `<th>${row.size}${row.size === result.recommendedSize ? '<br><small>ближайший*</small>' : ''}</th>`).join('');
+    const fitRows = result.rows.map(row => `<td>${row.compatible ? 'Совместим' : 'Не прошёл порог'}</td>`).join('');
+    compare.innerHTML = `<table><thead><tr><th>Параметр</th>${sizes}</tr></thead><tbody>${dataRows.join('')}<tr class="selected"><th>Результат движка</th>${fitRows}</tr></tbody></table><p class="sv-note">* Ближайший размер среди прошедших порог совместимости. Значение прибавки = мерка изделия − мерка тела; отрицательное число означает меньшее изделие в окружности. Статусы отображают каждый критерий отдельно.</p>`;
+  }
+  function renderSchematic(result) {
+    const garment = product.sizes.find(row => row.size === selectedSize);
+    if (!garment) return;
+    const body = bodyValues();
+    const sourceWidth = product.category === 'tops' ? garment.chestCm : garment.hipCm;
+    const unit = 1.7; // Common diagram scale; girths are unfolded into half-circumferences.
+    const width = sourceWidth / 2 * unit;
+    const lengthCm = garment.lengthCm;
+    const length = lengthCm * unit;
+    const left = (300 - width) / 2;
+    const right = 300 - left;
+    const top = 45;
+    const hem = top + length;
+    const title = product.category === 'tops' ? 'Развёртка мерок верха' : 'Развёртка мерок брюк';
+    const waistHalf = (garment.waistCm || sourceWidth) / 2 * unit;
+    const crotch = top + (garment.lengthCm - (garment.inseamCm || 0)) * unit;
+    const garmentSvg = product.category === 'tops'
+      ? `<path d="M${left + 18},${top} L${left},${top + 12} L${left - 24},${top + 70} L${left - 9},${top + 78} L${left},${top + 48} L${left},${hem} L${right},${hem} L${right},${top + 48} L${right + 9},${top + 78} L${right + 24},${top + 70} L${right},${top + 12} L${right - 18},${top} Q150,${top + 14} ${left + 18},${top} Z"/>`
+      : `<path d="M${150 - waistHalf / 2},${top} L${150 + waistHalf / 2},${top} L${right},${crotch} L${right - 4},${hem} L${154},${hem} L150,${crotch} L146,${hem} L${left + 4},${hem} L${left},${crotch} Z"/>`;
+    const bodyGirth = Number(body[product.category === 'tops' ? 'chestCm' : 'hipCm']);
+    const bodyHalf = result.status === 'ready' ? bodyGirth / 2 * unit : null;
+    const bodyMarker = bodyHalf
+      ? `<line x1="${150 - bodyHalf / 2}" y1="${top + 32}" x2="${150 + bodyHalf / 2}" y2="${top + 32}" stroke="#373e35" stroke-width="4"/><text x="150" y="${top + 26}" text-anchor="middle" font-size="10">тело: полуобхват ${bodyGirth / 2} см</text>` : '';
+    schematicCanvas.innerHTML = `<svg viewBox="0 0 300 320" role="img" aria-label="${title}, размер ${selectedSize}; полуобхват ${sourceWidth / 2} сантиметров, длина ${lengthCm} сантиметров">
+      <title>${title}, размер ${selectedSize}</title><line x1="150" y1="12" x2="150" y2="304" stroke="#b9b8ac" stroke-dasharray="3 5"/>
+       <circle cx="150" cy="21" r="12" fill="none" stroke="#7d8175" stroke-width="1.5"/>
+      <g fill="${product.tone}" fill-opacity=".72" stroke="#4f5548" stroke-width="2">${garmentSvg}</g>
+       ${bodyMarker}
+      <line x1="${left}" y1="${hem + 11}" x2="${right}" y2="${hem + 11}" stroke="#a66e53" stroke-width="1.5"/>
+       <text x="150" y="${hem + 27}" text-anchor="middle" fill="#62665c" font-size="10">изделие: полуобхват ${sourceWidth / 2} см</text>
+    </svg>`;
+    const matching = result.status === 'ready' ? result.rows.find(row => row.size === selectedSize) : null;
+    schematicCopy.innerHTML = `<strong>${title} · ${selectedSize}</strong><br>${labels[product.category === 'tops' ? 'chestCm' : 'hipCm']}: ${sourceWidth} см<br>Длина изделия: ${lengthCm} см${product.category === 'bottoms' ? `<br>Внутренний шов: ${garment.inseamCm} см` : ''}<br>Полуобхват = обхват / 2; это не видимая ширина тела и не лекало.${matching ? `<br>Порог совместимости: ${matching.compatible ? 'пройден' : 'не пройден'}.` : ''}<span class="schematic-caption">Плоская схема мерок · не 3D</span>`;
+  }
 
-    async function imageToDataUrl(source, maxDimension = 1200) {
-        const response = await fetch(source);
-        if (!response.ok) throw new Error('Не удалось загрузить изображение товара');
-        const bitmap = await createImageBitmap(await response.blob());
-        const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(bitmap.width * scale);
-        canvas.height = Math.round(bitmap.height * scale);
-        const context = canvas.getContext('2d');
-        context.fillStyle = '#888888';
-        context.fillRect(0, 0, canvas.width, canvas.height);
-        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  renderProductOptions();
+  const persisted = readStored();
+  bodyKeys.forEach(key => { if (persisted[key] !== undefined) form.elements[key].value = persisted[key]; });
+  renderSizePicker();
+  evaluateNow();
+
+  form.addEventListener('input', event => {
+    if (event.target.matches('input[type="number"]')) saveBody();
+    byId('photoResult').replaceChildren();
+    byId('photoStatus').textContent = '';
+    evaluateNow();
+  });
+  form.addEventListener('change', event => {
+    if (event.target.name === 'preference') evaluateNow();
+  });
+  productSelect.addEventListener('change', () => {
+    product = catalog.getProduct(productSelect.value) || products[0];
+    renderProductOptions();
+    renderSizePicker();
+    evaluateNow();
+    byId('photoResult').replaceChildren();
+    byId('photoStatus').textContent = '';
+  });
+  sizePicker.addEventListener('click', event => {
+    const button = event.target.closest('[data-size]');
+    if (!button) return;
+    selectedSize = button.dataset.size;
+    renderSizePicker();
+    evaluateNow();
+    byId('photoResult').replaceChildren();
+    byId('photoStatus').textContent = '';
+  });
+  const burger = document.querySelector('.burger-icon');
+  const links = document.querySelector('.nav-links');
+  burger?.addEventListener('click', () => links?.classList.toggle('active'));
+  document.addEventListener('click', event => { if (!event.target.closest('.burger-menu')) links?.classList.remove('active'); });
+
+  async function loadServiceStatus() {
+    const authHint = byId('photoAuthHint');
+    try {
+      const response = await fetch('/api/status', { headers: { Accept: 'application/json' } });
+      if (!response.ok) throw new Error('status unavailable');
+      serviceStatus = await response.json();
+    } catch {
+      serviceStatus = { mode: 'catalog-only', tryOnAvailable: false };
+    }
+    renderPhotoAvailability();
+    authHint.innerHTML = localStorage.getItem('token') ? '' : 'Для запроса фото-превью потребуется авторизация. <a href="account.html">Войти или создать аккаунт</a>. Размерный расчёт остаётся открытым.';
+  }
+  function renderPhotoAvailability() {
+    const panel = byId('photoAvailability');
+    if (!panel) return;
+    if (product.category === 'bottoms') {
+      panel.textContent = 'Фото-генерация для брюк не поддерживается. Сравнение мерок и плоская схема остаются доступны.';
+    } else if (!serviceStatus) {
+      panel.textContent = 'Проверяем доступность отдельного сервиса фото-превью…';
+    } else if (serviceStatus.mode === 'catalog-only' || !serviceStatus.tryOnAvailable) {
+      panel.textContent = serviceStatus.message || 'Генерация фото-превью сейчас недоступна. Лаборатория мерок и схема продолжают работать.';
+    } else {
+      panel.textContent = serviceStatus.message || 'Сервис фото-превью доступен для верхней одежды.';
+    }
+  }
+  loadServiceStatus();
+
+  function compressPhoto(file) {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      return Promise.reject(new Error('Выберите JPEG, PNG или WebP.'));
+    }
+    if (file.size > 12 * 1024 * 1024) return Promise.reject(new Error('Исходное фото должно быть не больше 12 МБ.'));
+    return createImageBitmap(file).then(bitmap => {
+      if (bitmap.width < 512 || bitmap.height < 768 || bitmap.height <= bitmap.width) {
         bitmap.close();
-        return canvas.toDataURL('image/jpeg', 0.94);
+        throw new Error('Нужно вертикальное фото анфас в полный рост не меньше 512 × 768 пикселей.');
+      }
+      const max = 1200;
+      const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#f3f1e9';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+      return canvas.toDataURL('image/jpeg', .84);
+    });
+  }
+  const photoInput = byId('personPhoto');
+  photoInput.addEventListener('change', () => {
+    const file = photoInput.files?.[0];
+    byId('fileName').textContent = file ? `${file.name} · ${Math.round(file.size / 1024)} КБ` : 'Файл не выбран';
+    requestVersion += 1;
+    byId('photoResult').replaceChildren();
+    byId('photoStatus').textContent = '';
+  });
+  byId('photoConsent').addEventListener('change', () => {
+    requestVersion += 1;
+    byId('photoResult').replaceChildren();
+  });
+  byId('generatePhoto').addEventListener('click', async () => {
+    const status = byId('photoStatus');
+    const resultArea = byId('photoResult');
+    const currentFit = evaluateNow();
+    const versionAtStart = requestVersion;
+    const token = localStorage.getItem('token');
+    const file = photoInput.files?.[0];
+    if (product.category !== 'tops') {
+      status.textContent = 'Фото-генерация поддерживает только верхнюю одежду. Для брюк доступны сравнение мерок и плоская схема.';
+      return;
     }
-
-    function clamp(value, minimum, maximum) {
-        return Math.min(maximum, Math.max(minimum, value));
+    if (!serviceStatus || !serviceStatus.tryOnAvailable || serviceStatus.mode !== 'full') {
+      status.textContent = serviceStatus?.message || 'Сервис генерации недоступен; продолжайте сравнение размеров без фото.';
+      return;
     }
-
-    function getSizeScale(size, recommendedSize, measurements, fitEase) {
-        const sizes = ['XS', 'S', 'M', 'L'];
-        const selectedIndex = sizes.indexOf(size);
-        const recommendedIndex = sizes.indexOf(recommendedSize);
-        const sizeDelta = selectedIndex >= 0 && recommendedIndex >= 0
-            ? selectedIndex - recommendedIndex
-            : 0;
-        const ease = Number(fitEase) || 10;
-        const selectedEase = clamp(ease + sizeDelta * 4, 2, 24);
-        const chest = Number(measurements.chestCm);
-        const waist = Number(measurements.waistCm);
-        const hips = Number(measurements.hipCm);
-        const weight = Number(measurements.weightKg);
-        const bodyGirth = chest * 0.75 + waist * 0.15 + hips * 0.1;
-        const referenceGirth = 100 * 0.75 + 82 * 0.15 + 106 * 0.1;
-        const girthScale = (bodyGirth + selectedEase) / (referenceGirth + ease);
-        const weightScale = Math.cbrt(weight / 78);
-        const width = clamp(girthScale * 0.88 + weightScale * 0.12, 0.78, 1.12);
-        const height = clamp(1 + ((Number(measurements.heightCm) / 185) - 1) * 0.32 + sizeDelta * 0.005, 0.92, 1.08);
-        return { width, height };
+    if (!token) {
+      status.innerHTML = 'Для генерации войдите в аккаунт. <a href="account.html">Перейти ко входу</a>. Мерки можно сравнивать без входа.';
+      return;
     }
-
-    async function prepareSizeAwareGarment(source, maskSource, size, recommendedSize, measurements, fitEase) {
-        if (!maskSource) return { image: await imageToDataUrl(source), applied: false };
-        try {
-            const [imageResponse, maskResponse] = await Promise.all([fetch(source), fetch(maskSource)]);
-            if (!imageResponse.ok || !maskResponse.ok) throw new Error('Garment mask unavailable');
-            const [imageBitmap, maskBitmap] = await Promise.all([
-                createImageBitmap(await imageResponse.blob()),
-                createImageBitmap(await maskResponse.blob())
-            ]);
-            const scale = Math.min(1, 1200 / Math.max(imageBitmap.width, imageBitmap.height));
-            const width = Math.max(1, Math.round(imageBitmap.width * scale));
-            const height = Math.max(1, Math.round(imageBitmap.height * scale));
-            const sourceCanvas = document.createElement('canvas');
-            const maskCanvas = document.createElement('canvas');
-            sourceCanvas.width = maskCanvas.width = width;
-            sourceCanvas.height = maskCanvas.height = height;
-            const sourceContext = sourceCanvas.getContext('2d', { willReadFrequently: true });
-            const maskContext = maskCanvas.getContext('2d', { willReadFrequently: true });
-            sourceContext.drawImage(imageBitmap, 0, 0, width, height);
-            maskContext.drawImage(maskBitmap, 0, 0, width, height);
-            imageBitmap.close();
-            maskBitmap.close();
-            const pixels = sourceContext.getImageData(0, 0, width, height);
-            const mask = maskContext.getImageData(0, 0, width, height);
-            let left = width;
-            let top = height;
-            let right = -1;
-            let bottom = -1;
-            let foreground = 0;
-            for (let y = 0; y < height; y += 1) {
-                for (let x = 0; x < width; x += 1) {
-                    const index = (y * width + x) * 4;
-                    const alpha = Math.round(pixels.data[index + 3] * mask.data[index] / 255);
-                    pixels.data[index + 3] = alpha;
-                    if (alpha < 16) continue;
-                    foreground += 1;
-                    left = Math.min(left, x);
-                    top = Math.min(top, y);
-                    right = Math.max(right, x);
-                    bottom = Math.max(bottom, y);
-                }
-            }
-            const boundsWidth = right - left + 1;
-            const boundsHeight = bottom - top + 1;
-            const maskFraction = foreground / (width * height);
-            if (maskFraction < 0.06 || maskFraction > 0.55 || boundsWidth / width < 0.16 || boundsHeight / height < 0.28) {
-                throw new Error('Garment mask failed validation');
-            }
-            sourceContext.putImageData(pixels, 0, 0);
-            const scaleFactors = getSizeScale(size, recommendedSize, measurements, fitEase);
-            const output = document.createElement('canvas');
-            output.width = width;
-            output.height = height;
-            const outputContext = output.getContext('2d');
-            outputContext.fillStyle = '#888888';
-            outputContext.fillRect(0, 0, width, height);
-            outputContext.translate((left + right + 1) / 2, top);
-            outputContext.scale(scaleFactors.width, scaleFactors.height);
-            outputContext.drawImage(sourceCanvas, left, top, boundsWidth, boundsHeight, -boundsWidth / 2, 0, boundsWidth, boundsHeight);
-            return {
-                image: output.toDataURL('image/jpeg', 0.94),
-                applied: true,
-                width: scaleFactors.width,
-                height: scaleFactors.height
-            };
-        } catch {
-            return { image: await imageToDataUrl(source), applied: false };
-        }
+    if (!file || !byId('photoConsent').checked) {
+      status.textContent = 'Выберите изображение и подтвердите отдельное согласие на отправку.';
+      return;
     }
-
-    function getProduct(button) {
-        const page = document.querySelector('.product-page');
-        if (page) {
-            const image = page.querySelector('.main-image img');
-            const file = location.pathname.split('/').pop();
-            return {
-                name: page.querySelector('.product-info h2')?.textContent.trim() || 'Товар Silver.Vy',
-                image: garmentReferenceImages[file]
-                    ? new URL(garmentReferenceImages[file], location.href).href
-                    : image?.src,
-                garmentDescription: garmentDescriptions[file] || 'upper-body clothing',
-                garmentMask: garmentMaskImages[file]
-                    ? new URL(garmentMaskImages[file], location.href).href
-                    : '',
-                category: categories[file] || null,
-                fit: fitProfiles[file] || { label: 'стандартный', ease: 6 },
-                sizes: [...page.querySelectorAll('.size')].map(item => item.textContent.trim()),
-                selected: page.querySelector('.size.active')?.textContent.trim()
-            };
-        }
-
-        const card = button.closest('.product-card');
-        const image = card?.querySelector('.product-link img');
-        const link = card?.querySelector('.product-link');
-        const file = link?.getAttribute('href')?.split('/').pop();
-        return {
-            name: card?.querySelector('h4')?.textContent.trim() || 'Товар Silver.Vy',
-            image: garmentReferenceImages[file]
-                ? new URL(garmentReferenceImages[file], location.href).href
-                : image?.src,
-            garmentDescription: garmentDescriptions[file] || 'upper-body clothing',
-            garmentMask: garmentMaskImages[file]
-                ? new URL(garmentMaskImages[file], location.href).href
-                : '',
-            category: categories[file] || null,
-            fit: fitProfiles[file] || { label: 'стандартный', ease: 6 },
-            sizes: ['XS', 'S', 'M', 'L']
-        };
+    if (currentFit.status !== 'ready' || !currentFit.rows.some(row => row.size === selectedSize)) {
+      status.textContent = 'Сначала заполните обязательные мерки корректными значениями.';
+      return;
     }
-
-    function chooseRecommendedSize(measurements, category) {
-        const rows = chart[category];
-        if (!rows) return null;
-        const fields = category === 'tops' ? ['chest', 'waist', 'hip'] : ['waist', 'hip'];
-        return rows
-            .map(row => {
-                let score = fields.reduce((sum, field) => {
-                    const value = Number(measurements[`${field}Cm`]);
-                    if (!value) return sum + 3;
-                    const [min, max] = row[field];
-                    if (value >= min && value <= max) return sum;
-                    return sum + Math.min(Math.abs(value - min), Math.abs(value - max)) / 4;
-                }, 0);
-                for (const field of ['heightCm', 'weightKg']) {
-                    const value = Number(measurements[field]);
-                    const range = row[field === 'heightCm' ? 'height' : 'weight'];
-                    if (value && range && (value < range[0] || value > range[1])) {
-                        score += Math.min(Math.abs(value - range[0]), Math.abs(value - range[1])) / (field === 'heightCm' ? 25 : 12);
-                    }
-                }
-                return { size: row.size, score };
-            })
-            .sort((a, b) => a.score - b.score)[0]?.size;
+    const button = byId('generatePhoto');
+    button.disabled = true;
+    resultArea.replaceChildren();
+    status.textContent = 'Подготавливаем уменьшенную копию изображения…';
+    try {
+      const personImage = await compressPhoto(file);
+      if (versionAtStart !== requestVersion) { status.textContent = 'Параметры изменились. Повторите запрос для актуального выбора.'; return; }
+      const measurements = Object.fromEntries(bodyKeys.map(key => {
+        const value = bodyValues()[key];
+        return [key, value === '' ? null : Number(value)];
+      }));
+      const response = await fetch('/api/try-on', {
+        method: 'POST',
+        signal: AbortSignal.timeout(300000),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ personImage, productId: product.id, size: selectedSize, measurements, preference: form.elements.preference.value })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || (response.status === 401 ? 'Авторизуйтесь, чтобы создать фото-превью.' : 'Не удалось создать фото-превью.'));
+      if (versionAtStart !== requestVersion) {
+        status.textContent = 'Параметры изменились во время обработки. Устаревший результат скрыт.';
+        return;
+      }
+      const image = document.createElement('img');
+      image.src = data.image;
+      image.alt = `Иллюстративное фото-превью изделия ${product.name}, размер ${selectedSize}`;
+      const notice = document.createElement('p');
+      notice.className = 'sv-note';
+      const serverFit = data.fit?.recommendedSize ? ` Серверная проверка: ${data.fit.recommendedSize} — выбран ${selectedSize}.` : '';
+      notice.textContent = `${data.provider || 'Сервис генерации'} · sizeConditioning: ${data.sizeConditioning || 'не указано'}. ${data.fitNotice || 'Иллюстративное изображение, не подтверждение реальной посадки.'}${serverFit}`;
+      resultArea.append(image, notice);
+      status.textContent = 'Фото-превью готово. Оно не заменяет проверку мерок и не подтверждает точную посадку.';
+    } catch (error) {
+      if (versionAtStart === requestVersion) status.textContent = error.message || 'Сервис фото-превью временно недоступен.';
+    } finally {
+      button.disabled = false;
     }
-
-    function createModal() {
-        if (document.getElementById('tryonModal')) return document.getElementById('tryonModal');
-        const modal = document.createElement('div');
-        modal.id = 'tryonModal';
-        modal.className = 'tryon-modal';
-        modal.innerHTML = `
-            <div class="tryon-dialog" role="dialog" aria-modal="true" aria-labelledby="tryonTitle">
-                <button class="tryon-close" type="button" aria-label="Закрыть">×</button>
-                <div class="tryon-heading"><span class="tryon-orb">✦</span><p>Виртуальная примерка</p><h2 id="tryonTitle">Ваш образ, созданный для вас</h2><span class="tryon-product"></span></div>
-                <div class="tryon-steps">
-                    <label class="tryon-upload" for="tryonPhoto"><span>01</span><strong>Загрузите фото в полный рост</strong><small>Один человек, анфас, фигура целиком; вертикальный кадр около 2:3</small><input id="tryonPhoto" type="file" accept="image/jpeg,image/png,image/webp" required><span class="tryon-file-name">Файл не выбран</span></label>
-                    <div class="tryon-measurements">
-                        <div><span>02</span><strong>Ваши параметры</strong></div>
-                        <div class="tryon-measure-grid">
-                            <label>Рост, см<input name="heightCm" type="number" min="120" max="220" required></label>
-                            <label>Вес, кг<input name="weightKg" type="number" min="30" max="250" required></label>
-                            <label>Грудь, см<input name="chestCm" type="number" min="60" max="160" required></label>
-                            <label>Талия, см<input name="waistCm" type="number" min="45" max="150" required></label>
-                            <label>Бёдра, см<input name="hipCm" type="number" min="65" max="170" required></label>
-                        </div>
-                        <span class="tryon-recommendation"></span>
-                        <details class="tryon-chart">
-                            <summary>Открыть размерную сетку</summary>
-                            <div class="tryon-chart-table"></div>
-                        </details>
-                    </div>
-                <label class="tryon-size-label"><span>03</span>Размер для генерации<select class="tryon-size"></select></label>
-                </div>
-                <p class="tryon-fit-note">Экспериментальный масштаб референса рассчитан от каталожного эталона: рост 185 см и размер L. Без проверенной маски вещи масштабирование не применяется; точную посадку это не гарантирует.</p>
-                <label class="tryon-consent"><input type="checkbox" required><span>Я согласен(на) передать фото в Hugging Face для генерации. Фото не сохраняется в профиле Silver.Vy.</span></label>
-                <button class="tryon-generate" type="button"><span>✦</span> Создать примерку</button>
-                <p class="tryon-status" role="status"></p>
-                <div class="tryon-result"></div>
-            </div>`;
-        document.body.appendChild(modal);
-        modal.querySelector('.tryon-close').addEventListener('click', () => modal.classList.remove('open'));
-        modal.addEventListener('click', event => {
-            if (event.target === modal) modal.classList.remove('open');
-        });
-        modal.querySelector('#tryonPhoto').addEventListener('change', event => {
-            modal.querySelector('.tryon-file-name').textContent = event.target.files[0]?.name || 'Файл не выбран';
-        });
-        return modal;
-    }
-
-    function addButtons() {
-        const detail = document.querySelector('.product-page');
-        const detailFile = location.pathname.split('/').pop();
-        if (detail && categories[detailFile] === 'tops' && !detail.querySelector('.tryon-launch')) {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'tryon-launch';
-            button.textContent = '✦ Примерить на себе';
-            detail.querySelector('.product-info')?.appendChild(button);
-        }
-        document.querySelectorAll('.product-card').forEach(card => {
-            const file = card.querySelector('.product-link')?.getAttribute('href')?.split('/').pop();
-            if (categories[file] !== 'tops') return;
-            if (card.querySelector('.tryon-launch')) return;
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'tryon-launch';
-            button.textContent = '✦ Примерить на себе';
-            card.appendChild(button);
-        });
-
-        document.querySelectorAll('.tryon-launch').forEach(button => {
-            button.addEventListener('click', () => openModal(button));
-        });
-    }
-
-    async function openModal(button) {
-        if (!token()) {
-            window.location.href = 'account.html';
-            return;
-        }
-        const product = getProduct(button);
-        const modal = createModal();
-        modal.dataset.category = product.category || '';
-        modal.dataset.fit = product.fit?.label || 'стандартный';
-        modal.dataset.ease = product.fit?.ease || 6;
-        modal.dataset.image = product.image || '';
-        modal.dataset.garmentMask = product.garmentMask || '';
-        modal.dataset.garmentDescription = product.garmentDescription || 'upper-body clothing';
-        modal.dataset.product = product.name;
-        modal.querySelector('.tryon-product').textContent = product.name;
-        const select = modal.querySelector('.tryon-size');
-        select.innerHTML = '';
-        delete select.dataset.userChanged;
-        product.sizes.forEach(size => {
-            const option = document.createElement('option');
-            option.value = size;
-            option.textContent = size;
-            if (size === product.selected) option.selected = true;
-            select.appendChild(option);
-        });
-        if (product.category) renderSizeChart(modal, product);
-        modal.classList.add('open');
-
-        if (!product.category) {
-            modal.querySelector('.tryon-status').textContent = 'Для обуви визуальная примерка этой моделью не поддерживается.';
-            modal.querySelector('.tryon-generate').disabled = true;
-        } else {
-            modal.querySelector('.tryon-generate').disabled = false;
-        }
-
-        try {
-            const response = await fetch('https://silvervy-backend.onrender.com/api/auth/profile', { headers: { Authorization: `Bearer ${token()}` } });
-            if (response.ok) {
-                const data = await response.json();
-                const measurements = data.user.bodyMeasurements || {};
-                for (const [key, value] of Object.entries(measurements)) {
-                    const input = modal.querySelector(`[name="${key}"]`);
-                    if (input) input.value = value;
-                }
-                updateRecommendation(modal, product);
-            }
-        } catch {}
-    }
-
-    function updateRecommendation(modal, product) {
-        const values = Object.fromEntries([...modal.querySelectorAll('.tryon-measurements input')].map(input => [input.name, input.value]));
-        const required = ['heightCm', 'weightKg', 'chestCm', 'waistCm', 'hipCm'];
-        const label = modal.querySelector('.tryon-recommendation');
-        if (required.some(key => !Number(values[key]))) {
-            label.textContent = 'Заполните параметры для подсказки по размеру';
-            return;
-        }
-        const recommendation = chooseRecommendedSize(values, product.category || modal.dataset.category);
-        const select = modal.querySelector('.tryon-size');
-        const visibleSizes = [...select.options].map(option => option.value);
-        modal.querySelector('.tryon-fit-note').textContent = `Масштабирование референса — экспериментальная оценка от эталона 185 см / L по меркам и прибавке ${modal.dataset.ease} см для кроя «${modal.dataset.fit}». Оно сработает только при наличии проверенной маски вещи; точные замеры изделия и 3D-посадка отсутствуют.`;
-        if (recommendation && visibleSizes.includes(recommendation)) {
-            label.textContent = `Предварительная рекомендация: ${recommendation}`;
-            if (!select.dataset.userChanged) select.value = recommendation;
-        } else {
-            label.textContent = 'Заполните параметры для подсказки по размеру';
-        }
-    }
-
-    function renderSizeChart(modal, product) {
-        const rows = chart[product.category] || [];
-        const sizes = product.sizes.filter(size => rows.some(row => row.size === size));
-        const measures = [['Грудь, см', 'chest'], ['Талия, см', 'waist'], ['Бёдра, см', 'hip'], ['Рост, см', 'height'], ['Вес, кг', 'weight']];
-        const tableRows = measures.map(([label, key]) => `<tr><th>${label}</th>${sizes.map(size => {
-            const range = rows.find(row => row.size === size)?.[key];
-            return `<td>${range ? `${range[0]}–${range[1]}` : '—'}</td>`;
-        }).join('')}</tr>`).join('');
-        modal.querySelector('.tryon-chart-table').innerHTML = `<div class="tryon-chart-scroll"><table><thead><tr><th>Мерка</th>${sizes.map(size => `<th>${size}</th>`).join('')}</tr></thead><tbody>${tableRows}</tbody></table></div><small>Типовые мерки фигуры. Фактические замеры изделия могут отличаться.</small>`;
-    }
-
-    async function compressImage(file) {
-        const bitmap = await createImageBitmap(file);
-        if (bitmap.height <= bitmap.width) throw new Error('Нужно вертикальное фото в полный рост, снятое в анфас.');
-        if (bitmap.width < 512 || bitmap.height < 768) throw new Error('Разрешение фото слишком низкое. Загрузите снимок не меньше 512 × 768 пикселей.');
-        if (bitmap.height / bitmap.width < 1.25 || bitmap.height / bitmap.width > 2.6) throw new Error('Выберите вертикальный кадр примерно 2:3, где фигура целиком занимает фото.');
-        const scale = Math.min(1, 1200 / Math.max(bitmap.width, bitmap.height));
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(bitmap.width * scale);
-        canvas.height = Math.round(bitmap.height * scale);
-        const context = canvas.getContext('2d');
-        context.fillStyle = '#f4f1ec';
-        context.fillRect(0, 0, canvas.width, canvas.height);
-        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-        bitmap.close();
-        return canvas.toDataURL('image/jpeg', 0.86);
-    }
-
-    function readFormMeasurements(modal) {
-        return Object.fromEntries([...modal.querySelectorAll('.tryon-measurements input')].map(input => [input.name, Number(input.value)]));
-    }
-
-    async function generate(modal) {
-        const status = modal.querySelector('.tryon-status');
-        const file = modal.querySelector('#tryonPhoto').files[0];
-        const consent = modal.querySelector('.tryon-consent input').checked;
-        const measurements = readFormMeasurements(modal);
-        const size = modal.querySelector('.tryon-size').value;
-        if (!file || !consent || !size || Object.values(measurements).some(value => !value)) {
-            status.textContent = 'Загрузите фото, заполните параметры и подтвердите передачу изображения.';
-            return;
-        }
-
-        const button = modal.querySelector('.tryon-generate');
-        const result = modal.querySelector('.tryon-result');
-        button.disabled = true;
-        button.classList.add('generating');
-        result.innerHTML = '';
-        status.textContent = 'Проверяем фото и подготавливаем его для IDM-VTON…';
-        try {
-            const personImage = await compressImage(file);
-            const recommendedSize = chooseRecommendedSize(measurements, modal.dataset.category);
-            const garmentPreparation = await prepareSizeAwareGarment(
-                modal.dataset.image,
-                modal.dataset.garmentMask,
-                size,
-                recommendedSize,
-                measurements,
-                modal.dataset.ease
-            );
-            const garmentImage = garmentPreparation.image;
-            const saveResponse = await fetch('https://silvervy-backend.onrender.com/api/auth/profile', {
-                method: 'PUT',
-                headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(measurements)
-            });
-            const saveData = await saveResponse.json().catch(() => ({}));
-            if (!saveResponse.ok) throw new Error(saveData.message || 'Не удалось сохранить параметры профиля');
-
-            const response = await fetch('https://silvervy-backend.onrender.com/api/try-on', {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    personImage,
-                    garmentImage,
-                    category: modal.dataset.category,
-                    productName: modal.dataset.product,
-                    garmentDescription: modal.dataset.garmentDescription,
-                    size,
-                    recommendedSize,
-                    measurements,
-                    fitProfile: modal.dataset.fit
-                })
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Не удалось создать примерку');
-            status.textContent = 'Готово. Это визуальный эскиз, а не точный расчёт посадки.';
-            const scaleNote = garmentPreparation.applied
-                ? ` Маска вещи выделена отдельно; масштаб референса ${garmentPreparation.width.toFixed(3)} по ширине и ${garmentPreparation.height.toFixed(3)} по длине.`
-                : ' Масштабирование пропущено: проверенная маска вещи пока недоступна.';
-            result.innerHTML = `<img alt="Результат виртуальной примерки" src="${data.image}"><a class="tryon-download" download="silvervy-try-on.png" href="${data.image}">Скачать результат</a><small>${data.provider || 'IDM-VTON'} принимает один изменённый референс. Масштаб не заменяет реальную примерку и требует визуальной проверки.${scaleNote}</small>`;
-        } catch (error) {
-            status.textContent = error.message || 'Сервис примерки временно недоступен.';
-        } finally {
-            button.disabled = false;
-            button.classList.remove('generating');
-        }
-    }
-
-    function init() {
-        addButtons();
-        const modal = createModal();
-        modal.querySelector('.tryon-generate').addEventListener('click', () => generate(modal));
-        modal.querySelector('.tryon-size').addEventListener('change', event => {
-            event.target.dataset.userChanged = 'true';
-        });
-        modal.querySelectorAll('.tryon-measurements input').forEach(input => {
-            input.addEventListener('input', () => {
-                updateRecommendation(modal, { category: modal.dataset.category });
-            });
-        });
-    }
-
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
-    else init();
+  });
 })();

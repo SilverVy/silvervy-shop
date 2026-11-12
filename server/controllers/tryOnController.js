@@ -2,6 +2,11 @@ const MAX_IMAGE_BYTES = 7 * 1024 * 1024;
 const QWEN_SPACE_URL = (process.env.QWEN_SPACE_URL || 'https://qwen-qwen-image-edit-2511.hf.space').replace(/\/$/, '');
 const IDM_SPACE_URL = (process.env.IDM_VTON_SPACE_URL || 'https://yisol-idm-vton.hf.space').replace(/\/$/, '');
 const { createHash, randomUUID } = require('node:crypto');
+const { readFile } = require('node:fs/promises');
+const path = require('node:path');
+const sharp = require('sharp');
+const { assessRequest, parsePersonImage } = require('../services/fit-service');
+const activeJobs = new Set();
 const IDM_GARMENT_DESCRIPTIONS = new Set([
     'long wool coat',
     'bomber jacket',
@@ -333,88 +338,77 @@ async function callIdm(person, garment, garmentDescription) {
     const completed = events.findLast(event => event.msg === 'process_completed');
     const output = completed?.output?.data?.[0];
     const imageUrl = output?.url || output?.path;
-    if (!completed?.success || !imageUrl) throw new Error(completed?.output?.error || 'IDM-VTON не вернула изображение');
+    if (!completed?.success || !imageUrl) {
+        const error = new Error(completed?.output?.error || 'IDM-VTON не вернула изображение');
+        if (!imageUrl && !completed?.output?.error) error.code = 'EMPTY_MODEL_RESULT';
+        throw error;
+    }
 
     const absoluteUrl = imageUrl.startsWith('http')
         ? imageUrl
         : `${IDM_SPACE_URL}/file=${encodeURIComponent(imageUrl)}`;
     const imageResponse = await fetch(absoluteUrl, {
-        headers: providerHeaders(),
+        headers: new URL(absoluteUrl).origin === new URL(IDM_SPACE_URL).origin ? providerHeaders() : {},
         signal: AbortSignal.timeout(60000)
     });
     if (!imageResponse.ok) throw new Error('Не удалось загрузить результат IDM-VTON');
     const result = Buffer.from(await imageResponse.arrayBuffer());
     if (!result.length || result.length > 12 * 1024 * 1024) throw new Error('Размер результата IDM-VTON превышает допустимый');
-    return `data:${imageResponse.headers.get('content-type') || 'image/png'};base64,${result.toString('base64')}`;
+    const metadata = await sharp(result, { limitInputPixels: 16000000 }).metadata();
+    const mime = { jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' }[metadata.format];
+    if (!mime) throw new Error('IDM-VTON вернула неподдерживаемый формат изображения');
+    return `data:${mime};base64,${result.toString('base64')}`;
 }
 
 exports.generate = async (req, res) => {
+    const userKey = String(req.user.id);
+    if (activeJobs.has(userKey)) {
+        res.set('Retry-After', '15');
+        return res.status(429).json({ message: 'Дождитесь завершения текущей примерки.' });
+    }
     try {
-        const person = readImage(req.body.personImage);
-        const garment = readImage(req.body.garmentImage);
-        const category = req.body.category;
-        const productName = String(req.body.productName || '');
-        const size = String(req.body.size || '').toUpperCase();
-        const recommendedSize = String(req.body.recommendedSize || '').toUpperCase();
-        const fitProfile = String(req.body.fitProfile || '');
-        const measurements = req.body.measurements || {};
-
-        if (!person || !garment) {
-            return res.status(400).json({ message: 'Загрузите фотографию и проверьте изображение товара' });
+        const assessment = assessRequest(req.body, { forGeneration: true });
+        const person = parsePersonImage(req.body.personImage);
+        if (!person) return res.status(400).json({ message: 'Загрузите корректное фото JPEG, PNG или WebP до 7 МБ.' });
+        activeJobs.add(userKey);
+        let metadata;
+        try {
+            metadata = await sharp(person.buffer, { limitInputPixels: 16000000 }).metadata();
+        } catch {
+            return res.status(400).json({ message: 'Изображение повреждено или содержит слишком много пикселей.' });
         }
-        if (!['tops', 'bottoms', 'one-pieces'].includes(category)) {
-            return res.status(400).json({ message: 'Для этой категории виртуальная примерка пока недоступна' });
+        if (metadata.width < 256 || metadata.height < 384 || metadata.height <= metadata.width) {
+            return res.status(400).json({ message: 'Нужно вертикальное фото анфас в полный рост достаточного разрешения.' });
         }
-        if (category !== 'tops') {
-            return res.status(422).json({ message: 'IDM-VTON сейчас поддерживает только верхнюю одежду. Примерка низа и цельных изделий временно отключена.' });
-        }
-        if (!['XS', 'S', 'M', 'L', 'XL', 'XXL'].includes(size)) {
-            return res.status(400).json({ message: 'Выберите размер для генерации' });
-        }
-        const measurementRanges = {
-            heightCm: [120, 220],
-            weightKg: [30, 250],
-            chestCm: [60, 160],
-            waistCm: [45, 150],
-            hipCm: [65, 170]
-        };
-        const safeMeasurements = {};
-        for (const [key, [minimum, maximum]] of Object.entries(measurementRanges)) {
-            const value = Number(measurements[key]);
-            if (Number.isFinite(value) && value >= minimum && value <= maximum) safeMeasurements[key] = value;
-        }
-
-        const requestedDescription = String(req.body.garmentDescription || '');
-        const baseDescription = IDM_GARMENT_DESCRIPTIONS.has(requestedDescription)
-            ? requestedDescription
-            : 'upper-body clothing';
-        const garmentDescription = buildIdmGarmentDescription({
-            baseDescription,
-            size,
-            recommendedSize: ['XS', 'S', 'M', 'L', 'XL', 'XXL'].includes(recommendedSize) ? recommendedSize : '',
-            measurements: safeMeasurements,
-            fitProfile
-        });
-        const image = await callIdm(person, garment, garmentDescription);
+        const garmentBuffer = await readFile(path.join(__dirname, '../public', assessment.product.images.front));
+        const garment = { buffer: garmentBuffer, mimeType: 'image/jpeg', size: garmentBuffer.length };
+        const image = await callIdm(person, garment, assessment.description);
 
         res.status(200).json({
             image,
-            provider: 'IDM-VTON; size and profile passed as text guidance only'
+            productId: assessment.product.id,
+            size: assessment.size,
+            provider: 'IDM-VTON',
+            sizeConditioning: 'text-only',
+            fitNotice: 'Визуальная иллюстрация. Мерки переданы только текстом; совпадение изображения с физической посадкой не гарантируется.',
+            fit: assessment.fit
         });
     } catch (error) {
+        if (error.status) return res.status(error.status).json({ message: error.message, errors: error.errors });
         console.error('Try-on provider error:', error.name, error.message);
         const quotaReached = /zerogpu quota|quota/i.test(error.message);
         const emptyResult = error.code === 'EMPTY_MODEL_RESULT';
         const status = quotaReached ? 503 : emptyResult ? 502 : /timeout|timed out/i.test(error.message) ? 504 : 502;
         res.status(status).json({
             message: quotaReached
-                ? 'У модели примерки закончился лимит вычислений. Проверьте HF_TOKEN в переменных backend на Render и повторите позже.'
+                ? 'У публичной модели исчерпан лимит вычислений. Сравнение размеров работает без генерации; изображение можно попробовать позже.'
                 : emptyResult
-                    ? 'Модель примерки не вернула изображение. Попробуйте позже; если ошибка повторится, проверьте журнал backend на Render.'
+                    ? 'Модель не вернула изображение. Сравнение размеров остаётся доступным; попробуйте генерацию позже.'
                 : status === 504
                     ? 'Генерация заняла слишком много времени. Попробуйте ещё раз.'
                     : 'Сервис примерки временно не ответил. Попробуйте позже.',
-            details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
+    } finally {
+        activeJobs.delete(userKey);
     }
 };

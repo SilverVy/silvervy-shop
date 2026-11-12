@@ -51,12 +51,12 @@
                 <div class="carousel-caption">
                     <h2>ЛЕТО 2026</h2>
                     <p>Изысканные силуэты и премиальные материалы</p>
-                    <a href="catalog.html#summer2025" class="cta-button" data-ignore-cart>Смотреть коллекцию</a>
+                    <a href="catalog.html#outerwear" class="cta-button" data-ignore-cart>Смотреть коллекцию</a>
                 </div>
             </div>
             
             <div class="carousel-item">
-                <img src="Одежда/1_main.jpg" alt="Мужская коллекция">
+                <img src="media/collection/coat-model.jpg" alt="Учебная мужская коллекция Silver.Vy — изображение создано ИИ">
                 <div class="carousel-caption">
                     <h2>СОВРЕМЕННЫЙ МИНИМАЛИЗМ</h2>
                     <p>Лаконичность и функциональность в каждой детали</p>
@@ -92,7 +92,7 @@
         <h2>Исследуйте коллекции</h2>
         <div class="categories-grid">
             <a href="catalog.html#outerwear" class="category-card">
-                <img src="Одежда/verh.jpg" alt="Верхняя одежда">
+                <img src="media/collection/coat-front.jpg" alt="Пальто учебной коллекции — изображение создано ИИ">
                 <div class="category-overlay">
                     <h3>Верхняя одежда</h3>
                 </div>
@@ -104,7 +104,7 @@
                 </div>
             </a>
             <a href="catalog.html#denim" class="category-card">
-                <img src="Одежда/jean_coat/1_jean_coat.png" alt="Джинсовая куртка">
+                <img src="media/collection/denim-front.jpg" alt="Джинсовая куртка учебной коллекции — изображение создано ИИ">
                 <div class="category-overlay">
                     <h3>Деним</h3>
                 </div>
@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
     nextButton.addEventListener('click', nextSlide);
 
     // Обработчик для кнопки с якорем
-    document.querySelector('.cta-button[href*="#summer2025"]').addEventListener('click', function(e) {
+    document.querySelector('.cta-button[href*="#outerwear"]')?.addEventListener('click', function(e) {
         window.location.href = this.getAttribute('href'); // Принудительный переход
     });
 
