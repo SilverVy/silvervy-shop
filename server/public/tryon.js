@@ -2,9 +2,6 @@
     const categories = {
         'product-boots.html': null,
         'product-loafers.html': null,
-        'product-trousers.html': 'bottoms',
-        'product-jeans.html': 'bottoms',
-        'product-linen_shorts.html': 'bottoms',
         'product-shirt.html': 'tops',
         'product-linen_shirt.html': 'tops',
         'product-coat.html': 'tops',
@@ -44,22 +41,13 @@
         'product-coat.html': { label: 'свободный oversize', ease: 14 },
         'product-bomber.html': { label: 'прямой', ease: 10 },
         'product-trench.html': { label: 'свободный прямой', ease: 12 },
-        'product-trousers.html': { label: 'прямой', ease: 4 },
         'product-shirt.html': { label: 'свободный прямой', ease: 8 },
-        'product-jeans.html': { label: 'свободный baggy', ease: 8 },
         'product-jean_coat.html': { label: 'свободный', ease: 10 },
-        'product-linen_shirt.html': { label: 'свободный', ease: 8 },
-        'product-linen_shorts.html': { label: 'свободный', ease: 6 }
+        'product-linen_shirt.html': { label: 'свободный', ease: 8 }
     };
 
     const chart = {
         tops: [
-            { size: 'XS', chest: [76, 82], waist: [58, 64], hip: [82, 88], height: [150, 165], weight: [42, 54] },
-            { size: 'S', chest: [82, 88], waist: [64, 70], hip: [88, 94], height: [158, 172], weight: [50, 62] },
-            { size: 'M', chest: [88, 96], waist: [70, 78], hip: [94, 102], height: [165, 178], weight: [58, 74] },
-            { size: 'L', chest: [96, 104], waist: [78, 86], hip: [102, 110], height: [170, 185], weight: [68, 88] }
-        ],
-        bottoms: [
             { size: 'XS', chest: [76, 82], waist: [58, 64], hip: [82, 88], height: [150, 165], weight: [42, 54] },
             { size: 'S', chest: [82, 88], waist: [64, 70], hip: [88, 94], height: [158, 172], weight: [50, 62] },
             { size: 'M', chest: [88, 96], waist: [70, 78], hip: [94, 102], height: [165, 178], weight: [58, 74] },
@@ -256,9 +244,9 @@
         modal.innerHTML = `
             <div class="tryon-dialog" role="dialog" aria-modal="true" aria-labelledby="tryonTitle">
                 <button class="tryon-close" type="button" aria-label="Закрыть">×</button>
-                <div class="tryon-heading"><span class="tryon-orb">✦</span><p>Виртуальная примерка</p><h2 id="tryonTitle">Образ, созданный для вас</h2><span class="tryon-product"></span></div>
+                <div class="tryon-heading"><span class="tryon-orb">✦</span><p>Виртуальная примерка</p><h2 id="tryonTitle">Ваш образ, созданный для вас</h2><span class="tryon-product"></span></div>
                 <div class="tryon-steps">
-                    <label class="tryon-upload" for="tryonPhoto"><span>01</span><strong>Загрузите фото в полный рост</strong><small>Один человек, анфас, фигура целиком.</small><input id="tryonPhoto" type="file" accept="image/jpeg,image/png,image/webp" required><span class="tryon-file-name">Файл не выбран</span></label>
+                    <label class="tryon-upload" for="tryonPhoto"><span>01</span><strong>Загрузите фото в полный рост</strong><small>Один человек, анфас, фигура целиком; вертикальный кадр около 2:3</small><input id="tryonPhoto" type="file" accept="image/jpeg,image/png,image/webp" required><span class="tryon-file-name">Файл не выбран</span></label>
                     <div class="tryon-measurements">
                         <div><span>02</span><strong>Ваши параметры</strong></div>
                         <div class="tryon-measure-grid">
@@ -276,8 +264,8 @@
                     </div>
                 <label class="tryon-size-label"><span>03</span>Размер для генерации<select class="tryon-size"></select></label>
                 </div>
-                <p class="tryon-fit-note">Точную посадку это не гарантирует.</p>
-                <label class="tryon-consent"><input type="checkbox" required><span>Я согласен(на) передать фото для генерации. Фото не сохраняется в профиле Silver.Vy.</span></label>
+                <p class="tryon-fit-note">Экспериментальный масштаб референса рассчитан от каталожного эталона: рост 185 см и размер L. Без проверенной маски вещи масштабирование не применяется; точную посадку это не гарантирует.</p>
+                <label class="tryon-consent"><input type="checkbox" required><span>Я согласен(на) передать фото в Hugging Face для генерации. Фото не сохраняется в профиле Silver.Vy.</span></label>
                 <button class="tryon-generate" type="button"><span>✦</span> Создать примерку</button>
                 <p class="tryon-status" role="status"></p>
                 <div class="tryon-result"></div>
@@ -295,7 +283,8 @@
 
     function addButtons() {
         const detail = document.querySelector('.product-page');
-        if (detail && !detail.querySelector('.tryon-launch')) {
+        const detailFile = location.pathname.split('/').pop();
+        if (detail && categories[detailFile] === 'tops' && !detail.querySelector('.tryon-launch')) {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'tryon-launch';
@@ -303,6 +292,8 @@
             detail.querySelector('.product-info')?.appendChild(button);
         }
         document.querySelectorAll('.product-card').forEach(card => {
+            const file = card.querySelector('.product-link')?.getAttribute('href')?.split('/').pop();
+            if (categories[file] !== 'tops') return;
             if (card.querySelector('.tryon-launch')) return;
             const button = document.createElement('button');
             button.type = 'button';
@@ -312,14 +303,6 @@
         });
 
         document.querySelectorAll('.tryon-launch').forEach(button => {
-            const product = getProduct(button);
-            if (!product.category || product.category !== 'tops') {
-                button.disabled = true;
-                button.textContent = product.category === 'bottoms' ? 'Примерка низа временно недоступна' : 'Примерка обуви скоро';
-                button.title = product.category === 'bottoms'
-                    ? 'Публичная IDM-VTON поддерживает только верхнюю одежду'
-                    : 'Текущая IDM-VTON поддерживает только верхнюю одежду';
-            }
             button.addEventListener('click', () => openModal(button));
         });
     }
@@ -353,7 +336,7 @@
         modal.classList.add('open');
 
         if (!product.category) {
-            modal.querySelector('.tryon-status').textContent = 'Для обуви визуальная примерка не поддерживается.';
+            modal.querySelector('.tryon-status').textContent = 'Для обуви визуальная примерка этой моделью не поддерживается.';
             modal.querySelector('.tryon-generate').disabled = true;
         } else {
             modal.querySelector('.tryon-generate').disabled = false;
@@ -384,6 +367,7 @@
         const recommendation = chooseRecommendedSize(values, product.category || modal.dataset.category);
         const select = modal.querySelector('.tryon-size');
         const visibleSizes = [...select.options].map(option => option.value);
+        modal.querySelector('.tryon-fit-note').textContent = `Масштабирование референса — экспериментальная оценка от эталона 185 см / L по меркам и прибавке ${modal.dataset.ease} см для кроя «${modal.dataset.fit}». Оно сработает только при наличии проверенной маски вещи; точные замеры изделия и 3D-посадка отсутствуют.`;
         if (recommendation && visibleSizes.includes(recommendation)) {
             label.textContent = `Предварительная рекомендация: ${recommendation}`;
             if (!select.dataset.userChanged) select.value = recommendation;
@@ -395,9 +379,7 @@
     function renderSizeChart(modal, product) {
         const rows = chart[product.category] || [];
         const sizes = product.sizes.filter(size => rows.some(row => row.size === size));
-        const measures = product.category === 'bottoms'
-            ? [['Талия, см', 'waist'], ['Бёдра, см', 'hip'], ['Рост, см', 'height'], ['Вес, кг', 'weight']]
-            : [['Грудь, см', 'chest'], ['Талия, см', 'waist'], ['Бёдра, см', 'hip'], ['Рост, см', 'height'], ['Вес, кг', 'weight']];
+        const measures = [['Грудь, см', 'chest'], ['Талия, см', 'waist'], ['Бёдра, см', 'hip'], ['Рост, см', 'height'], ['Вес, кг', 'weight']];
         const tableRows = measures.map(([label, key]) => `<tr><th>${label}</th>${sizes.map(size => {
             const range = rows.find(row => row.size === size)?.[key];
             return `<td>${range ? `${range[0]}–${range[1]}` : '—'}</td>`;
@@ -442,7 +424,7 @@
         button.disabled = true;
         button.classList.add('generating');
         result.innerHTML = '';
-        status.textContent = 'Проверяем фото и подготавливаем его для генерации';
+        status.textContent = 'Проверяем фото и подготавливаем его для IDM-VTON…';
         try {
             const personImage = await compressImage(file);
             const recommendedSize = chooseRecommendedSize(measurements, modal.dataset.category);
