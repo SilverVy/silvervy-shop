@@ -150,7 +150,7 @@
             throw new Error('Маска выходит за кадр. Отодвиньтесь от камеры или исправьте точки.');
         }
         return { width, height, target, polygons, sleeves, armCalibration: 'anatomical-trace-v1', pxPerCm: pxCm, projectedChestPx: garment.chestCm * circumScale,
-            hemY, warnings: [...new Set(warnings)], method: 'calibrated-mask-reference-v1' };
+            hemY, hemClearanceCm: (p.feet.y - hemY) / pxCm, warnings: [...new Set(warnings)], method: 'calibrated-mask-reference-v1' };
     }
     function svg(geometry, preview = false) {
         const paths = geometry.polygons.map(poly => `<polygon points="${poly.map(p=>p.map(n=>n.toFixed(2)).join(',')).join(' ')}"/>`).join('');

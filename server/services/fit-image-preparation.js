@@ -48,6 +48,7 @@ async function prepareSizeInputs(person, garmentBuffer, assessment, calibration)
             sleeveControl: 'independent-axis-v1', referenceSleeves: graded.transforms,
             sleeves: guide.sleeves,
             projectedChestPx: Math.round(guide.projectedChestPx), pxPerCm: Math.round(guide.pxPerCm * 100) / 100,
+            hemClearanceCm: Math.round(guide.hemClearanceCm * 10) / 10,
             measurements: { ...assessment.measurements }, garmentMeasurements: { ...assessment.garment },
             warnings: guide.warnings
         }

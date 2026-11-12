@@ -252,3 +252,101 @@ mtime_ms = 1794493829659
 storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/0b5117ec-2002-4bc8-b010-91918dce1340/d3e1d10a-ec3a-4159-aa93-b62b9cfbac12"
 storage_version_token = "1794494181817448"
 content_type = "image/png"
+
+[[outputs]]
+id = "igs5n-yuiYYumxI2J7ugK"
+uri = "file://generated-artifacts/prototype-sleeves-comparison.png"
+type = "image"
+title = "Черновой геометрический прототип XS/XL"
+description = "Рукава перенесены с фронтального фото пальто и удлинены поверх кистей. На стыках и плечах видны грубые края, плечевые серые участки не исправлены; это проверка принципа, не готовый результат."
+logical_id = "5622a0b2-9472-40a7-ab5d-b7120e02a949"
+content_hash = "sha256:ee56c33179fefaf0143e0d139188b01fcfb91b02ca158b659a2b9174845694a4"
+size = 345580
+mtime_ms = 1794497493793
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/5622a0b2-9472-40a7-ab5d-b7120e02a949/f4c3e47c-7bd8-4cb4-b3c3-d77ac0db73b9"
+storage_version_token = "1794497570052639"
+content_type = "image/png"
+
+[[outputs]]
+id = "ZzjazDEpIFZtTEjfByW4Y"
+uri = "file://generated-artifacts/prototype-coat-XS.png"
+type = "image"
+title = "Геометрический прототип пальто XS"
+description = "Черновой монтаж рукавов: геометрия меняет край манжеты независимо от модели. Текстура и соединение с плечом пока выглядят грубо."
+logical_id = "b52c715b-e91f-49de-9174-bc84ca697e9c"
+content_hash = "sha256:38ddc533b084422878fac4d0a51233ca7ab2c00ce5153ab3af8464a079cdceb1"
+size = 638602
+mtime_ms = 1794497493185
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/b52c715b-e91f-49de-9174-bc84ca697e9c/1c649e1d-1c9a-4452-976a-176bef58eb48"
+storage_version_token = "1794497570808217"
+content_type = "image/png"
+
+[[outputs]]
+id = "GNMdSMcxIl2F6Qy4zo38r"
+uri = "file://generated-artifacts/prototype-coat-XL.png"
+type = "image"
+title = "Геометрический прототип пальто XL"
+description = "Черновой монтаж рукавов до кистей. Видны стыки и серые фрагменты у плеч; в сайт не встроено."
+logical_id = "fa76da78-9537-4a10-ab07-a90fc6b95c8a"
+content_hash = "sha256:1017ad2e74f3e79003f6962eb6dcfcf5a19084d9bcbaa4bfa9bf1a3a126ff0dd"
+size = 642115
+mtime_ms = 1794497493617
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/fa76da78-9537-4a10-ab07-a90fc6b95c8a/cf96ecd7-68e5-45c4-8a34-e7ecd1e8a2f0"
+storage_version_token = "1794497571535552"
+content_type = "image/png"
+
+[[outputs]]
+id = "CtMGYjngQqslvqFxUaJ5e"
+uri = "file://generated-artifacts/prototype-soft-comparison.png"
+type = "image"
+title = "Пересчитанное продолжение рукавов XS/XL"
+description = "Второй тест использует фактуру самой генерации, не каталог. По текущей формуле и вручную оценённым ориентирам концы различаются: XS ≈ 591 px (13,1 см за запястьем, 77% кисти); XL ≈ 627 px (18,9 см, на 1,9 см за пальцами). Кожа возле исходной манжеты не копируется. Результат остаётся ручным офлайн-прототипом: это не автоматическая сегментация и не проверенная посадка."
+logical_id = "6f85ce19-aa0f-4c33-ab33-7675bf375a20"
+content_hash = "sha256:20f4cf70e31c0c8ccd016ae2e2627ababf7f09db3c339a74ffb2df5a48a5edcb"
+size = 336912
+mtime_ms = 1794499071556
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/6f85ce19-aa0f-4c33-ab33-7675bf375a20/224bccd0-a82e-43ce-853c-23d02729e9c7"
+storage_version_token = "1794499137107063"
+content_type = "image/png"
+
+[[outputs]]
+id = "HVi3s-inybhxql4NDXV2G"
+uri = "file://generated-artifacts/prototype-soft-XS.png"
+type = "image"
+title = "Расчётная манжета XS"
+description = "Расчёт заканчивается примерно на 77% длины кисти; часть пальцев останется видна по текущей формуле. Точка на фото оценена вручную."
+logical_id = "d774f48a-87e4-44d6-9af2-ee4f4ab22d7a"
+content_hash = "sha256:c2df2698bb92e1e64309dc3041e20c518452154b40a50629af36e7fb1a530882"
+size = 624092
+mtime_ms = 1794498812112
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/d774f48a-87e4-44d6-9af2-ee4f4ab22d7a/968734e0-e0fd-4ef2-bbd6-cebb3b0de4fd"
+storage_version_token = "1794498906603839"
+content_type = "image/png"
+
+[[outputs]]
+id = "8ORMYOy35aruaDEsa0uFI"
+uri = "file://generated-artifacts/prototype-soft-XL.png"
+type = "image"
+title = "Расчётная манжета XL"
+description = "Расчёт выходит примерно на 1,9 см за кончик кисти; край продолжен ниже всей кисти. Точки на фото оценены вручную."
+logical_id = "ab875394-7506-4b0e-a738-0620e16a98d5"
+content_hash = "sha256:cc9cc9324f0e231218bafbbf5614a5524961635bc362b3c684a8edb8c03060e2"
+size = 629020
+mtime_ms = 1794498812292
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/ab875394-7506-4b0e-a738-0620e16a98d5/3047d20e-1c5d-4485-8f0f-89ba2253bb0d"
+storage_version_token = "1794498907328560"
+content_type = "image/png"
+
+[[outputs]]
+id = "Ra_sCIZ54VJZYCWIKZY3p"
+uri = "file://generated-artifacts/prototype-copy-comparison.png"
+type = "image"
+title = "Неудачная проверка копирования кусочков рукава"
+description = "Куски взяты с самого результата и повернуты по измеренным направлениям рук; на стыках всё равно образовались ступени, края рваные. Реальные границы вставки в тестовом файле XS — 609 px, XL — 637 px (28 px разницы), но этот монтаж непригоден и не будет интегрирован."
+logical_id = "0c5a05d0-eb78-4083-9fe5-2e6df034ce3f"
+content_hash = "sha256:d808b21e5e45776b199e047bb0befa02e2e888e9114d999f46fa1fe6f875de88"
+size = 339975
+mtime_ms = 1794500201272
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/0c5a05d0-eb78-4083-9fe5-2e6df034ce3f/de3053cd-f8d2-4cbc-8f4f-9b637447cea3"
+storage_version_token = "1794500436628772"
+content_type = "image/png"

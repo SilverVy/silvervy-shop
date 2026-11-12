@@ -44,3 +44,9 @@ Sleeve-control examples must include small people with short arms, not only an a
 **Why:** the user explicitly rejected nearly identical sleeve examples and described this real-world oversized-fit scenario.
 
 **How to apply:** check small-body scenarios and shoulder drop when assessing the result. Do not exaggerate the catalog's grading just to manufacture a visible difference, and do not present calculated hand coverage as observed photo accuracy.
+
+In a 140 cm wearer test, trousers appeared in the generated coat image even though they were absent from that test's input photo; treat them as model hallucination, not preserved source clothing.
+
+**Why:** the user explicitly corrected a previous attribution of the trousers.
+
+**How to apply:** compare short-person, long-coat outputs with their exact input photos and classify newly appearing trousers as a generation failure.
