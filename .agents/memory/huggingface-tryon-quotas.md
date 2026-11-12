@@ -18,3 +18,9 @@ The former 185 cm / largest-size-L model calibration is not applicable to the fi
 **Why:** That earlier user-selected baseline was an unverified experimental assumption. The user now permits designed educational specifications but requires rigorous distinction between design assumptions and real measurements for the diploma.
 
 **How to apply:** Never infer physical garment dimensions, a model's height or a worn size from generated photographs. Use declared design specifications for educational calculations, distinguish geometric guidance from trained metric conditioning, and require manufactured samples for empirical accuracy.
+
+Independent sleeve-length grading of the reference and uncapped cuff geometry do not prove that IDM-VTON changes generated cuff positions correctly.
+
+**Why:** Live XS/XL trials with different sleeve lengths still produced cuffs close to the wrists, without the expected monotonic change. Putting qualitative cuff-position wording first in the prompt did not resolve this. Correct mask/reference inputs are not evidence of correct generated measurements.
+
+**How to apply:** Treat sleeve control as experimental. Verify the actual cuff edges against the calculated guide before saying the photo-size problem is fixed. Keep calculated sleeve centimetres distinct from dimensions observed in the returned image.

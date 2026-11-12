@@ -196,3 +196,17 @@ mtime_ms = 1794489347349
 storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/2cededfc-8aa6-4b7b-a48a-10cef001f23b/b299b811-ddcf-4a2d-8ad3-109d2c0525e0"
 storage_version_token = "1794489555710582"
 content_type = "image/png"
+
+[[outputs]]
+id = "_hv7QDNIRXib04hM2XsWx"
+uri = "file://generated-artifacts/tryon/sleeve-cuff-control.png"
+type = "image"
+title = "Рукава: расчёт и фактический ответ IDM-VTON"
+description = "Красные линии показывают рассчитанное положение манжет. После независимого изменения рукавов на референсе и двух вариантов подсказки модель всё ещё не воспроизводит нужную разницу XS–XL. Это контроль ограничения, а не доказательство точной посадки."
+logical_id = "64943a95-7d67-4e10-bff5-611201909dab"
+content_hash = "sha256:0895de8ad7426f8bc54178eb0741d021620b69420c959412d1d1e4cf219f3dea"
+size = 448558
+mtime_ms = 1794490405657
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/64943a95-7d67-4e10-bff5-611201909dab/2b2a22e7-93bd-4d09-b91d-c42cb2538771"
+storage_version_token = "1794490448940577"
+content_type = "image/png"

@@ -52,6 +52,7 @@ async function verify() {
         assert.equal(requests.length, 0, 'photo must not be sent before consent');
         await page.locator('#photoConsent').check();
         await page.locator('.calibration-stage svg').waitFor();
+        assert.match(await page.locator('.calibration-status').textContent(), /рукав 61 см/);
         await page.locator('#generatePhoto').click();
         await waitText('подтвердите калибровку');
         assert.equal(requests.length, 0);
@@ -70,6 +71,7 @@ async function verify() {
         await page.locator('[name="waistCm"]').fill('85');
         assert.equal(await page.locator('#photoResult img').count(), 0, 'previous photo must disappear when measurements change');
         await page.locator('[data-size="XL"]').click();
+        assert.match(await page.locator('.calibration-status').textContent(), /рукав 62.4 см/);
         for (const [selected, text] of [['quota', 'исчерпана квота'], ['expired', 'Войдите заново'], ['invalid', 'не вернул корректное изображение']]) {
             await page.evaluate(() => localStorage.setItem('token', 'browser-fixture-only-not-a-real-token'));
             scenario = selected;

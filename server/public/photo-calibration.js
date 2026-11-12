@@ -35,7 +35,8 @@
                 current = geometry.build({ ...context, points, width: image.naturalWidth, height: image.naturalHeight });
                 overlay = current.polygons.map(poly => `<polygon points="${poly.map(p=>p.join(',')).join(' ')}"/>`).join('');
                 target = current.target.map(poly => `<polygon points="${poly.map(p=>p.join(',')).join(' ')}"/>`).join('');
-                status.textContent = `Размер ${context.garment.size}: грудь изделия ${context.garment.chestCm} см, тело ${context.body.chestCm} см; длина ${context.garment.lengthCm} см. ${current.warnings.join(' ')}`;
+                const sleeves = current.sleeves.map(item => `${item.side === 'Left' ? 'слева' : 'справа'} ${Math.abs(item.wristOffsetCm).toFixed(1)} см ${item.wristOffsetCm >= 0 ? 'за запястьем' : 'до запястья'}`).join(', ');
+                status.textContent = `Размер ${context.garment.size}: грудь изделия ${context.garment.chestCm} см, тело ${context.body.chestCm} см; длина ${context.garment.lengthCm} см; рукав ${context.garment.sleeveCm} см от плечевого шва. Расчёт манжет: ${sleeves}. ${current.warnings.join(' ')}`;
                 status.className = 'calibration-status';
             } catch (error) {
                 status.textContent = error.message;

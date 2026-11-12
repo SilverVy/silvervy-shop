@@ -4,6 +4,8 @@ const { generate } = require('../server/controllers/tryOnController');
 const { defaults } = require('../server/public/fit-geometry');
 async function main() {
     if (process.env.RUN_LIVE_IDM !== '1') throw new Error('Live inference is opt-in: RUN_LIVE_IDM=1 node scripts/verify-idm-live.cjs');
+    const runName = process.env.IDM_RUN_NAME || 'live';
+    if (!/^[a-z0-9-]+$/.test(runName)) throw new Error('Use a simple run label containing letters, digits and hyphens.');
     const image = await fs.readFile('server/public/media/collection/shirt-model.jpg');
     const points = { ...structuredClone(defaults),
         crown: { x: .5, y: .055 }, feet: { x: .5, y: .942 }, neck: { x: .5, y: .193 },
@@ -21,11 +23,11 @@ async function main() {
             set() { return this; }, json(data) { this.data = data; return this; } };
         await generate(req, res);
         const { image: result, ...report } = res.data;
-        await fs.writeFile(`generated-artifacts/tryon/live-${size}.json`, JSON.stringify({ status: res.statusCode, ...report }, null, 2));
+        await fs.writeFile(`generated-artifacts/tryon/${runName}-${size}.json`, JSON.stringify({ status: res.statusCode, ...report }, null, 2));
         console.log(JSON.stringify({ size, status: res.statusCode, code: report.code, message: report.message,
             method: report.sizeConditioning, hasImage: Boolean(result) }));
         if (!result) { process.exitCode = 2; break; }
-        await fs.writeFile(`generated-artifacts/tryon/live-${size}.png`, Buffer.from(result.split(',')[1], 'base64'));
+        await fs.writeFile(`generated-artifacts/tryon/${runName}-${size}.png`, Buffer.from(result.split(',')[1], 'base64'));
     }
 }
 main().catch(error => { console.error(error.name, error.message); process.exitCode = 1; });

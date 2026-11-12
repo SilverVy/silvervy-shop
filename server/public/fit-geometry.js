@@ -72,7 +72,8 @@
         const hemY = neckY + garment.lengthCm * pxCm;
         const warnings = [
             'Ширина оценена по отношению обхватов при допущении сходного поперечного сечения; ткань и 3D-драпировка не моделируются.',
-            'Рукава и проймы приближённые: обхват рукава и лекала коллекции не заданы.'
+            'Рукава и проймы приближённые: обхват рукава и лекала коллекции не заданы.',
+            'IDM-VTON может игнорировать небольшую разницу рукавов: расчётные линии манжет не являются измерением сгенерированной одежды.'
         ];
         if (hemY >= p.feet.y || hemY >= height - 2 || shoulderHalf * 2 >= width * .85) {
             throw new Error('Контур не помещается в фото. Проверьте рост, макушку, подошвы и основание шеи.');
@@ -107,6 +108,8 @@
             ...edges.slice().reverse().map(z => [z.x - z.half, z.y]),
             [p.neck.x - shoulderHalf, shoulderY]
         ];
+        const sleeves = [];
+        if (!Number.isFinite(garment.sleeveCm) || garment.sleeveCm <= 0) throw new Error('Для размерной примерки нужна длина рукава изделия.');
         function sleeve(side, fullArm) {
             const direction = side === 'Left' ? -1 : 1;
             const start = { x: p.neck.x + direction * shoulderHalf, y: shoulderY };
@@ -115,12 +118,14 @@
             const distance = Math.hypot(dx, dy);
             if (distance < 15 * pxCm) throw new Error('Проверьте запястья: они слишком близко к плечам.');
             const requested = garment.sleeveCm * pxCm;
-            const len = fullArm ? distance * .96 : Math.min(requested, distance * .96);
-            if (!fullArm && requested > distance) warnings.push('Рукав достигает кисти: маска ограничена перед запястьем, чтобы сохранить руки.');
+            const len = fullArm ? distance : requested;
+            if (!fullArm && requested > distance) warnings.push('Рукав выходит за запястье: область кисти может попасть в маску и быть изменена моделью. Длина не обрезается искусственно.');
             const ux = dx / distance, uy = dy / distance;
             const topHalf = chestSpan * .16 + Math.max(0, garment.chestCm - Number(body.chestCm)) * circumScale * .06;
             const cuffHalf = topHalf * .65;
             const end = { x: start.x + ux * len, y: start.y + uy * len };
+            if (!fullArm) sleeves.push({ side, lengthCm: garment.sleeveCm, projectedLengthPx: len,
+                wristOffsetCm: (requested - distance) / pxCm, start, cuff: end, wrist });
             return [[start.x - uy * topHalf, start.y + ux * topHalf],
                 [end.x - uy * cuffHalf, end.y + ux * cuffHalf],
                 [end.x + uy * cuffHalf, end.y - ux * cuffHalf],
@@ -136,7 +141,7 @@
         if (polygons.some(poly => poly.some(([x, y]) => x < 0 || x > width || y < neckY - 2 * pxCm || y > height))) {
             throw new Error('Маска выходит за кадр. Отодвиньтесь от камеры или исправьте точки.');
         }
-        return { width, height, target, polygons, pxPerCm: pxCm, projectedChestPx: garment.chestCm * circumScale,
+        return { width, height, target, polygons, sleeves, pxPerCm: pxCm, projectedChestPx: garment.chestCm * circumScale,
             hemY, warnings: [...new Set(warnings)], method: 'calibrated-mask-reference-v1' };
     }
     function svg(geometry, preview = false) {

@@ -1,6 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const sharp = require('sharp');
+const fs = require('node:fs/promises');
 const geometry = require('../server/public/fit-geometry');
 const catalog = require('../server/public/catalog-data');
 const { assessRequest } = require('../server/services/fit-service');
@@ -19,6 +20,34 @@ test('size AND laboratory circumference and height change the image-space geomet
     assert.ok(build('M', { ...body, chestCm: 110 }).projectedChestPx < build('M').projectedChestPx);
     assert.ok(build('M', { ...body, heightCm: 190 }).hemY < build('M').hemY);
     assert.notDeepEqual(build('M', { ...body, waistCm: 90 }), build('M'));
+});
+test('sleeve endpoints follow sleeve centimetres without collapsing at the wrist', () => {
+    const context = { product, body, points: geometry.defaults, width: 768, height: 1024 };
+    const base = product.sizes.find(row => row.size === 'M');
+    const short = geometry.build({ ...context, garment: { ...base, sleeveCm: 70 } });
+    const long = geometry.build({ ...context, garment: { ...base, sleeveCm: 75 } });
+    for (let i = 0; i < 2; i++) {
+        const a = short.sleeves[i], b = long.sleeves[i];
+        assert.ok(a.wristOffsetCm > 0 && b.wristOffsetCm > a.wristOffsetCm);
+        assert.ok(Math.abs(b.projectedLengthPx - a.projectedLengthPx - 5 * short.pxPerCm) < 1e-6);
+        assert.notDeepEqual(a.cuff, b.cuff);
+    }
+    assert.deepEqual(short.target[0], long.target[0], 'torso must not change when only sleeve length changes');
+    assert.notEqual(geometry.svg(short), geometry.svg(long), 'the actual editable mask must change beyond the wrist too');
+});
+test('sleeve-only changes alter trusted reference pixels without stretching the torso', async () => {
+    const person = { buffer: await sharp({ create: { width: 768, height: 1024, channels: 3, background: '#123456' } }).png().toBuffer() };
+    const reference = await fs.readFile('server/public/media/collection/shirt-front.jpg');
+    const base = assessRequest({ productId: 'shirt', size: 'M', measurements: body });
+    const calibration = { confirmed: true, points: geometry.defaults };
+    const prepared = await prepareSizeInputs(person, reference, base, calibration);
+    const changed = await prepareSizeInputs(person, reference, { ...base, garment: { ...base.garment, sleeveCm: 57 } }, calibration);
+    assert.equal(prepared.metadata.referenceScaleY, changed.metadata.referenceScaleY);
+    assert.equal(changed.metadata.referenceSleeves[0].sleeveRatio, 57 / 61);
+    assert.ok(!prepared.garment.buffer.equals(changed.garment.buffer), 'real image input must change, not only text');
+    const bodyPatch = buffer => sharp(buffer).extract({ left: 345, top: 350, width: 70, height: 300 }).raw().toBuffer();
+    assert.deepEqual(await bodyPatch(prepared.garment.buffer), await bodyPatch(changed.garment.buffer));
+    assert.deepEqual(prepared.guide.target[0], changed.guide.target[0]);
 });
 test('calibration rejects nonfinite, inverted, off-image, incomplete and physically unscaled input', () => {
     for (const points of [{}, { ...geometry.defaults, neck: { x: NaN, y: .18 } },

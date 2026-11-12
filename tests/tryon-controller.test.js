@@ -70,11 +70,17 @@ test('IDM adapter sends different measured masks AND references, live laboratory
         assert.equal(res.data.sizeConditioning, 'calibrated-mask-reference-v1');
         assert.equal(res.data.geometry.measurements.chestCm, 100, 'must use laboratory, not stored profile measurement');
         assert.equal(res.data.geometry.measurements.heightCm, 178);
+        assert.equal(res.data.geometry.sleeveControl, 'independent-axis-v1');
+        assert.equal(res.data.geometry.sleeves[0].lengthCm, size === 'XS' ? 59.6 : 62.4);
         assert.match(res.data.image, /^data:image\/png;base64,/);
     }
     assert.notEqual(payloads[0].data[2], payloads[1].data[2]);
     assert.match(payloads[0].data[2], /garment 108 cm/);
     assert.match(payloads[1].data[2], /garment 132 cm/);
+    assert.match(payloads[0].data[2], /sleeves 59.6 cm from shoulder seam/);
+    assert.match(payloads[1].data[2], /sleeves 62.4 cm from shoulder seam/);
+    assert.match(payloads[0].data[2], /^long sleeves with above-wrist cuffs and visible wrists/);
+    assert.match(payloads[1].data[2], /^full-length sleeves with cuffs near wrists/);
     assert.equal(payloads[0].data[6], payloads[1].data[6]);
     assert.equal(payloads[0].data[3], false, 'automatic mask must be disabled, otherwise the size mask is ignored');
     assert.equal(payloads[0].data[0].layers.length, 1);

@@ -420,7 +420,14 @@ exports.generate = async (req, res) => {
         const comparison = assessment.fit.rows.find(row => row.size === assessment.size);
         const fitWords = comparison.checks.some(check => check.easeCm < 0) ? 'tight close-fitting'
             : comparison.checks.some(check => check.status === 'loose') ? 'very loose oversized' : 'relaxed';
-        const prompt = `${fitWords} ${assessment.product.garmentDescription}, size ${assessment.size}. Follow the provided silhouette and hem length, keep garment details and anatomy. ${assessment.description}`;
+        const cuffGuidance = prepared.guide.sleeves.map(sleeve => `${sleeve.side} cuff ${
+            sleeve.wristOffsetCm >= 0 ? `${sleeve.wristOffsetCm.toFixed(1)} cm beyond` : `${Math.abs(sleeve.wristOffsetCm).toFixed(1)} cm before`
+        } wrist`).join('; ');
+        const meanCuffOffset = prepared.guide.sleeves.reduce((sum, sleeve) => sum + sleeve.wristOffsetCm, 0) / prepared.guide.sleeves.length;
+        const sleeveStyle = meanCuffOffset < -4 ? 'long sleeves with above-wrist cuffs and visible wrists'
+            : meanCuffOffset > 1 ? 'extra-long sleeves with cuffs extending over wrists'
+                : 'full-length sleeves with cuffs near wrists';
+        const prompt = `${sleeveStyle}, ${fitWords} ${assessment.product.garmentDescription}, sleeves ${assessment.garment.sleeveCm} cm from shoulder seam, ${cuffGuidance}. Size ${assessment.size}. Preserve the independently graded sleeve and cuff positions. ${assessment.description}`;
         const image = await callIdm(prepared.person, prepared.garment, prompt, prepared);
         console.info(JSON.stringify({ event: 'tryon_completed', requestId, elapsedMs: Date.now() - startedAt }));
 

@@ -1,6 +1,7 @@
 const sharp = require('sharp');
 const geometry = require('../public/fit-geometry');
 const { FitError } = require('./fit-service');
+const { gradeSleeves } = require('./sleeve-reference');
 
 async function prepareSizeInputs(person, garmentBuffer, assessment, calibration) {
     if (assessment.fit.rows.find(row => row.size === assessment.size).checks.some(check => check.easeCm < 0)) {
@@ -32,12 +33,19 @@ async function prepareSizeInputs(person, garmentBuffer, assessment, calibration)
     const reference = await sharp({ create: { width: 768, height: 1024, channels: 3, background: '#ffffff' } })
         .composite([{ input: resizedReference, left: Math.floor((768 - targetWidth) / 2), top: Math.floor((1024 - targetHeight) / 2) }])
         .png().toBuffer();
+    const sourceInfo = await sharp(garmentBuffer).metadata();
+    const graded = await gradeSleeves(reference, {
+        productId: assessment.product.id, sourceWidth: sourceInfo.width, sourceHeight: sourceInfo.height,
+        targetWidth, targetHeight, scaleX, scaleY, sleeveRatio: assessment.garment.sleeveCm / base.sleeveCm
+    });
     return {
         person: { buffer: normalizedPerson, mimeType: 'image/png' },
-        garment: { buffer: reference, mimeType: 'image/png' }, mask, guide,
+        garment: { buffer: graded.buffer, mimeType: 'image/png' }, mask, guide,
         seedPerson: person.buffer, seedGarment: garmentBuffer,
         metadata: {
             method: guide.method, referenceScaleX: scaleX, referenceScaleY: scaleY,
+            sleeveControl: 'independent-axis-v1', referenceSleeves: graded.transforms,
+            sleeves: guide.sleeves,
             projectedChestPx: Math.round(guide.projectedChestPx), pxPerCm: Math.round(guide.pxPerCm * 100) / 100,
             measurements: { ...assessment.measurements }, garmentMeasurements: { ...assessment.garment },
             warnings: guide.warnings
