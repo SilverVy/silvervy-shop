@@ -109,14 +109,17 @@ test('coat fabric color is prioritized and short-arm measurements reach the prov
         assert.match(payloads.at(-1).data[2], /^warm muted taupe beige long wool coat\. Matching reference fabric color across torso, shoulders and sleeves\./);
         assert.ok(payloads.at(-1).data[2].indexOf('warm muted taupe beige') < payloads.at(-1).data[2].indexOf('Design measurements'));
         assert.match(payloads.at(-1).data[2], /Measurement-derived target hem: ankle-length/);
+        assert.match(payloads.at(-1).data[2], /Preserve this size's measured oversized volume/);
         assert.equal(res.data.geometry.hemClearanceCm <= 10, true);
         if (size === 'XS') {
             assert.equal(res.data.geometry.sleeves[0].wristOffsetCm.toFixed(1), '13.1');
             assert.match(payloads.at(-1).data[2], /cover 77% of the hand/);
+            assert.match(payloads.at(-1).data[2], /chest: garment 114 cm vs body 82 cm; ease \+32 cm \(39% of body circumference\)/);
         } else {
             assert.equal(res.data.geometry.sleeves[0].wristOffsetCm.toFixed(1), '18.9');
             assert.equal(res.data.geometry.sleeves[0].handCoverageRatio, 1);
             assert.match(payloads.at(-1).data[2], /cover the entire hand and finish 1\.9 cm past the fingertips/);
+            assert.match(payloads.at(-1).data[2], /chest: garment 138 cm vs body 82 cm; ease \+56 cm \(68% of body circumference\)/);
         }
     }
     assert.notEqual(payloads[0].data[2], payloads[1].data[2]);

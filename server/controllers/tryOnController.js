@@ -420,6 +420,16 @@ exports.generate = async (req, res) => {
         const comparison = assessment.fit.rows.find(row => row.size === assessment.size);
         const fitWords = comparison.checks.some(check => check.easeCm < 0) ? 'tight close-fitting'
             : comparison.checks.some(check => check.status === 'loose') ? 'very loose oversized' : 'relaxed';
+        const easeGuidance = [
+            ['chest', assessment.garment.chestCm, assessment.measurements.chestCm],
+            ['waist', assessment.garment.waistCm, assessment.measurements.waistCm],
+            ['hips', assessment.garment.hipCm, assessment.measurements.hipCm]
+        ].map(([zone, garmentCm, bodyCm]) => {
+            const easeCm = garmentCm - bodyCm;
+            const easePercent = Math.round(easeCm / bodyCm * 100);
+            return `${zone}: garment ${garmentCm} cm vs body ${bodyCm} cm; ease +${easeCm} cm (${easePercent}% of body circumference)`;
+        }).join('; ');
+        const volumeGuidance = `Preserve this size's measured oversized volume at chest, waist and hips: ${easeGuidance}. Keep the coat visibly roomy with dropped shoulders; do not taper it to the body.`;
         const cuffGuidance = prepared.guide.sleeves.map(sleeve => {
             const side = sleeve.side.toLowerCase();
             if (sleeve.handCoverageRatio >= 1) {
@@ -446,7 +456,7 @@ exports.generate = async (req, res) => {
             : `Measurement-derived target hem: ${clearance.toFixed(1)} cm above shoe level; preserve the marked garment length.`;
         const appearance = [assessment.product.tryOnColor, assessment.product.garmentDescription].filter(Boolean).join(' ');
         // The text encoder has a limited context: keep garment color and sleeve style before verbose measurements.
-        const prompt = `${appearance}. Matching reference fabric color across torso, shoulders and sleeves. Follow the size mask silhouette. ${hemGuidance} Sleeve coverage targets: ${cuffGuidance}. ${sleeveStyle}; ${fitWords}; size ${assessment.size}; sleeves ${assessment.garment.sleeveCm} cm from shoulder seam; preserve the graded cuff positions, collar and pockets. ${assessment.description}`;
+        const prompt = `${appearance}. Matching reference fabric color across torso, shoulders and sleeves. Follow the size mask silhouette. ${volumeGuidance} ${hemGuidance} Sleeve coverage targets: ${cuffGuidance}. ${sleeveStyle}; ${fitWords}; size ${assessment.size}; sleeves ${assessment.garment.sleeveCm} cm from shoulder seam; preserve the graded cuff positions, collar and pockets. ${assessment.description}`;
         const image = await callIdm(prepared.person, prepared.garment, prompt, prepared);
         console.info(JSON.stringify({ event: 'tryon_completed', requestId, elapsedMs: Date.now() - startedAt }));
 

@@ -45,6 +45,12 @@ Sleeve-control examples must include small people with short arms, not only an a
 
 **How to apply:** check small-body scenarios and shoulder drop when assessing the result. Do not exaggerate the catalog's grading just to manufacture a visible difference, and do not present calculated hand coverage as observed photo accuracy.
 
+Larger selected sizes must retain visibly larger garment volume in generated images, not only longer sleeves, in line with the measured ease at chest, waist, and hips.
+
+**Why:** the user reported that the XL output lost the expected increase in volume despite larger garment measurements.
+
+**How to apply:** compare torso silhouette as well as sleeve length across sizes; numeric ease alone does not prove the generated volume is correct.
+
 In a 140 cm wearer test, trousers appeared in the generated coat image even though they were absent from that test's input photo; treat them as model hallucination, not preserved source clothing.
 
 **Why:** the user explicitly corrected a previous attribution of the trousers.
