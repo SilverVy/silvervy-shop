@@ -417,46 +417,39 @@ exports.generate = async (req, res) => {
         const prepared = await prepareSizeInputs(person, garmentBuffer, assessment, req.body.calibration);
         console.info(JSON.stringify({ event: 'tryon_started', requestId, productId: assessment.product.id,
             size: assessment.size, method: prepared.metadata.method, hfTokenConfigured: Boolean(process.env.HF_TOKEN) }));
-        const comparison = assessment.fit.rows.find(row => row.size === assessment.size);
-        const fitWords = comparison.checks.some(check => check.easeCm < 0) ? 'tight close-fitting'
-            : comparison.checks.some(check => check.status === 'loose') ? 'very loose oversized' : 'relaxed';
-        const easeGuidance = [
+        const ease = [
             ['chest', assessment.garment.chestCm, assessment.measurements.chestCm],
             ['waist', assessment.garment.waistCm, assessment.measurements.waistCm],
             ['hips', assessment.garment.hipCm, assessment.measurements.hipCm]
-        ].map(([zone, garmentCm, bodyCm]) => {
-            const easeCm = garmentCm - bodyCm;
-            const easePercent = Math.round(easeCm / bodyCm * 100);
-            return `${zone}: garment ${garmentCm} cm vs body ${bodyCm} cm; ease +${easeCm} cm (${easePercent}% of body circumference)`;
-        }).join('; ');
-        const volumeGuidance = `Preserve this size's measured oversized volume at chest, waist and hips: ${easeGuidance}. Keep the coat visibly roomy with dropped shoulders; do not taper it to the body.`;
-        const cuffGuidance = prepared.guide.sleeves.map(sleeve => {
-            const side = sleeve.side.toLowerCase();
-            if (sleeve.handCoverageRatio >= 1) {
-                const pastFingertips = Math.max(0, sleeve.wristOffsetCm - sleeve.handLengthCm);
-                return `${side} cuff must cover the entire hand and finish ${pastFingertips.toFixed(1)} cm past the fingertips; no fingers visible below cuff`;
-            }
-            if (sleeve.handCoverageRatio > 0) {
-                const exposed = Math.max(0, sleeve.handLengthCm - sleeve.wristOffsetCm);
-                return `${side} cuff must cover ${Math.round(sleeve.handCoverageRatio * 100)}% of the hand from wrist toward fingertips; leave only the final ${exposed.toFixed(1)} cm of fingertips visible`;
-            }
-            return `${side} cuff must stop ${Math.abs(sleeve.wristOffsetCm).toFixed(1)} cm before wrist; keep the hand visible`;
-        }).join('; ');
-        const meanCuffOffset = prepared.guide.sleeves.reduce((sum, sleeve) => sum + sleeve.wristOffsetCm, 0) / prepared.guide.sleeves.length;
-        const sleeveStyle = meanCuffOffset < -4 ? 'sleeves ending above the wrists'
-            : meanCuffOffset > 1 ? 'sleeves extending over the hands according to the hand-coverage targets'
-                : 'sleeves ending at the wrists';
+        ].map(([zone, garmentCm, bodyCm]) =>
+            `${zone} ${garmentCm - bodyCm >= 0 ? '+' : ''}${Number((garmentCm - bodyCm).toFixed(1))}`
+        ).join(', ');
+        const volumeGuidance = `Size ${assessment.size}; ease ${ease} cm. Keep roomy; do not taper.`;
+        const sleeveTarget = prepared.guide.sleeves[0];
+        let cuffGuidance = 'Keep the calculated cuff position.';
+        if (sleeveTarget?.handCoverageRatio >= 1) {
+            const pastFingertips = Math.max(0, sleeveTarget.wristOffsetCm - sleeveTarget.handLengthCm);
+            cuffGuidance = `Cuffs cover both hands, ${pastFingertips.toFixed(1)} cm past fingertips; no fingers visible.`;
+        } else if (sleeveTarget?.handCoverageRatio > 0) {
+            const exposed = Math.max(0, sleeveTarget.handLengthCm - sleeveTarget.wristOffsetCm);
+            cuffGuidance = `Cuffs cover ${Math.round(sleeveTarget.handCoverageRatio * 100)}% of each hand; expose only ${exposed.toFixed(1)} cm at fingertips.`;
+        } else if (sleeveTarget) {
+            cuffGuidance = `Cuffs stop ${Math.abs(sleeveTarget.wristOffsetCm).toFixed(1)} cm before wrists.`;
+        }
         const clearance = prepared.guide.hemClearanceCm;
         const hemLevel = clearance <= 12 ? 'ankle-length'
             : clearance <= 20 ? 'lower-calf-length'
                 : clearance <= 34 ? 'mid-calf-length'
                     : clearance <= 48 ? 'knee-length' : 'above-knee-length';
         const hemGuidance = assessment.product.id === 'coat'
-            ? `Measurement-derived target hem: ${hemLevel}, ${clearance.toFixed(1)} cm above shoe level. Do not shorten the coat; the coat, not trousers, must fill the marked coat silhouette, with trousers visible only below its target hem.`
-            : `Measurement-derived target hem: ${clearance.toFixed(1)} cm above shoe level; preserve the marked garment length.`;
+            ? `Keep ${hemLevel} coat; do not shorten or add trousers.`
+            : `Keep measured hem; do not shorten.`;
         const appearance = [assessment.product.tryOnColor, assessment.product.garmentDescription].filter(Boolean).join(' ');
-        // The text encoder has a limited context: keep garment color and sleeve style before verbose measurements.
-        const prompt = `${appearance}. Matching reference fabric color across torso, shoulders and sleeves. Follow the size mask silhouette. ${volumeGuidance} ${hemGuidance} Sleeve coverage targets: ${cuffGuidance}. ${sleeveStyle}; ${fitWords}; size ${assessment.size}; sleeves ${assessment.garment.sleeveCm} cm from shoulder seam; preserve the graded cuff positions, collar and pockets. ${assessment.description}`;
+        // Keep every high-priority instruction within the provider's short text context.
+        const prompt = `${appearance}. ${volumeGuidance} ${cuffGuidance} ${hemGuidance} Same person, face and pose; match reference color, collar and pockets.`;
+        if (prompt.trim().split(/\s+/).length > 55) {
+            throw new Error('Размерная подсказка для IDM-VTON превышает безопасную длину.');
+        }
         const image = await callIdm(prepared.person, prepared.garment, prompt, prepared);
         console.info(JSON.stringify({ event: 'tryon_completed', requestId, elapsedMs: Date.now() - startedAt }));
 

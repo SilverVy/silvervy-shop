@@ -51,6 +51,12 @@ Larger selected sizes must retain visibly larger garment volume in generated ima
 
 **How to apply:** compare torso silhouette as well as sleeve length across sizes; numeric ease alone does not prove the generated volume is correct.
 
+In the user's November 13 XS/XL comparison, sleeve differences became more visible but still looked too short and unnatural against the calculated hand coverage.
+
+**Why:** the user supplied both generated images and the matching size chart and asked for a reality check.
+
+**How to apply:** treat increased visual difference as partial compliance only; compare each cuff to the target fraction of the hand on both arms.
+
 In a 140 cm wearer test, trousers appeared in the generated coat image even though they were absent from that test's input photo; treat them as model hallucination, not preserved source clothing.
 
 **Why:** the user explicitly corrected a previous attribution of the trousers.

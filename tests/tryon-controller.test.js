@@ -79,12 +79,14 @@ test('IDM adapter sends different measured masks AND references, live laboratory
         assert.match(res.data.image, /^data:image\/png;base64,/);
     }
     assert.notEqual(payloads[0].data[2], payloads[1].data[2]);
-    assert.match(payloads[0].data[2], /garment 108 cm/);
-    assert.match(payloads[1].data[2], /garment 132 cm/);
-    assert.match(payloads[0].data[2], /sleeves 59.6 cm from shoulder seam/);
-    assert.match(payloads[1].data[2], /sleeves 62.4 cm from shoulder seam/);
-    assert.match(payloads[0].data[2], /sleeves ending above the wrists/);
-    assert.match(payloads[1].data[2], /sleeves ending at the wrists/);
+    assert.match(payloads[0].data[2], /Size XS; ease chest/);
+    assert.match(payloads[1].data[2], /Size XL; ease chest/);
+    assert.match(payloads[0].data[2], /Cuffs stop 6\.4 cm before wrists/);
+    assert.match(payloads[1].data[2], /Cuffs stop 0\.6 cm before wrists/);
+    for (const prompt of payloads.map(payload => payload.data[2])) {
+        assert.ok(prompt.trim().split(/\s+/).length <= 60, 'all essential directions fit the compact prompt budget');
+        assert.match(prompt, /Same person, face and pose/);
+    }
     assert.equal(payloads[0].data[6], payloads[1].data[6]);
     assert.equal(payloads[0].data[3], false, 'automatic mask must be disabled, otherwise the size mask is ignored');
     assert.equal(payloads[0].data[0].layers.length, 1);
@@ -106,20 +108,25 @@ test('coat fabric color is prioritized and short-arm measurements reach the prov
         const res = response();
         await generate(req, res);
         assert.equal(res.statusCode, 200);
-        assert.match(payloads.at(-1).data[2], /^warm muted taupe beige long wool coat\. Matching reference fabric color across torso, shoulders and sleeves\./);
-        assert.ok(payloads.at(-1).data[2].indexOf('warm muted taupe beige') < payloads.at(-1).data[2].indexOf('Design measurements'));
-        assert.match(payloads.at(-1).data[2], /Measurement-derived target hem: ankle-length/);
-        assert.match(payloads.at(-1).data[2], /Preserve this size's measured oversized volume/);
+        const prompt = payloads.at(-1).data[2];
+        assert.match(prompt, /^warm muted taupe beige long wool coat\./);
+        assert.match(prompt, /Size (XS|XL); ease chest/);
+        assert.match(prompt, /Keep ankle-length coat; do not shorten or add trousers/);
+        assert.match(prompt, /Keep roomy; do not taper/);
+        assert.ok(prompt.trim().split(/\s+/).length <= 55, 'cuff and volume instructions remain inside the compact prompt budget');
+        assert.match(res.data.geometry.armConditioning.method, /masked-forearm-extension-v1/);
         assert.equal(res.data.geometry.hemClearanceCm <= 10, true);
         if (size === 'XS') {
             assert.equal(res.data.geometry.sleeves[0].wristOffsetCm.toFixed(1), '13.1');
-            assert.match(payloads.at(-1).data[2], /cover 77% of the hand/);
-            assert.match(payloads.at(-1).data[2], /chest: garment 114 cm vs body 82 cm; ease \+32 cm \(39% of body circumference\)/);
+            assert.match(prompt, /chest \+32, waist \+46, hips \+30 cm/);
+            assert.match(prompt, /Cuffs cover 77% of each hand; expose only 3\.9 cm at fingertips/);
+            assert.equal(res.data.geometry.armConditioning.sides[0].extensionCm, 13.1);
         } else {
             assert.equal(res.data.geometry.sleeves[0].wristOffsetCm.toFixed(1), '18.9');
             assert.equal(res.data.geometry.sleeves[0].handCoverageRatio, 1);
-            assert.match(payloads.at(-1).data[2], /cover the entire hand and finish 1\.9 cm past the fingertips/);
-            assert.match(payloads.at(-1).data[2], /chest: garment 138 cm vs body 82 cm; ease \+56 cm \(68% of body circumference\)/);
+            assert.match(prompt, /chest \+56, waist \+70, hips \+54 cm/);
+            assert.match(prompt, /Cuffs cover both hands, 1\.9 cm past fingertips; no fingers visible/);
+            assert.equal(res.data.geometry.armConditioning.sides[0].extensionCm, 18.9);
         }
     }
     assert.notEqual(payloads[0].data[2], payloads[1].data[2]);

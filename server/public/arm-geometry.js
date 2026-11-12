@@ -50,7 +50,10 @@
         }
         const shift = assessment.shoulderShiftCm, endCm = shift + garment.sleeveCm;
         const topHalf = chestSpan * .16 + Math.max(0, garment.chestCm - Number(body.chestCm)) * circumScale * .06;
-        const target = ribbon(shift, endCm, topHalf, topHalf * .65);
+        const cuffHalf = topHalf * .65;
+        const wristProgress = Math.max(0, Math.min(1, (measured.armLengthCm - shift) / garment.sleeveCm));
+        const wristHalf = topHalf + (cuffHalf - topHalf) * wristProgress;
+        const target = ribbon(shift, endCm, topHalf, cuffHalf);
         const erase = ribbon(0, measured.armLengthCm, topHalf, topHalf * .65);
         const nodes = nodesBetween(shift, endCm);
         const warnings = [];
@@ -64,6 +67,7 @@
             metadata: { side, lengthCm: garment.sleeveCm, start: at(shift), cuff: at(endCm), wrist, shoulder, elbow, handTip,
                 projectedLengthPx: nodes.slice(1).reduce((sum, node, i) => sum + distance(nodes[i].point, node.point), 0),
                 wristOffsetCm: offset, shoulderShiftCm: shift, shoulderDropCm: assessment.shoulderDropCm,
+                conditioningHalfWidthAtWristPx: wristHalf, conditioningHalfWidthAtCuffPx: cuffHalf,
                 handCoverageRatio: assessment.handCoverageRatio, handLengthCm: measured.handLengthCm,
                 sources, label: assessment.label, assumption: assessment.assumption }
         };
