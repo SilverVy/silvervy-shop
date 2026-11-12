@@ -17,23 +17,24 @@
       <h2>Лаборатория<br>посадки</h2>
       <p>Сопоставьте заданные вами окружности с размерными данными учебной коллекции. Результат — сравнение выбранного алгоритма, не гарантия посадки на реальном изделии.</p>
       <p><a id="methodologyDownload" href="fit-methodology.md" download>Скачать методику: формулы, допущения и план проверки</a></p>
+      <p class="sv-note" id="measurementLimits" aria-live="polite"></p>
     </section>
     <div class="lab-layout">
       <section class="lab-panel" aria-labelledby="measureTitle">
         <h3 id="measureTitle">Ваши мерки</h3>
-        <p class="sv-note">Измеряйте сантиметровой лентой без натяжения. Грудь — по наиболее выступающим точкам; талия — по естественной линии; бёдра — по наиболее полной части. Рост нужен для масштаба фото, но не участвует в балле размера. Сохранённые мерки профиля загружаются автоматически. Для расчёта, схемы и генерации используются текущие поля ниже; изменения остаются в этой вкладке и не перезаписывают профиль.</p>
+        <p class="sv-note">Измеряйте сантиметровой лентой без натяжения. Грудь — по наиболее выступающим точкам; талия — по естественной линии; бёдра — по наиболее полной части. Рост нужен для масштаба фото, но не участвует в балле размера. Сохранённые мерки профиля загружаются автоматически; корректные изменения для вошедших пользователей сохраняются обратно в профиль. Поля, которых нет в лаборатории, например вес, не перезаписываются.</p>
         <p class="profile-source" id="profileSource" role="status"></p>
         <button type="button" class="profile-import" id="importProfile">Загрузить сохранённые мерки профиля</button>
         <form id="bodyForm" novalidate>
           <div class="lab-fields">
-            <label data-field="chestCm"><span>Обхват груди, см <b>*</b></span><input name="chestCm" inputmode="decimal" type="number" min="60" max="180" step="0.1" aria-describedby="error-chestCm"><small class="field-error" id="error-chestCm"></small></label>
-            <label data-field="waistCm"><span>Обхват талии, см <b>*</b></span><input name="waistCm" inputmode="decimal" type="number" min="45" max="170" step="0.1" aria-describedby="error-waistCm"><small class="field-error" id="error-waistCm"></small></label>
-            <label data-field="hipCm"><span>Обхват бёдер, см <b>*</b></span><input name="hipCm" inputmode="decimal" type="number" min="65" max="190" step="0.1" aria-describedby="error-hipCm"><small class="field-error" id="error-hipCm"></small></label>
-            <label data-field="heightCm"><span>Рост, см <em>необязательно</em></span><input name="heightCm" inputmode="decimal" type="number" min="120" max="220" step="0.1" aria-describedby="error-heightCm"><small class="field-error" id="error-heightCm"></small></label>
-            <label data-field="inseamCm"><span>Внутренний шов, см <em>необязательно</em></span><input name="inseamCm" inputmode="decimal" type="number" min="45" max="110" step="0.1" aria-describedby="error-inseamCm"><small class="field-error" id="error-inseamCm"></small></label>
-            <label data-field="shoulderCm"><span>Ширина плеч, см <em>необязательно</em></span><input name="shoulderCm" inputmode="decimal" type="number" min="28" max="70" step="0.1" aria-describedby="help-shoulderCm error-shoulderCm"><small id="help-shoulderCm">По спине между плечевыми точками, не по швам одежды.</small><small class="field-error" id="error-shoulderCm"></small></label>
-            <label data-field="armLengthCm"><span>Длина руки, см <em>необязательно</em></span><input name="armLengthCm" inputmode="decimal" type="number" min="35" max="90" step="0.1" aria-describedby="help-armLengthCm error-armLengthCm"><small id="help-armLengthCm">От плечевой точки через слегка согнутый локоть до запястья.</small><small class="field-error" id="error-armLengthCm"></small></label>
-            <label data-field="handLengthCm"><span>Длина кисти, см <em>необязательно</em></span><input name="handLengthCm" inputmode="decimal" type="number" min="12" max="26" step="0.1" aria-describedby="help-handLengthCm error-handLengthCm"><small id="help-handLengthCm">От запястья до конца среднего пальца.</small><small class="field-error" id="error-handLengthCm"></small></label>
+            <label data-field="chestCm"><span>Обхват груди, см <b>*</b></span><input name="chestCm" inputmode="decimal" type="number" min="72" max="120" step="0.1" aria-describedby="error-chestCm"><small class="field-error" id="error-chestCm"></small></label>
+            <label data-field="waistCm"><span>Обхват талии, см <b>*</b></span><input name="waistCm" inputmode="decimal" type="number" min="54" max="114" step="0.1" aria-describedby="error-waistCm"><small class="field-error" id="error-waistCm"></small></label>
+            <label data-field="hipCm"><span>Обхват бёдер, см <b>*</b></span><input name="hipCm" inputmode="decimal" type="number" min="70" max="126" step="0.1" aria-describedby="error-hipCm"><small class="field-error" id="error-hipCm"></small></label>
+            <label data-field="heightCm"><span>Рост, см <em>необязательно</em></span><input name="heightCm" inputmode="decimal" type="number" min="140" max="210" step="0.1" aria-describedby="error-heightCm"><small class="field-error" id="error-heightCm"></small></label>
+            <label data-field="inseamCm"><span>Внутренний шов, см <em>необязательно</em></span><input name="inseamCm" inputmode="decimal" type="number" min="65" max="94" step="0.1" aria-describedby="error-inseamCm"><small class="field-error" id="error-inseamCm"></small></label>
+            <label data-field="shoulderCm"><span>Ширина плеч, см <em>необязательно</em></span><input name="shoulderCm" inputmode="decimal" type="number" min="34" max="60" step="0.1" aria-describedby="help-shoulderCm error-shoulderCm"><small id="help-shoulderCm">По спине между плечевыми точками, не по швам одежды.</small><small class="field-error" id="error-shoulderCm"></small></label>
+            <label data-field="armLengthCm"><span>Длина руки, см <em>необязательно</em></span><input name="armLengthCm" inputmode="decimal" type="number" min="45" max="76" step="0.1" aria-describedby="help-armLengthCm error-armLengthCm"><small id="help-armLengthCm">От плечевой точки через слегка согнутый локоть до запястья.</small><small class="field-error" id="error-armLengthCm"></small></label>
+            <label data-field="handLengthCm"><span>Длина кисти, см <em>необязательно</em></span><input name="handLengthCm" inputmode="decimal" type="number" min="14" max="25" step="0.1" aria-describedby="help-handLengthCm error-handLengthCm"><small id="help-handLengthCm">От запястья до конца среднего пальца.</small><small class="field-error" id="error-handLengthCm"></small></label>
           </div>
           <div class="lab-control"><label for="productSelect">Учебное изделие</label><select class="lab-select" id="productSelect"></select></div>
           <div class="lab-control"><label>Предпочитаемая прибавка</label><div class="lab-radio-row" role="radiogroup" aria-label="Предпочитаемая прибавка">
@@ -66,7 +67,7 @@
       <details>
         <summary id="photoTitle">Фото-примерка выбранного размера · экспериментальный метод</summary>
         <div class="photo-controls">
-          <p class="sv-note">Мерки из лаборатории и размер выше управляют маской перерисовки, масштабом предметного референса и подсказкой IDM-VTON. Это геометрическое приближение, а не физическая симуляция ткани. Нужно фото анфас в полный рост от 512 × 768 пикселей до 12 МБ, рост и проверка опорных точек. Фото передаётся Hugging Face только по вашему запросу; Silver.Vy не сохраняет его в профиль, БД или браузерное хранилище. Хранение внешним провайдером не контролируется приложением.</p>
+          <p class="sv-note">Мерки из лаборатории и размер выше управляют маской перерисовки, масштабом предметного референса и подсказкой IDM-VTON. Это геометрическое приближение, а не физическая симуляция ткани. Нужно фото анфас в полный рост от 512 × 768 пикселей до 12 МБ, рост и проверка предложенных автоматикой опорных точек. Первичная разметка выполняется в браузере; фото передаётся Hugging Face только после отдельного согласия на генерацию. Сервер и база не сохраняют фото. Хранение внешним провайдером приложением не контролируется.</p>
           <label for="personPhoto">Выберите фотографию (JPEG, PNG или WebP)</label>
           <input id="personPhoto" type="file" accept="image/jpeg,image/png,image/webp">
           <span id="fileName" class="sv-note">Файл не выбран</span>
@@ -75,6 +76,7 @@
           <label class="photo-consent"><input type="checkbox" id="photoConsent"><span>Я даю согласие на отправку фото и размерной маски внешнему сервису. Понимаю ограничения экспериментального метода.</span></label>
           <div id="photoAvailability" class="sv-disclaimer" role="status">Проверяем доступность сервиса превью…</div>
           <p id="photoAuthHint" class="sv-note"></p>
+          <p class="photo-fit-block" id="photoSizeFitNotice" role="status" aria-live="polite"></p>
           <button class="sv-button photo-button" id="generatePhoto" type="button">Создать фото-превью</button>
           <p class="photo-status" id="photoStatus" role="status" aria-live="polite"></p>
           <div class="photo-result" id="photoResult"></div>
@@ -83,5 +85,5 @@
     </section>
   </main>
   <footer><div class="footer-content"><div class="footer-section"><h3>Контакты</h3><p>Красноярск, ул. Щорса, 41</p><p>info@silvervy.ru</p></div><div class="footer-section"><h3>Навигация</h3><div class="footer-links"><a href="catalog.html">Коллекция</a><a href="account.html">Аккаунт</a></div></div><div class="footer-section"><h3>Принцип</h3><p>Условные данные остаются условными. Сравнение доступно без авторизации.</p></div></div><div class="line"></div><p>&copy; 2026 Silver.Vy · Учебный проект</p></footer>
-  <script src="catalog-data.js"></script><script src="fit-engine.js"></script><script src="profile-measurements.js"></script><script src="arm-geometry.js"></script><script src="fit-geometry.js"></script><script src="photo-calibration.js"></script><script src="fit-schematic.js"></script><script src="tryon.js"></script>
+  <script src="catalog-data.js"></script><script src="fit-engine.js"></script><script src="profile-measurements.js"></script><script src="arm-geometry.js"></script><script src="fit-geometry.js"></script><script src="photo-landmarks.js"></script><script src="photo-calibration.js"></script><script src="fit-schematic.js"></script><script src="tryon.js"></script>
 </body></html>

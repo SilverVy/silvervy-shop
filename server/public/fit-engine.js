@@ -1,12 +1,42 @@
 (function (root, factory) {
-    const engine = factory();
+    const catalog = typeof module === 'object' && module.exports ? require('./catalog-data') : root.SilverVyCatalog;
+    const engine = factory(catalog);
     if (typeof module === 'object' && module.exports) module.exports = engine;
     else root.SilverVyFit = engine;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (catalog) {
     'use strict';
+    function chartRange(key) {
+        const candidates = [];
+        for (const product of catalog?.products || []) {
+            const ease = product.ease?.[key];
+            if (!ease) continue;
+            const outerAllowance = product.category === 'bottoms' && key === 'waistCm' ? 4 : 12;
+            for (const garment of product.sizes || []) {
+                if (!Number.isFinite(garment[key])) continue;
+                candidates.push({
+                    minimumBody: garment[key] - ease[1] - outerAllowance,
+                    maximumBody: garment[key] - ease[0]
+                });
+            }
+        }
+        if (!candidates.length) throw new Error(`Нет размерных данных для ${key}`);
+        return [
+            Math.round(Math.min(...candidates.map(item => item.minimumBody)) * 10) / 10,
+            Math.round(Math.max(...candidates.map(item => item.maximumBody)) * 10) / 10
+        ];
+    }
+    // Circumference bounds are derived from the outer edge of the supported
+    // chart/ease intervals; other limits protect the adult menswear photo model.
     const ranges = {
-        heightCm: [120, 220], chestCm: [60, 180], waistCm: [45, 170], hipCm: [65, 190],
-        shoulderCm: [28, 70], armLengthCm: [35, 90], handLengthCm: [12, 26], inseamCm: [45, 110]
+        heightCm: [140, 210],
+        chestCm: chartRange('chestCm'),
+        waistCm: chartRange('waistCm'),
+        hipCm: chartRange('hipCm'),
+        shoulderCm: [34, 60],
+        armLengthCm: [45, 76],
+        handLengthCm: [14, 25],
+        inseamCm: [65, 94],
+        weightKg: [40, 200]
     };
     const labels = { chestCm: 'Грудь', waistCm: 'Талия', hipCm: 'Бёдра' };
     function evaluateSleeve(garment, body) {
@@ -43,7 +73,7 @@
             const number = Number(value);
             if (!['number', 'string'].includes(typeof value) || !Number.isFinite(number) ||
                 number < ranges[key][0] || number > ranges[key][1]) {
-                errors[key] = `Допустимо ${ranges[key][0]}–${ranges[key][1]} см`;
+                errors[key] = `Допустимо ${ranges[key][0]}–${ranges[key][1]} ${key === 'weightKg' ? 'кг' : 'см'}`;
             }
         }
         return errors;

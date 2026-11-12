@@ -22,6 +22,31 @@ test('eight educational designs have complete, strictly graded dimensions', () =
     }
 });
 
+test('shared adult measurement ranges derive circumference limits from the whole size chart', () => {
+    for (const key of ['chestCm', 'waistCm', 'hipCm']) {
+        const candidates = catalog.products.flatMap(product => {
+            const target = product.ease[key];
+            if (!target) return [];
+            const allowance = product.category === 'bottoms' && key === 'waistCm' ? 4 : 12;
+            return product.sizes.map(garment => ({
+                minimum: garment[key] - target[1] - allowance,
+                maximum: garment[key] - target[0]
+            }));
+        });
+        const expected = [
+            Math.round(Math.min(...candidates.map(item => item.minimum)) * 10) / 10,
+            Math.round(Math.max(...candidates.map(item => item.maximum)) * 10) / 10
+        ];
+        assert.deepEqual(fit.ranges[key], expected);
+    }
+    assert.deepEqual(fit.ranges.heightCm, [140, 210]);
+    assert.deepEqual(fit.ranges.shoulderCm, [34, 60]);
+    assert.deepEqual(fit.ranges.armLengthCm, [45, 76]);
+    assert.deepEqual(fit.ranges.handLengthCm, [14, 25]);
+    assert.deepEqual(fit.ranges.inseamCm, [65, 94]);
+    assert.deepEqual(fit.ranges.weightKg, [40, 200]);
+});
+
 test('circumference ease is garment minus body for every product and size', () => {
     for (const product of catalog.products) {
         const result = fit.evaluate(product, body);

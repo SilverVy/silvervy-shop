@@ -26,12 +26,21 @@
   let latestFit = null;
   let requestVersion = 0;
   let serviceStatus = null;
+  let generationBusy = false;
   const storedKey = 'silvervy-fitting-body-v2';
   const editedKeys = new Set();
   let profileRequest = 0;
+  let profileSaveVersion = 0;
+  let profileSaveTimer = null;
   let photoRevision = 0;
   const bodyKeys = window.SilverVyMeasurements.keys;
+  for (const [key, range] of Object.entries(fit.ranges)) {
+    const input = form.elements.namedItem(key);
+    if (input) { input.min = String(range[0]); input.max = String(range[1]); }
+  }
   const labels = { chestCm: 'Обхват груди', waistCm: 'Обхват талии', hipCm: 'Обхват бёдер', shoulderCm: 'Ширина плеч', lengthCm: 'Длина изделия', sleeveCm: 'Длина рукава', thighCm: 'Обхват бедра', inseamCm: 'Внутренний шов' };
+  const rangeLabels = { chestCm: 'грудь', waistCm: 'талия', hipCm: 'бёдра', heightCm: 'рост', inseamCm: 'внутренний шов', shoulderCm: 'плечи', armLengthCm: 'рука', handLengthCm: 'кисть' };
+  byId('measurementLimits').textContent = `Поддерживаемые границы: ${bodyKeys.map(key => `${rangeLabels[key]} ${fit.ranges[key][0]}–${fit.ranges[key][1]} см`).join('; ')}. Вес профиля ${fit.ranges.weightKg[0]}–${fit.ranges.weightKg[1]} кг не участвует в расчёте размера. Обхваты выведены из полной размерной сетки; остальные пределы — рамки этого учебного прототипа, а не медицинская норма.`;
   const dimensionKeys = ['chestCm', 'waistCm', 'hipCm', 'shoulderCm', 'lengthCm', 'sleeveCm', 'thighCm', 'inseamCm'];
   const statusText = { tight: 'Отрицательная прибавка', close: 'Ниже целевого диапазона', intended: 'В целевом диапазоне', loose: 'Выше целевого диапазона', unknown: 'Нет сравнения' };
   const calibration = window.SilverVyPhotoCalibration(byId('photoCalibration'), {
@@ -61,6 +70,47 @@
   function saveBody() {
     try { sessionStorage.setItem(storedKey, JSON.stringify({ owner: owner(), values: bodyValues(), editedKeys: [...editedKeys] })); } catch { /* session storage may be unavailable */ }
   }
+  async function persistLabToProfile() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    const version = ++profileSaveVersion;
+    const source = byId('profileSource');
+    const measurements = Object.fromEntries(bodyKeys.map(key => {
+      const value = bodyValues()[key];
+      return [key, value === '' ? null : Number(value)];
+    }));
+    try {
+      const response = await apiRequest('/api/auth/profile', {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(measurements)
+      });
+      const data = await response.json().catch(() => ({}));
+      if (version !== profileSaveVersion || localStorage.getItem('token') !== token) return;
+      if (!response.ok) {
+        source.textContent = data.message || 'Не удалось сохранить мерки лаборатории в профиль.';
+        return;
+      }
+      localStorage.setItem('silvervy-profile-revision', String(Date.now()));
+      source.textContent = 'Корректные мерки лаборатории синхронизированы с профилем. Вес и поля, которых нет в лаборатории, сохранены.';
+    } catch {
+      if (version === profileSaveVersion) source.textContent = 'Не удалось синхронизировать лабораторию с профилем. Значения сохранены в этой вкладке.';
+    }
+  }
+  function scheduleProfileSave() {
+    clearTimeout(profileSaveTimer);
+    profileSaveVersion += 1;
+    if (!localStorage.getItem('token')) {
+      byId('profileSource').textContent = 'Гостевой режим: значения сохранены в этой вкладке. Войдите, чтобы синхронизировать лабораторию с профилем.';
+      return;
+    }
+    if (Object.keys(fit.validate(bodyValues(), product.category)).length) {
+      byId('profileSource').textContent = 'Исправьте некорректные или обязательные мерки; профиль сохранится после проверки значений.';
+      return;
+    }
+    byId('profileSource').textContent = 'Сохраняем корректные мерки лаборатории в профиль…';
+    profileSaveTimer = setTimeout(persistLabToProfile, 650);
+  }
   function renderProductOptions() {
     productSelect.innerHTML = products.map(item => `<option value="${item.id}">${item.name} · ${item.category === 'tops' ? 'верх' : 'низ'}</option>`).join('');
     productSelect.value = product.id;
@@ -70,9 +120,27 @@
       : 'Обхват груди, см <em>необязательно для низа</em>';
     renderPhotoAvailability();
   }
+  function sizeBlockMessage(row) {
+    const undersized = row?.checks?.filter(check => Number.isFinite(check.easeCm) && check.easeCm < 0) || [];
+    if (!undersized.length) return '';
+    const details = undersized.map(check => `${check.label.toLowerCase()} на ${Math.abs(check.easeCm).toFixed(1)} см`).join(', ');
+    return `Размер ${row.size} меньше тела по меркам: ${details}. Фотогенерация для этого размера заблокирована.`;
+  }
+  function updateGenerationGuard() {
+    const row = latestFit?.rows?.find(item => item.size === selectedSize);
+    const blockMessage = sizeBlockMessage(row);
+    const notice = byId('photoSizeFitNotice');
+    const button = byId('generatePhoto');
+    if (notice) notice.textContent = blockMessage;
+    if (button) button.disabled = generationBusy || Boolean(blockMessage);
+  }
   function renderSizePicker() {
     if (!product.sizes.some(row => row.size === selectedSize)) selectedSize = 'M';
-    sizePicker.innerHTML = product.sizes.map(row => `<button type="button" data-size="${row.size}" aria-pressed="${row.size === selectedSize}">${row.size}</button>`).join('');
+    sizePicker.innerHTML = product.sizes.map(row => {
+      const fitRow = latestFit?.rows?.find(item => item.size === row.size);
+      const undersized = Boolean(sizeBlockMessage(fitRow));
+      return `<button type="button" data-size="${row.size}" class="${undersized ? 'is-too-small' : ''}" aria-pressed="${row.size === selectedSize}"${undersized ? ' title="Меньше мерок тела — генерация недоступна"' : ''}>${row.size}</button>`;
+    }).join('');
   }
   function renderErrors(errors = {}) {
     bodyKeys.forEach(key => {
@@ -86,6 +154,8 @@
   function evaluateNow() {
     const preference = form.elements.preference.value;
     latestFit = fit.evaluate(product, bodyValues(), preference);
+    renderSizePicker();
+    updateGenerationGuard();
     renderErrors(latestFit.errors);
     renderRecommendation(latestFit);
     renderWarnings(latestFit.warnings || []);
@@ -147,7 +217,12 @@
       dataRows.push(`<tr><th>Положение рукава · расчёт</th>${result.rows.map(row => `<td>${row.sleeve.label}</td>`).join('')}</tr>`);
     }
     const sizes = result.rows.map(row => `<th>${row.size}${row.size === result.recommendedSize ? '<br><small>ближайший*</small>' : ''}</th>`).join('');
-    const fitRows = result.rows.map(row => `<td>${row.compatible ? 'Совместим' : 'Не прошёл порог'}</td>`).join('');
+    const fitRows = result.rows.map(row => {
+      const tooSmall = row.checks.filter(check => Number.isFinite(check.easeCm) && check.easeCm < 0);
+      const label = tooSmall.length ? 'Меньше тела' : row.compatible ? 'Совместим' : 'Не прошёл порог';
+      const detail = tooSmall.length ? `<br><small>${tooSmall.map(check => check.label.toLowerCase()).join(', ')}</small>` : '';
+      return `<td>${label}${detail}</td>`;
+    }).join('');
     compare.innerHTML = `<table><thead><tr><th>Параметр</th>${sizes}</tr></thead><tbody>${dataRows.join('')}<tr class="selected"><th>Результат движка</th>${fitRows}</tr></tbody></table><p class="sv-note">* Ближайший размер среди прошедших порог совместимости. Значение прибавки = мерка изделия − мерка тела; отрицательное число означает меньшее изделие в окружности. Статусы отображают каждый критерий отдельно.</p>`;
   }
   function renderSchematic(result) {
@@ -164,7 +239,11 @@
   evaluateNow();
 
   form.addEventListener('input', event => {
-    if (event.target.matches('input[type="number"]')) { editedKeys.add(event.target.name); saveBody(); }
+    if (event.target.matches('input[type="number"]')) {
+      editedKeys.add(event.target.name);
+      saveBody();
+      scheduleProfileSave();
+    }
     byId('photoResult').replaceChildren();
     byId('photoStatus').textContent = '';
     evaluateNow();
@@ -312,6 +391,8 @@
     const status = byId('photoStatus');
     const resultArea = byId('photoResult');
     const currentFit = evaluateNow();
+    const sizeReason = sizeBlockMessage(currentFit.rows?.find(row => row.size === selectedSize));
+    if (sizeReason) { status.textContent = sizeReason; return; }
     const versionAtStart = requestVersion;
     const token = localStorage.getItem('token');
     const file = photoInput.files?.[0];
@@ -335,8 +416,8 @@
       status.textContent = 'Сначала заполните обязательные мерки корректными значениями.';
       return;
     }
-    const button = byId('generatePhoto');
-    button.disabled = true;
+    generationBusy = true;
+    updateGenerationGuard();
     resultArea.replaceChildren();
     status.textContent = 'Подготавливаем уменьшенную копию изображения…';
     try {
@@ -381,7 +462,8 @@
         ? 'Время ожидания фото-превью истекло. Сравнение мерок остаётся доступным.'
         : error.message || 'Сервис фото-превью временно недоступен.';
     } finally {
-      button.disabled = false;
+      generationBusy = false;
+      updateGenerationGuard();
     }
   });
 })();

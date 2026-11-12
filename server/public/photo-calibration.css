@@ -2,8 +2,15 @@
 .photo-calibration { padding: 20px; border: 1px solid var(--sv-line); background: #f4f1e8; }
 .photo-calibration[hidden] { display: none; }
 .photo-calibration h4 { margin: 0 0 10px; font: 500 1.4rem var(--sv-serif); }
+.calibration-layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(180px, .7fr); align-items: start; gap: 18px; margin: 16px 0; }
+.calibration-work { min-width: 0; }
 .calibration-stage { max-width: 440px; margin: 18px auto; touch-action: none; }
 .calibration-stage svg { display: block; width: 100%; height: auto; cursor: crosshair; }
+.calibration-reference { padding: 12px; border: 1px solid var(--sv-line); background: #fffdf8; }
+.calibration-reference h5 { margin: 0 0 8px; font: 500 1rem var(--sv-serif); }
+.calibration-reference img { display: block; width: 100%; height: auto; object-fit: contain; }
+.calibration-reference p, .calibration-detection-status { margin: 8px 0 0; color: var(--sv-muted); font-size: .78rem; line-height: 1.5; }
+.calibration-detection-status { min-height: 2.4em; }
 .calibration-fields { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; }
 .calibration-fields label { display: grid; gap: 6px; font-size: .8rem; }
 .calibration-fields input, .calibration-fields select { width: 100%; min-width: 0; padding: 10px; border: 1px solid var(--sv-line); background: white; font: inherit; box-sizing: border-box; }
@@ -12,8 +19,15 @@
 .calibration-review-status { font-size: .85rem; line-height: 1.5; }
 .profile-source { margin: 12px 0; font-size: .8rem; line-height: 1.5; color: var(--sv-muted); }
 .photo-request-meta { padding: 15px; border-left: 3px solid var(--sv-olive); font-size: .8rem; line-height: 1.6; }
+.lab-size-row button.is-too-small { border-color: #963d2e; color: #963d2e; }
+.photo-fit-block { margin: 10px 0; color: #963d2e; font-size: .85rem; line-height: 1.5; }
+.photo-fit-block:empty { display: none; }
 @media (max-width: 560px) {
     .photo-calibration { padding: 12px; }
+    .calibration-layout { grid-template-columns: 1fr; gap: 10px; }
+    .calibration-reference { display: grid; grid-template-columns: minmax(80px, 120px) 1fr; gap: 10px; align-items: start; }
+    .calibration-reference h5 { grid-column: 1 / -1; }
+    .calibration-reference p { margin-top: 0; }
     .calibration-fields { grid-template-columns: 1fr 1fr; }
     .calibration-fields label:first-child { grid-column: 1 / -1; }
 }

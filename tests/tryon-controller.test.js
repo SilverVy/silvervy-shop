@@ -247,7 +247,7 @@ test('HF access failure remains distinct from site authentication and includes s
     assert.ok(res.data.requestId);
 });
 
-test('calibration is mandatory and impossible nonelastic sizes never fake body shrinkage', async t => {
+test('calibration is mandatory and any negative circumference ease blocks generation', async t => {
     const original = global.fetch;
     t.after(() => { global.fetch = original; });
     global.fetch = async () => { throw new Error('Provider should not be contacted'); };
@@ -257,9 +257,12 @@ test('calibration is mandatory and impossible nonelastic sizes never fake body s
     await generate(req, noGuide);
     assert.equal(noGuide.statusCode, 422);
     req.body.calibration = { confirmed: true, points: structuredClone(geometry.defaults) };
-    req.body.measurements = { ...measurements, chestCm: 170 };
-    const tooSmall = response();
-    await generate(req, tooSmall);
-    assert.equal(tooSmall.statusCode, 422);
-    assert.match(tooSmall.data.message, /меньше тела/);
+    req.body.size = 'XS';
+    for (const [key, value] of [['chestCm', 118], ['waistCm', 112], ['hipCm', 120]]) {
+        req.body.measurements = { ...measurements, [key]: value };
+        const tooSmall = response();
+        await generate(req, tooSmall);
+        assert.equal(tooSmall.statusCode, 422, `${key} smaller than size XS`);
+        assert.match(tooSmall.data.message, /меньше тела/);
+    }
 });

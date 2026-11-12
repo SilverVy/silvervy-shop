@@ -81,12 +81,16 @@ exports.updateProfile = async (req, res) => {
         return res.status(400).json({ message: 'Передайте объект с мерками.' });
     }
     const allowed = ['heightCm', 'weightKg', 'chestCm', 'waistCm', 'hipCm', 'inseamCm', 'shoulderCm', 'armLengthCm', 'handLengthCm'];
-    const ranges = { ...require('../public/fit-engine').ranges, weightKg: [30, 250] };
-    const measurements = {};
+    const ranges = require('../public/fit-engine').ranges;
+    const measurements = { ...(req.user.bodyMeasurements || {}) };
 
     for (const key of allowed) {
+        if (!Object.hasOwn(req.body, key)) continue;
         const value = req.body[key];
-        if (value === null || value === undefined || value === '') continue;
+        if (value === null || value === undefined || value === '') {
+            delete measurements[key];
+            continue;
+        }
         const number = Number(value);
         if (!['number', 'string'].includes(typeof value) || !Number.isFinite(number) || number < ranges[key][0] || number > ranges[key][1]) {
             return res.status(400).json({ message: 'Проверьте введённые параметры' });

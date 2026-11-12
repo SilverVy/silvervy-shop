@@ -5,15 +5,23 @@
         let image = null, source = '', points = structuredClone(geometry.defaults), selected = 'crown', dragging = false;
         let current = null, loadVersion = 0;
         const reviewed = new Set();
+        let autoDetectedKeys = new Set();
         container.innerHTML = `<h4>Калибровка фото по вашим меркам</h4>
-          <p class="sv-note">Это не автоматическое распознавание. Начальные точки условные: переместите их на человека. Нужен полный рост, фронтальная поза, опущенные и немного отведённые руки со слегка согнутыми локтями, по возможности облегающая одежда. Плечевые точки отмечайте на теле, не на спущенных швах одежды; конец кисти — конец среднего пальца. Кисти, лицо и фон вне маски сохраняются из оригинала.</p>
-          <div class="calibration-stage" tabindex="0" aria-label="Фото с опорными точками и областью перерисовки"></div>
+          <p class="sv-note">Поза и видимые кисти автоматически оцениваются локально в браузере для каждого фото. Это предварительная разметка, не измерение тела: проверьте каждую точку и поправьте её на фото. Нужен полный рост, фронтальная поза и руки немного отведены от туловища. Плечевые точки ставьте на тело, не на спущенный шов. Кисти, лицо и фон вне маски сохраняются из оригинала.</p>
+          <div class="calibration-layout">
+            <section class="calibration-work"><div class="calibration-stage" tabindex="0" aria-label="Фото с опорными точками и областью перерисовки"></div>
+            <p class="calibration-detection-status" role="status" aria-live="polite"></p></section>
+            <aside class="calibration-reference"><h5>Эталон разметки</h5>
+              <img src="/media/calibration/coat-calibrated-XL.png" alt="Пример полного фронтального фото с пронумерованными контрольными точками и маской пальто">
+              <p>Пример расположения точек и зоны маски. Координаты нельзя копировать: они рассчитываются заново для каждого фото.</p>
+            </aside>
+          </div>
           <div class="calibration-fields"><label>Опорная точка<select class="calibration-point">${Object.entries(geometry.labels).map(([key, label], i) => `<option value="${key}">${i + 1}. ${label}</option>`).join('')}</select></label>
           <label>X, % ширины<input class="calibration-x" type="number" min="0" max="100" step="0.1"></label>
           <label>Y, % высоты<input class="calibration-y" type="number" min="0" max="100" step="0.1"></label></div>
           <p class="sv-note">Выберите точку и нажмите на фото или перетащите маркер. Координаты можно вводить с клавиатуры. Коричневая область — вся зона перерисовки, включая удаление прежней одежды; светлый контур — ориентир выбранного размера, красные пунктиры — расчётные манжеты. Это не обещание точной формы результата.</p>
-          <button class="calibration-review" type="button">Точка на месте — проверить следующую</button>
-          <p class="calibration-review-status" role="status">Проверьте каждую точку отдельно. Шаблон не распознаёт человека.</p>
+          <button class="calibration-review" type="button">Точка проверена — перейти дальше</button>
+          <p class="calibration-review-status" role="status">Проверьте автоматические точки и вручную подтвердите оценочные.</p>
           <button class="calibration-reset" type="button">Сбросить точки</button>
           <p class="calibration-status" role="status"></p>
           <label class="photo-consent"><input class="calibration-confirm" type="checkbox"><span>Я проверил все ${Object.keys(geometry.defaults).length} точек: они соответствуют человеку на фото. Масштаб торса рассчитан по росту; для рук используются текущие мерки лаборатории, а при их отсутствии — приближённая оценка по фото.</span></label>`;
@@ -22,6 +30,7 @@
         const xInput = container.querySelector('.calibration-x');
         const yInput = container.querySelector('.calibration-y');
         const status = container.querySelector('.calibration-status');
+        const detectionStatus = container.querySelector('.calibration-detection-status');
         const confirm = container.querySelector('.calibration-confirm');
         function controls() {
             selector.value = selected;
@@ -29,8 +38,9 @@
             yInput.value = (points[selected].y * 100).toFixed(1);
             confirm.disabled = reviewed.size !== Object.keys(points).length;
             if (confirm.disabled) confirm.checked = false;
-            container.querySelector('.calibration-review-status').textContent =
-                `Проверено ${reviewed.size} из ${Object.keys(points).length}. ${confirm.disabled ? 'Исправьте положение выбранной точки или подтвердите, что она на месте.' : 'Теперь можно подтвердить калибровку.'}`;
+            const remaining = Object.keys(points).length - reviewed.size;
+            container.querySelector('.calibration-review-status').textContent = `Автоматически предложено: ${autoDetectedKeys.size}. Проверено или вручную отмечено: ${reviewed.size} из ${Object.keys(points).length}. ` +
+                (remaining ? `Осталось подтвердить ${remaining} точек. Выберите каждую и отметьте её или перетащите на фото.` : 'Просмотрите схему целиком и подтвердите её ниже.');
         }
         function refresh() {
             if (!image) { container.hidden = true; return; }
@@ -93,8 +103,10 @@
             confirm.checked = false; refresh(); onChange();
         });
         container.querySelector('.calibration-reset').addEventListener('click', () => {
-            reviewed.clear(); selected = 'crown';
-            points = structuredClone(geometry.defaults); confirm.checked = false; refresh(); onChange();
+            reviewed.clear(); autoDetectedKeys.clear(); selected = 'crown';
+            points = structuredClone(geometry.defaults); confirm.checked = false;
+            detectionStatus.textContent = 'Точки сброшены. Авторазметка будет рассчитана заново при следующей загрузке фото.';
+            refresh(); onChange();
         });
         container.hidden = true;
         return {
@@ -104,16 +116,31 @@
                 next.src = dataUrl;
                 await next.decode();
                 if (version !== loadVersion) return;
-                image = next; source = dataUrl; points = structuredClone(geometry.defaults); reviewed.clear(); selected = 'crown'; confirm.checked = false;
+                image = next; source = dataUrl; points = structuredClone(geometry.defaults); reviewed.clear(); autoDetectedKeys.clear(); selected = 'crown'; confirm.checked = false;
+                detectionStatus.textContent = 'Фото остаётся в браузере. Выполняется локальное распознавание позы, контура и кистей…';
+                refresh();
+                try {
+                    if (!root.SilverVyPhotoLandmarks) throw new Error('Модуль локального распознавания не загрузился.');
+                    const detection = await root.SilverVyPhotoLandmarks.estimate(next, geometry.defaults);
+                    if (version !== loadVersion) return;
+                    points = detection.points;
+                    autoDetectedKeys = new Set(detection.automaticKeys);
+                    reviewed.clear();
+                    autoDetectedKeys.forEach(key => reviewed.add(key));
+                    detectionStatus.textContent = `Распознано: ${autoDetectedKeys.size} точек; геометрически оценено: ${detection.estimatedKeys.length}. Оценочные точки нужно проверить вручную. ${detection.warnings.join(' ') || 'Поза, силуэт и кисти определены предварительно.'} Фото не отправлялось на сервер.`;
+                } catch (error) {
+                    if (version !== loadVersion) return;
+                    detectionStatus.textContent = `Авторазметка недоступна; точки оставлены условными, расставьте их вручную. ${error.message || ''} Фото не отправлялось на сервер.`;
+                }
                 refresh();
             },
             refresh,
-            clear() { loadVersion += 1; image = null; source = ''; current = null; reviewed.clear(); confirm.checked = false; stage.replaceChildren(); container.hidden = true; },
+            clear() { loadVersion += 1; image = null; source = ''; current = null; reviewed.clear(); autoDetectedKeys.clear(); confirm.checked = false; detectionStatus.textContent = ''; stage.replaceChildren(); container.hidden = true; },
             get image() { return source; },
             payload() {
                 refresh();
                 if (!current) throw new Error(status.textContent || 'Загрузите и откалибруйте фото.');
-                if (reviewed.size !== Object.keys(points).length || !confirm.checked) throw new Error('Проверьте каждую опорную точку отдельно и подтвердите калибровку фото.');
+                if (reviewed.size !== Object.keys(points).length || !confirm.checked) throw new Error('Проверьте и вручную подтвердите все опорные точки на фото.');
                 return { points: structuredClone(points), confirmed: true };
             }
         };

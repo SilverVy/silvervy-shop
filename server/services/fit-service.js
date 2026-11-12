@@ -26,6 +26,13 @@ function assessRequest(body = {}, { forGeneration = false } = {}) {
         throw new FitError(422, 'IDM-VTON не поддерживает примерку брюк. Сравнение мерок и схема доступны без генерации.');
     }
     const comparison = fit.rows.find(row => row.size === size);
+    if (forGeneration) {
+        const smallerThanBody = comparison.checks.filter(check => check.easeCm < 0);
+        if (smallerThanBody.length) {
+            const zones = smallerThanBody.map(check => `${check.label.toLowerCase()} на ${Math.abs(check.easeCm).toFixed(1)} см`).join(', ');
+            throw new FitError(422, `Размер ${size} меньше тела по меркам: ${zones}. Выберите размер не меньше обхватов тела.`);
+        }
+    }
     const values = comparison.checks.map(check =>
         `${check.key}: garment ${check.garmentCm} cm, body ${check.bodyCm} cm, circumference ease ${check.easeCm} cm`
     ).join('; ');

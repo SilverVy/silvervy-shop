@@ -27,8 +27,9 @@
         handTipLeft: 'Конец среднего пальца слева', handTipRight: 'Конец среднего пальца справа'
     };
     function validate(points, body) {
-        if (!Number.isFinite(Number(body?.heightCm)) || Number(body.heightCm) < 120 || Number(body.heightCm) > 220) {
-            throw new Error('Для масштаба фото укажите рост 120–220 см в лаборатории.');
+        const heightRange = fit.ranges.heightCm;
+        if (!Number.isFinite(Number(body?.heightCm)) || Number(body.heightCm) < heightRange[0] || Number(body.heightCm) > heightRange[1]) {
+            throw new Error(`Для масштаба фото укажите рост ${heightRange[0]}–${heightRange[1]} см в лаборатории.`);
         }
         for (const key of Object.keys(defaults)) {
             if (!points?.[key] || !['x', 'y'].every(axis => typeof points[key][axis] === 'number' &&

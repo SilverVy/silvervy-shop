@@ -1,9 +1,10 @@
 (function (root, factory) {
   'use strict';
-  const api = factory();
+  const fit = typeof module === 'object' && module.exports ? require('./fit-engine') : root.SilverVyFit;
+  const api = factory(fit);
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.SilverVySchematic = api;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (fit) {
   'use strict';
 
   const METRICS = {
@@ -20,11 +21,7 @@
     tops: ['chestCm', 'waistCm', 'hipCm', 'shoulderCm', 'lengthCm', 'sleeveCm'],
     bottoms: ['waistCm', 'hipCm', 'thighCm', 'inseamCm', 'lengthCm']
   };
-  const LIMITS = {
-    chestCm: [60, 180], waistCm: [45, 170], hipCm: [65, 190],
-    shoulderCm: [28, 70], armLengthCm: [35, 90], inseamCm: [45, 110],
-    thighCm: [20, 100]
-  };
+  const LIMITS = { ...fit.ranges, thighCm: [20, 100] };
   const STATUS = {
     tight: 'Отрицательная прибавка',
     close: 'Ниже целевого диапазона',

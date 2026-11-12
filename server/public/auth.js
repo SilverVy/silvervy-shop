@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const user = JSON.parse(localStorage.getItem('user'));
 
         if (token && user) {
+            const measurementLimits = window.SilverVyFit.ranges;
             document.querySelector('.auth-section').innerHTML = `
                 <div class="user-profile">
                     <h2>Добро пожаловать, ${user.name}!</h2>
@@ -44,17 +45,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         <h3>Параметры для подбора размера</h3>
                         <p>Измените данные в любое время. Фото тела в профиле не сохраняется.</p>
                         <form id="bodyMeasurementsForm">
-                            <label>Рост, см<input name="heightCm" type="number" min="120" max="220" required></label>
-                            <label>Вес, кг · необязательно<input name="weightKg" type="number" min="30" max="250" step="0.1"></label>
-                            <label>Обхват груди, см<input name="chestCm" type="number" min="60" max="180" step="0.1" required></label>
-                            <label>Обхват талии, см<input name="waistCm" type="number" min="45" max="170" step="0.1" required></label>
-                            <label>Обхват бёдер, см<input name="hipCm" type="number" min="65" max="190" step="0.1" required></label>
-                            <label>Длина внутреннего шва, см<input name="inseamCm" type="number" min="45" max="110" step="0.1"></label>
-                            <label>Ширина плеч, см · необязательно<input name="shoulderCm" type="number" min="28" max="70" step="0.1"></label>
+                            <label>Рост, см · необязательно<input name="heightCm" type="number" min="${measurementLimits.heightCm[0]}" max="${measurementLimits.heightCm[1]}" step="0.1"></label>
+                            <label>Вес, кг · необязательно<input name="weightKg" type="number" min="${measurementLimits.weightKg[0]}" max="${measurementLimits.weightKg[1]}" step="0.1"></label>
+                            <label>Обхват груди, см<input name="chestCm" type="number" min="${measurementLimits.chestCm[0]}" max="${measurementLimits.chestCm[1]}" step="0.1" required></label>
+                            <label>Обхват талии, см<input name="waistCm" type="number" min="${measurementLimits.waistCm[0]}" max="${measurementLimits.waistCm[1]}" step="0.1" required></label>
+                            <label>Обхват бёдер, см<input name="hipCm" type="number" min="${measurementLimits.hipCm[0]}" max="${measurementLimits.hipCm[1]}" step="0.1" required></label>
+                            <label>Длина внутреннего шва, см<input name="inseamCm" type="number" min="${measurementLimits.inseamCm[0]}" max="${measurementLimits.inseamCm[1]}" step="0.1"></label>
+                            <label>Ширина плеч, см · необязательно<input name="shoulderCm" type="number" min="${measurementLimits.shoulderCm[0]}" max="${measurementLimits.shoulderCm[1]}" step="0.1"></label>
                             <small>По спине между плечевыми точками, не по швам одежды.</small>
-                            <label>Длина руки, см · необязательно<input name="armLengthCm" type="number" min="35" max="90" step="0.1"></label>
+                            <label>Длина руки, см · необязательно<input name="armLengthCm" type="number" min="${measurementLimits.armLengthCm[0]}" max="${measurementLimits.armLengthCm[1]}" step="0.1"></label>
                             <small>От плечевой точки через слегка согнутый локоть до запястья. Здесь и в лаборатории используйте одну методику.</small>
-                            <label>Длина кисти, см · необязательно<input name="handLengthCm" type="number" min="12" max="26" step="0.1"></label>
+                            <label>Длина кисти, см · необязательно<input name="handLengthCm" type="number" min="${measurementLimits.handLengthCm[0]}" max="${measurementLimits.handLengthCm[1]}" step="0.1"></label>
                             <small>От запястья до конца среднего пальца, а не только длина ладони.</small>
                             <button type="submit" class="cta-button">Сохранить параметры</button>
                             <span id="measurementsStatus" role="status"></span>
