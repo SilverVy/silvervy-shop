@@ -132,6 +132,51 @@ test('coat fabric color is prioritized and short-arm measurements reach the prov
     assert.notEqual(payloads[0].data[2], payloads[1].data[2]);
 });
 
+test('short-garment prompts carry product-specific measurements across all five sizes', async t => {
+    const original = global.fetch;
+    t.after(() => { global.fetch = original; });
+    const payloads = [];
+    const image = await sharp({ create: { width: 768, height: 1024, channels: 3, background: '#b5a28d' } }).png().toBuffer();
+    global.fetch = providerStub({ image, onJoin: value => { payloads.push(value); } });
+    const wearer = { heightCm: 160, chestCm: 82, waistCm: 64, hipCm: 88, shoulderCm: 36, armLengthCm: 54, handLengthCm: 17 };
+    const products = [
+        ['shirt', 'shirt-cropped-reference-v1', 'Long-sleeve cotton shirt'],
+        ['bomber', 'bomber-cropped-reference-v1', 'Short bomber jacket'],
+        ['denim', 'denim-cropped-reference-v1', 'Short denim jacket'],
+        ['linen', 'linen-short-sleeve-reference-v1', 'Short-sleeve linen shirt']
+    ];
+    for (const [productId, profileId, style] of products) {
+        const bySize = [];
+        for (const size of ['XS', 'S', 'M', 'L', 'XL']) {
+            const req = await request(size);
+            req.body.productId = productId;
+            req.body.measurements = wearer;
+            const res = response();
+            await generate(req, res);
+            assert.equal(res.statusCode, 200, `${productId} ${size}`);
+            assert.equal(res.data.geometry.preprocessing.id, profileId);
+            const prompt = payloads.at(-1).data[2];
+            assert.ok(prompt.includes(style), `${productId}: preserve its cut`);
+            assert.ok(prompt.includes(`Selected ${size}: garment chest`));
+            assert.match(prompt, /body length \d+(?:\.\d+)? cm, sleeve length \d+(?:\.\d+)? cm/);
+            assert.match(prompt, /circumference ease: chest/);
+            assert.match(prompt, /larger sizes must add chest, waist and hip volume, not only sleeve length/);
+            assert.match(prompt, /Keep the hem at the mask boundary; do not lengthen/);
+            if (productId === 'linen') {
+                assert.match(prompt, /left short sleeve ends .* at the calculated \d+(?:\.\d+)? cm length/);
+                assert.match(prompt, /right short sleeve ends .* at the calculated \d+(?:\.\d+)? cm length/);
+            } else {
+                assert.match(prompt, /Long-sleeve cuff targets: left cuff/);
+                assert.match(prompt, /right cuff must/);
+            }
+            bySize.push(prompt);
+        }
+        for (let index = 1; index < bySize.length; index++) {
+            assert.notEqual(bySize[index - 1], bySize[index], `${productId}: adjacent size prompts must differ`);
+        }
+    }
+});
+
 test('quota and missing image failures do not return fabricated success', async t => {
     const original = global.fetch;
     t.after(() => { global.fetch = original; });

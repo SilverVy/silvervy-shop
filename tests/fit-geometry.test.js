@@ -69,6 +69,65 @@ test('sleeve-only changes alter trusted reference pixels without stretching the 
     assert.deepEqual(await bodyPatch(prepared.garment.buffer), await bodyPatch(changed.garment.buffer));
     assert.deepEqual(prepared.guide.target[0], changed.guide.target[0]);
 });
+test('short garments use item-specific cropped references and size-dependent length, volume, and sleeves', async () => {
+    const source = await sharp({ create: { width: 768, height: 1024, channels: 3, background: '#123456' } }).png().toBuffer();
+    const measurements = {
+        heightCm: 160, chestCm: 82, waistCm: 64, hipCm: 88,
+        shoulderCm: 36, armLengthCm: 54, handLengthCm: 17
+    };
+    for (const productId of ['shirt', 'bomber', 'denim', 'linen']) {
+        const item = catalog.getProduct(productId);
+        const reference = await fs.readFile(`server/public/${item.images.front}`);
+        const prepare = async size => {
+            const assessment = assessRequest({ productId, size, measurements });
+            return prepareSizeInputs({ buffer: source }, reference, assessment, {
+                points: geometry.defaults, confirmed: true
+            });
+        };
+        const sized = [];
+        for (const size of ['XS', 'S', 'M', 'L', 'XL']) sized.push(await prepare(size));
+        const expectedProfile = productId === 'linen'
+            ? 'linen-short-sleeve-reference-v1'
+            : `${productId}-cropped-reference-v1`;
+        for (const prepared of sized) {
+            assert.equal(prepared.metadata.preprocessing.id, expectedProfile);
+            assert.equal(prepared.metadata.preprocessing.mode, 'short-top');
+            assert.ok(prepared.metadata.preprocessing.referenceCrop);
+        }
+        for (let index = 1; index < sized.length; index++) {
+            const previous = sized[index - 1], current = sized[index];
+            assert.ok(previous.metadata.referenceScaleX < current.metadata.referenceScaleX, `${productId}: chest volume scale`);
+            assert.ok(previous.metadata.referenceScaleY < current.metadata.referenceScaleY, `${productId}: body length scale`);
+            assert.ok(previous.guide.projectedChestPx < current.guide.projectedChestPx, `${productId}: size mask width`);
+            assert.ok(previous.guide.hemClearanceCm > current.guide.hemClearanceCm, `${productId}: hem moves with selected length`);
+            assert.ok(previous.guide.sleeves[0].lengthCm < current.guide.sleeves[0].lengthCm, `${productId}: sleeve length changes`);
+            assert.ok(previous.metadata.referenceSleeves[0].sleeveRatio < current.metadata.referenceSleeves[0].sleeveRatio);
+            assert.notDeepEqual(previous.garment.buffer, current.garment.buffer, `${productId}: reference image must change by size`);
+        }
+    }
+});
+
+test('coat and trench stay on the full-frame outerwear preprocessing route', async () => {
+    const source = await sharp({ create: { width: 768, height: 1024, channels: 3, background: '#123456' } }).png().toBuffer();
+    const measurements = {
+        heightCm: 160, chestCm: 82, waistCm: 64, hipCm: 88,
+        shoulderCm: 36, armLengthCm: 54, handLengthCm: 17
+    };
+    for (const productId of ['coat', 'trench']) {
+        const item = catalog.getProduct(productId);
+        const reference = await fs.readFile(`server/public/${item.images.front}`);
+        const assessment = assessRequest({ productId, size: 'M', measurements });
+        const prepared = await prepareSizeInputs({ buffer: source }, reference, assessment, {
+            points: geometry.defaults, confirmed: true
+        });
+        assert.deepEqual(prepared.metadata.preprocessing, {
+            id: 'outerwear-full-frame-v1', mode: 'outerwear', referenceCrop: null
+        });
+        assert.equal(prepared.metadata.referenceScaleX, 1);
+        assert.equal(prepared.metadata.referenceScaleY, 1);
+    }
+});
+
 test('calibration rejects nonfinite, inverted, off-image, incomplete and physically unscaled input', () => {
     for (const points of [{}, { ...geometry.defaults, neck: { x: NaN, y: .18 } },
         { ...geometry.defaults, crown: { x: .5, y: .9 } },

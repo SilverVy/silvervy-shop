@@ -22,16 +22,27 @@ function axisMap(point, root, unit, factor) {
     const along = (point[0] - root[0]) * unit[0] + (point[1] - root[1]) * unit[1];
     return [point[0] + (factor - 1) * along * unit[0], point[1] + (factor - 1) * along * unit[1]];
 }
-function plans({ productId, sourceWidth, sourceHeight, targetWidth, targetHeight, scaleX, scaleY, sleeveRatio }) {
+function plans({
+    productId, sourceWidth, sourceHeight, targetWidth, targetHeight, scaleX, scaleY, sleeveRatio,
+    sourceCrop = { x: 0, y: 0, width: 1, height: 1 }
+}) {
     const annotation = annotations[productId];
     if (!annotation) throw new Error('Нет пиксельной разметки рукавов для предметного референса.');
     if (![sourceWidth, sourceHeight, targetWidth, targetHeight, scaleX, scaleY, sleeveRatio].every(n => Number.isFinite(n) && n > 0)) {
         throw new Error('Некорректные параметры градации рукавов.');
     }
+    if (!sourceCrop || ![sourceCrop.x, sourceCrop.y, sourceCrop.width, sourceCrop.height].every(Number.isFinite) ||
+        sourceCrop.x < 0 || sourceCrop.y < 0 || sourceCrop.width <= 0 || sourceCrop.height <= 0 ||
+        sourceCrop.x + sourceCrop.width > 1 || sourceCrop.y + sourceCrop.height > 1) {
+        throw new Error('Некорректная область референса для разметки рукава.');
+    }
     const contain = Math.min(768 / sourceWidth, 1024 / sourceHeight);
     const offsetX = (768 - sourceWidth * contain) / 2, offsetY = (1024 - sourceHeight * contain) / 2;
     const left = Math.floor((768 - targetWidth) / 2), top = Math.floor((1024 - targetHeight) / 2);
-    const canonical = point => [offsetX + point[0] * sourceWidth * contain, offsetY + point[1] * sourceHeight * contain];
+    const canonical = point => [
+        offsetX + (point[0] - sourceCrop.x) / sourceCrop.width * sourceWidth * contain,
+        offsetY + (point[1] - sourceCrop.y) / sourceCrop.height * sourceHeight * contain
+    ];
     const mapped = point => {
         const p = canonical(point);
         return [left + p[0] * targetWidth / 768, top + p[1] * targetHeight / 1024];
@@ -54,7 +65,10 @@ function plans({ productId, sourceWidth, sourceHeight, targetWidth, targetHeight
         const target = polygon.map(point => axisMap(point, root, unit, factor));
         if (target.some(([x,y]) => x < 0 || x >= 768 || y < 0 || y >= 1024)) throw new Error('Рукав референса выходит за кадр.');
         return { side, root, unit, polygon, target, factor, sleeveRatio, torsoAxisScale,
-            backgroundX: Math.round(mapped([side === 'Left' ? 0 : 1, 0])[0]) };
+            backgroundX: Math.round(mapped([
+                side === 'Left' ? sourceCrop.x : sourceCrop.x + sourceCrop.width,
+                sourceCrop.y + sourceCrop.height / 2
+            ])[0]) };
     });
 }
 

@@ -86,6 +86,16 @@ function buildQwenPrompt({ productName, category, size, recommendedSize, measure
     ].filter(Boolean).join(' ');
 }
 
+function shortSleeveEnd(sleeve) {
+    const { shoulder, elbow, cuff } = sleeve;
+    const dx = elbow.x - shoulder.x, dy = elbow.y - shoulder.y;
+    const lengthSquared = dx * dx + dy * dy;
+    const progress = ((cuff.x - shoulder.x) * dx + (cuff.y - shoulder.y) * dy) / lengthSquared;
+    if (progress < 0.85) return 'above the elbow on the upper arm';
+    if (progress <= 1.15) return 'at the elbow';
+    return 'below the elbow on the forearm';
+}
+
 function findImageFile(value) {
     if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('/') || value.startsWith('data:'))) {
         return value.startsWith('data:') ? { url: value } : { path: value };
@@ -449,11 +459,28 @@ exports.generate = async (req, res) => {
             : clearance <= 20 ? 'lower-calf-length'
                 : clearance <= 34 ? 'mid-calf-length'
                     : clearance <= 48 ? 'knee-length' : 'above-knee-length';
+        const isOuterwear = prepared.metadata.preprocessing.mode === 'outerwear';
         const hemGuidance = assessment.product.id === 'coat'
             ? `Keep ${hemLevel} coat ${clearance.toFixed(1)} cm above shoe level; do not shorten or add trousers.`
-            : `Keep measured hem; do not shorten.`;
+            : assessment.product.id === 'trench'
+                ? `Keep ${hemLevel} trench ${clearance.toFixed(1)} cm above shoe level; do not shorten or add trousers.`
+                : `Keep measured hem; do not shorten.`;
         const appearance = [assessment.product.tryOnColor, assessment.product.garmentDescription].filter(Boolean).join(' ');
-        const prompt = `${appearance}. Matching reference fabric color across torso, shoulders and sleeves. Follow the size mask silhouette. ${volumeGuidance} Sleeve coverage targets: ${cuffGuidance}. ${sleeveStyle}; ${fitWords}; sleeves ${assessment.garment.sleeveCm} cm from shoulder seam; preserve each calculated cuff position. ${hemGuidance} Same person, face and pose; preserve collar, pockets and closures.`;
+        const outerwearPrompt = `${appearance}. Matching reference fabric color across torso, shoulders and sleeves. Follow the size mask silhouette. ${volumeGuidance} Sleeve coverage targets: ${cuffGuidance}. ${sleeveStyle}; ${fitWords}; sleeves ${assessment.garment.sleeveCm} cm from shoulder seam; preserve each calculated cuff position. ${hemGuidance} Same person, face and pose; preserve collar, pockets and closures.`;
+        const shortGarmentStyle = {
+            shirt: 'Long-sleeve cotton shirt; preserve its button placket and curved hem.',
+            bomber: 'Short bomber jacket; preserve its ribbed waistband, cuffs and cropped body.',
+            denim: 'Short denim jacket; preserve the straight hem, denim texture and pockets.',
+            linen: 'Short-sleeve linen shirt; sleeves must remain short, not become long sleeves.'
+        }[assessment.product.id];
+        const garmentMeasurements = `Selected ${assessment.size}: garment chest ${assessment.garment.chestCm} cm, waist ${assessment.garment.waistCm} cm, hips ${assessment.garment.hipCm} cm, body length ${assessment.garment.lengthCm} cm, sleeve length ${assessment.garment.sleeveCm} cm.`;
+        const shortSleeveGuidance = assessment.product.id === 'linen'
+            ? prepared.guide.sleeves.map(sleeve =>
+                `${sleeve.side.toLowerCase()} short sleeve ends ${shortSleeveEnd(sleeve)} at the calculated ${sleeve.lengthCm} cm length`
+            ).join('; ')
+            : `Long-sleeve cuff targets: ${cuffGuidance}. ${sleeveStyle}`;
+        const shortPrompt = `${appearance}. ${shortGarmentStyle} Follow the selected-size mask and cropped reference. ${garmentMeasurements} ${volumeGuidance} ${shortSleeveGuidance}. Keep the hem at the mask boundary; do not lengthen. Match reference fabric color and construction. Same person, face and pose; preserve anatomy.`;
+        const prompt = isOuterwear ? outerwearPrompt : shortPrompt;
         const image = await callIdm(prepared.person, prepared.garment, prompt, prepared);
         console.info(JSON.stringify({ event: 'tryon_completed', requestId, elapsedMs: Date.now() - startedAt }));
 

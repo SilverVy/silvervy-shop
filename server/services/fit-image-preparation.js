@@ -2,6 +2,7 @@ const sharp = require('sharp');
 const geometry = require('../public/fit-geometry');
 const { FitError } = require('./fit-service');
 const { gradeSleeves } = require('./sleeve-reference');
+const { getPreprocessingProfile, getCropRect } = require('./garment-preprocessing');
 
 async function prepareSizeInputs(person, garmentBuffer, assessment, calibration) {
     if (assessment.fit.rows.find(row => row.size === assessment.size).checks.some(check => check.easeCm < 0)) {
@@ -22,21 +23,33 @@ async function prepareSizeInputs(person, garmentBuffer, assessment, calibration)
     }
     const normalizedPerson = await sharp(oriented.data).resize(768, 1024, { fit: 'contain', background: '#f3f1e9' }).png().toBuffer();
     const mask = await sharp(Buffer.from(geometry.svg(guide))).resize(768, 1024, { fit: 'contain', background: '#000000' }).removeAlpha().png().toBuffer();
+    const profile = getPreprocessingProfile(assessment.product.id);
+    const originalReferenceInfo = await sharp(garmentBuffer).metadata();
+    const referenceCrop = getCropRect(profile, originalReferenceInfo.width, originalReferenceInfo.height);
+    const referenceSource = referenceCrop
+        ? await sharp(garmentBuffer).extract({
+            left: referenceCrop.left, top: referenceCrop.top,
+            width: referenceCrop.width, height: referenceCrop.height
+        }).toBuffer()
+        : garmentBuffer;
+    const sourceInfo = referenceCrop
+        ? { width: referenceCrop.width, height: referenceCrop.height }
+        : originalReferenceInfo;
     const base = assessment.product.sizes.find(row => row.size === 'M');
     const scaleX = assessment.garment.chestCm / base.chestCm;
     const scaleY = assessment.garment.lengthCm / base.lengthCm;
     const targetWidth = Math.round(768 * .8 * scaleX);
     const targetHeight = Math.round(1024 * .8 * scaleY);
     if (targetWidth > 768 || targetHeight > 1024) throw new FitError(422, 'Референс выбранного размера не помещается в рабочий кадр.');
-    const normalizedReference = await sharp(garmentBuffer).resize(768, 1024, { fit: 'contain', background: '#ffffff' }).png().toBuffer();
+    const normalizedReference = await sharp(referenceSource).resize(768, 1024, { fit: 'contain', background: '#ffffff' }).png().toBuffer();
     const resizedReference = await sharp(normalizedReference).resize(targetWidth, targetHeight, { fit: 'fill' }).png().toBuffer();
     const reference = await sharp({ create: { width: 768, height: 1024, channels: 3, background: '#ffffff' } })
         .composite([{ input: resizedReference, left: Math.floor((768 - targetWidth) / 2), top: Math.floor((1024 - targetHeight) / 2) }])
         .png().toBuffer();
-    const sourceInfo = await sharp(garmentBuffer).metadata();
     const graded = await gradeSleeves(reference, {
         productId: assessment.product.id, sourceWidth: sourceInfo.width, sourceHeight: sourceInfo.height,
-        targetWidth, targetHeight, scaleX, scaleY, sleeveRatio: assessment.garment.sleeveCm / base.sleeveCm
+        targetWidth, targetHeight, scaleX, scaleY, sleeveRatio: assessment.garment.sleeveCm / base.sleeveCm,
+        sourceCrop: referenceCrop?.sourceCrop
     });
     return {
         person: { buffer: normalizedPerson, mimeType: 'image/png' },
@@ -44,6 +57,13 @@ async function prepareSizeInputs(person, garmentBuffer, assessment, calibration)
         seedPerson: person.buffer, seedGarment: garmentBuffer,
         metadata: {
             method: guide.method, referenceScaleX: scaleX, referenceScaleY: scaleY,
+            preprocessing: {
+                id: profile.id, mode: profile.mode,
+                referenceCrop: referenceCrop ? {
+                    left: referenceCrop.left, top: referenceCrop.top,
+                    width: referenceCrop.width, height: referenceCrop.height
+                } : null
+            },
             armCalibration: guide.armCalibration,
             sleeveControl: 'independent-axis-v1', referenceSleeves: graded.transforms,
             sleeves: guide.sleeves,
