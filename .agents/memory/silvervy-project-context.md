@@ -74,3 +74,9 @@ In a 140 cm wearer test, trousers appeared in the generated coat image even thou
 **Why:** the user explicitly corrected a previous attribution of the trousers.
 
 **How to apply:** compare short-person, long-coat outputs with their exact input photos and classify newly appearing trousers as a generation failure.
+
+GitHub commits for Silver.Vy must be authored by SilverVy.
+
+**Why:** the user explicitly said all commits should come from their GitHub account.
+
+**How to apply:** before pushing, verify the author and committer names on the outgoing commit; if necessary, consolidate unpublished local commits before sending.

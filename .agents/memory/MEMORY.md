@@ -2,3 +2,4 @@
 - [Silver.Vy project context](silvervy-project-context.md) — Silver.Vy is an educational project, not a commercial store.
 - [Hugging Face try-on quotas](huggingface-tryon-quotas.md) — public ZeroGPU Spaces can return empty results when shared inference quota is exhausted.
 - [Portable npm locks](portable-npm-locks.md) — successful Replit installs can leave private registry URLs that break external builds; verify portability separately.
+- [Git history safety guard](git-history-safety-guard.md) — unpublished history rewrites may require the explicit Replit Git safety override.
