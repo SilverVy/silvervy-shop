@@ -38,8 +38,9 @@ async function verify() {
         const smallDiagram = await page.locator('#schematicCanvas').innerHTML();
         await page.locator('[data-size="XL"]').click();
         assert.notEqual(await page.locator('#schematicCanvas').innerHTML(), smallDiagram);
-        assert.match(await page.locator('#schematicCopy').innerText(), /132 см/);
+        assert.match(await page.locator('#schematicCopy').innerText(), /132,0 см/);
         await page.screenshot({ path: 'generated-artifacts/fitting-desktop.jpg', fullPage: true });
+        await page.locator('#schematicCanvas').screenshot({ path: 'generated-artifacts/schematic-desktop.jpg' });
         await page.locator('[name="chestCm"]').fill('175');
         await page.locator('[name="waistCm"]').fill('165');
         await page.locator('[name="hipCm"]').fill('180');
@@ -61,6 +62,7 @@ async function verify() {
         await page.locator('#productSelect').selectOption('trousers');
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'mobile page overflows');
         await page.screenshot({ path: 'generated-artifacts/fitting-mobile.jpg', fullPage: true });
+        await page.locator('#schematicCanvas').screenshot({ path: 'generated-artifacts/schematic-mobile.jpg' });
         await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
         assert.ok(await page.locator('img[src="media/collection/coat-model.jpg"]').evaluate(image => image.naturalWidth > 0));
         assert.deepEqual(errors, []);

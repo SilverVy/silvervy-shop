@@ -6,6 +6,7 @@ const { readFile } = require('node:fs/promises');
 const path = require('node:path');
 const sharp = require('sharp');
 const { assessRequest, parsePersonImage } = require('../services/fit-service');
+const { prepareSizeInputs, preserveOutsideMask } = require('../services/fit-image-preparation');
 const activeJobs = new Set();
 const IDM_GARMENT_DESCRIPTIONS = new Set([
     'long wool coat',
@@ -18,8 +19,14 @@ const IDM_GARMENT_DESCRIPTIONS = new Set([
 ]);
 
 function providerHeaders(headers = {}) {
+    const token = (process.env.HF_TOKEN || '').trim();
+    if (token && !/^hf_[a-zA-Z0-9]+$/.test(token)) {
+        const error = new Error('HF_TOKEN на сервере имеет неверный формат. Используйте только значение hf_… без Bearer и кавычек.');
+        error.code = 'HF_CONFIG';
+        throw error;
+    }
     return {
-        ...(process.env.HF_TOKEN ? { Authorization: `Bearer ${process.env.HF_TOKEN}` } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...headers
     };
 }
@@ -123,6 +130,9 @@ function getProviderErrorMessage(value, depth = 0) {
 
 function sanitizeProviderError(message) {
     return String(message)
+        .replace(/\bhf_[a-zA-Z0-9]+\b/g, '[redacted token]')
+        .replace(/Bearer\s+\S+/gi, 'Bearer [redacted]')
+        .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, '[redacted session]')
         .replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, '[image data]')
         .replace(/https?:\/\/[^\s"'<>]+/g, '[url]')
         .slice(0, 300);
@@ -270,28 +280,44 @@ async function callQwen(person, garment, prompt) {
     return `data:${imageResponse.headers.get('content-type') || 'image/png'};base64,${result.toString('base64')}`;
 }
 
-async function callIdm(person, garment, garmentDescription) {
+function checkProviderResponse(response, stage) {
+    if (response.ok) return;
+    const error = new Error(`IDM-VTON: этап ${stage}, HTTP ${response.status}`);
+    error.stage = stage;
+    error.upstreamStatus = response.status;
+    if ([401, 403].includes(response.status)) error.code = 'HF_AUTH';
+    else if (response.status === 429) error.code = 'HF_QUOTA';
+    throw error;
+}
+
+async function callIdm(person, garment, garmentDescription, prepared) {
     const form = new FormData();
-    form.append('files', new Blob([person.buffer], { type: person.mimeType }), 'person.jpg');
-    form.append('files', new Blob([garment.buffer], { type: garment.mimeType }), 'garment.jpg');
+    form.append('files', new Blob([person.buffer], { type: person.mimeType }), 'person.png');
+    form.append('files', new Blob([garment.buffer], { type: garment.mimeType }), 'garment.png');
+    form.append('files', new Blob([prepared.mask], { type: 'image/png' }), 'size-mask.png');
     const uploadResponse = await fetch(`${IDM_SPACE_URL}/upload`, {
         method: 'POST',
         body: form,
         headers: providerHeaders(),
         signal: AbortSignal.timeout(60000)
     });
-    if (!uploadResponse.ok) throw new Error(`IDM-VTON не приняла изображения (${uploadResponse.status})`);
+    checkProviderResponse(uploadResponse, 'upload');
     const uploaded = await uploadResponse.json();
-    if (!Array.isArray(uploaded) || uploaded.length !== 2) throw new Error('IDM-VTON не вернула загруженные изображения');
+    if (!Array.isArray(uploaded) || uploaded.length !== 3 || !uploaded.every(item => typeof item === 'string')) throw new Error('IDM-VTON не вернула три загруженных изображения');
 
     const configResponse = await fetch(`${IDM_SPACE_URL}/config`, {
         headers: providerHeaders(),
         signal: AbortSignal.timeout(30000)
     });
-    if (!configResponse.ok) throw new Error(`Не удалось получить настройки IDM-VTON (${configResponse.status})`);
+    checkProviderResponse(configResponse, 'config');
     const config = await configResponse.json();
     const functionIndex = config.dependencies?.findIndex(dependency => dependency.api_name === 'tryon');
     if (functionIndex === undefined || functionIndex < 0) throw new Error('В IDM-VTON не найдена функция генерации');
+    const dependency = config.dependencies[functionIndex];
+    const editor = config.components?.find(component => component.id === dependency.inputs?.[0]);
+    if (editor?.type !== 'imageeditor' || dependency.inputs?.length !== 7) {
+        throw new Error('Интерфейс IDM-VTON изменился: размерная ручная маска недоступна. Автоматическая подмена текстовым режимом отключена.');
+    }
 
     const fileData = (path, origName, mimeType) => ({
         path,
@@ -300,16 +326,17 @@ async function callIdm(person, garment, garmentDescription) {
         meta: { _type: 'gradio.FileData' }
     });
     const sessionHash = randomUUID().replace(/-/g, '');
-    const seed = createHash('sha256').update(person.buffer).update(garment.buffer).digest().readUInt32BE(0) % 2147483648;
+    const seed = createHash('sha256').update(prepared.seedPerson).update(prepared.seedGarment).digest().readUInt32BE(0) % 2147483648;
     const joinResponse = await fetch(`${IDM_SPACE_URL}/queue/join`, {
         method: 'POST',
         headers: providerHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
             data: [
-                { background: fileData(uploaded[0], 'person.jpg', person.mimeType), layers: [], composite: null },
-                fileData(uploaded[1], 'garment.jpg', garment.mimeType),
+                { background: fileData(uploaded[0], 'person.png', person.mimeType),
+                    layers: [fileData(uploaded[2], 'size-mask.png', 'image/png')], composite: null },
+                fileData(uploaded[1], 'garment.png', garment.mimeType),
                 garmentDescription,
-                true,
+                false,
                 false,
                 20,
                 seed
@@ -320,13 +347,13 @@ async function callIdm(person, garment, garmentDescription) {
         }),
         signal: AbortSignal.timeout(30000)
     });
-    if (!joinResponse.ok) throw new Error(`IDM-VTON не запустила генерацию (${joinResponse.status})`);
+    checkProviderResponse(joinResponse, 'queue_join');
 
     const streamResponse = await fetch(`${IDM_SPACE_URL}/queue/data?session_hash=${encodeURIComponent(sessionHash)}`, {
         headers: providerHeaders({ Accept: 'text/event-stream' }),
         signal: AbortSignal.timeout(240000)
     });
-    if (!streamResponse.ok) throw new Error(`Не удалось получить результат IDM-VTON (${streamResponse.status})`);
+    checkProviderResponse(streamResponse, 'queue_stream');
     const stream = await streamResponse.text();
     const events = stream.split(/\r?\n/).filter(line => line.startsWith('data:')).map(line => {
         try {
@@ -339,7 +366,10 @@ async function callIdm(person, garment, garmentDescription) {
     const output = completed?.output?.data?.[0];
     const imageUrl = output?.url || output?.path;
     if (!completed?.success || !imageUrl) {
-        const error = new Error(completed?.output?.error || 'IDM-VTON не вернула изображение');
+        const queueError = events.findLast(event => event.msg === 'queue_full' || event.msg === 'unexpected_error' || event.error);
+        const error = new Error(completed?.output?.error || getProviderErrorMessage(queueError) ||
+            (queueError?.msg === 'queue_full' ? 'IDM-VTON queue quota full' : 'IDM-VTON не вернула изображение'));
+        error.stage = 'inference';
         if (!imageUrl && !completed?.output?.error) error.code = 'EMPTY_MODEL_RESULT';
         throw error;
     }
@@ -351,16 +381,19 @@ async function callIdm(person, garment, garmentDescription) {
         headers: new URL(absoluteUrl).origin === new URL(IDM_SPACE_URL).origin ? providerHeaders() : {},
         signal: AbortSignal.timeout(60000)
     });
-    if (!imageResponse.ok) throw new Error('Не удалось загрузить результат IDM-VTON');
+    checkProviderResponse(imageResponse, 'download');
     const result = Buffer.from(await imageResponse.arrayBuffer());
     if (!result.length || result.length > 12 * 1024 * 1024) throw new Error('Размер результата IDM-VTON превышает допустимый');
     const metadata = await sharp(result, { limitInputPixels: 16000000 }).metadata();
     const mime = { jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' }[metadata.format];
     if (!mime) throw new Error('IDM-VTON вернула неподдерживаемый формат изображения');
-    return `data:${mime};base64,${result.toString('base64')}`;
+    const preserved = await preserveOutsideMask(result, prepared);
+    return `data:image/png;base64,${preserved.toString('base64')}`;
 }
 
 exports.generate = async (req, res) => {
+    const requestId = randomUUID();
+    const startedAt = Date.now();
     const userKey = String(req.user.id);
     if (activeJobs.has(userKey)) {
         res.set('Retry-After', '15');
@@ -381,26 +414,43 @@ exports.generate = async (req, res) => {
             return res.status(400).json({ message: 'Нужно вертикальное фото анфас в полный рост достаточного разрешения.' });
         }
         const garmentBuffer = await readFile(path.join(__dirname, '../public', assessment.product.images.front));
-        const garment = { buffer: garmentBuffer, mimeType: 'image/jpeg', size: garmentBuffer.length };
-        const image = await callIdm(person, garment, assessment.description);
+        const prepared = await prepareSizeInputs(person, garmentBuffer, assessment, req.body.calibration);
+        console.info(JSON.stringify({ event: 'tryon_started', requestId, productId: assessment.product.id,
+            size: assessment.size, method: prepared.metadata.method, hfTokenConfigured: Boolean(process.env.HF_TOKEN) }));
+        const comparison = assessment.fit.rows.find(row => row.size === assessment.size);
+        const fitWords = comparison.checks.some(check => check.easeCm < 0) ? 'tight close-fitting'
+            : comparison.checks.some(check => check.status === 'loose') ? 'very loose oversized' : 'relaxed';
+        const prompt = `${fitWords} ${assessment.product.garmentDescription}, size ${assessment.size}. Follow the provided silhouette and hem length, keep garment details and anatomy. ${assessment.description}`;
+        const image = await callIdm(prepared.person, prepared.garment, prompt, prepared);
+        console.info(JSON.stringify({ event: 'tryon_completed', requestId, elapsedMs: Date.now() - startedAt }));
 
         res.status(200).json({
             image,
             productId: assessment.product.id,
             size: assessment.size,
             provider: 'IDM-VTON',
-            sizeConditioning: 'text-only',
-            fitNotice: 'Визуальная иллюстрация. Мерки переданы только текстом; совпадение изображения с физической посадкой не гарантируется.',
+            requestId,
+            sizeConditioning: prepared.metadata.method,
+            geometry: prepared.metadata,
+            fitNotice: 'Размер управляет калиброванной маской, масштабом референса и текстом. Область вне маски сохранена из исходного фото. Это экспериментальное геометрическое приближение, не физическая симуляция ткани и не гарантия посадки.',
             fit: assessment.fit
         });
     } catch (error) {
-        if (error.status) return res.status(error.status).json({ message: error.message, errors: error.errors });
-        console.error('Try-on provider error:', error.name, error.message);
-        const quotaReached = /zerogpu quota|quota/i.test(error.message);
+        if (error.status) return res.status(error.status).json({ message: error.message, errors: error.errors, requestId });
+        const quotaReached = ['HF_QUOTA'].includes(error.code) || /zerogpu quota|quota|queue full/i.test(error.message);
         const emptyResult = error.code === 'EMPTY_MODEL_RESULT';
+        console.error(JSON.stringify({ event: 'tryon_failed', requestId, stage: error.stage || 'prepare_or_provider',
+            code: error.code || (quotaReached ? 'HF_QUOTA' : 'PROVIDER_ERROR'), upstreamStatus: error.upstreamStatus,
+            message: error.stage === 'inference' ? (quotaReached ? 'Provider quota exhausted' : emptyResult ? 'Provider returned no image' : 'Provider inference failed')
+                : sanitizeProviderError(error.message), elapsedMs: Date.now() - startedAt }));
         const status = quotaReached ? 503 : emptyResult ? 502 : /timeout|timed out/i.test(error.message) ? 504 : 502;
         res.status(status).json({
-            message: quotaReached
+            requestId,
+            code: error.code || (quotaReached ? 'HF_QUOTA' : emptyResult ? 'HF_EMPTY_RESULT' : 'HF_PROVIDER_ERROR'),
+            message: error.code === 'HF_AUTH'
+                ? 'Hugging Face отклонил доступ. Проверьте серверный HF_TOKEN и доступ аккаунта к Space. Сессия входа Silver.Vy здесь ни при чём.'
+                : error.code === 'HF_CONFIG' ? error.message
+                : quotaReached
                 ? 'У публичной модели исчерпан лимит вычислений. Сравнение размеров работает без генерации; изображение можно попробовать позже.'
                 : emptyResult
                     ? 'Модель не вернула изображение. Сравнение размеров остаётся доступным; попробуйте генерацию позже.'

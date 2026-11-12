@@ -1,0 +1,18 @@
+.photo-controls { max-width: 850px; }
+.photo-calibration { padding: 20px; border: 1px solid var(--sv-line); background: #f4f1e8; }
+.photo-calibration[hidden] { display: none; }
+.photo-calibration h4 { margin: 0 0 10px; font: 500 1.4rem var(--sv-serif); }
+.calibration-stage { max-width: 440px; margin: 18px auto; touch-action: none; }
+.calibration-stage svg { display: block; width: 100%; height: auto; cursor: crosshair; }
+.calibration-fields { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; }
+.calibration-fields label { display: grid; gap: 6px; font-size: .8rem; }
+.calibration-fields input, .calibration-fields select { width: 100%; min-width: 0; padding: 10px; border: 1px solid var(--sv-line); background: white; font: inherit; box-sizing: border-box; }
+.calibration-status { font-size: .8rem; line-height: 1.6; }
+.calibration-reset, .profile-import { padding: 9px 12px; border: 1px solid var(--sv-line); background: transparent; color: var(--sv-ink); cursor: pointer; font: inherit; font-size: .8rem; }
+.profile-source { margin: 12px 0; font-size: .8rem; line-height: 1.5; color: var(--sv-muted); }
+.photo-request-meta { padding: 15px; border-left: 3px solid var(--sv-olive); font-size: .8rem; line-height: 1.6; }
+@media (max-width: 560px) {
+    .photo-calibration { padding: 12px; }
+    .calibration-fields { grid-template-columns: 1fr 1fr; }
+    .calibration-fields label:first-child { grid-column: 1 / -1; }
+}

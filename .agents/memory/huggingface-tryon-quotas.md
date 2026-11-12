@@ -5,16 +5,16 @@ description: Reliability limits of public Hugging Face Spaces used for Silver.Vy
 
 Do not assume an empty virtual try-on result means the uploaded photo is invalid. Public Hugging Face ZeroGPU Spaces can return `null` or an explicit quota error even when their runtime reports `RUNNING`. Verify a known-good example and inspect provider quota errors before asking users to retake photos. Authenticated requests may use the backend-only `HF_TOKEN` environment variable; never expose or log its value.
 
-IDM-VTON's public app applies an `upper_body` mask and has no size-conditioning, custom-mask, or multi-view input. The user explicitly chose it for the upper-body pilot because Qwen did not work and IDM-VTON previously ran on the site; lower-body try-on is temporarily disabled.
+IDM-VTON's automatic mode applies an `upper_body` mask. It has no trained metric size-conditioning or multi-view input, but the public editor DOES support a custom mask when automatic masking is disabled.
 
 **Why:** The user prefers restoring the previously functioning IDM-VTON path over continuing with Qwen, despite IDM-VTON's known category and conditioning limits. FASHN returned empty results for its own official example, and IDM-VTON's shared ZeroGPU quota can be exhausted.
 
-**How to apply:** Use IDM-VTON only for the explicitly chosen upper-body pilot. Keep lower-body try-on unavailable until a compatible provider is selected. The endpoint accepts a garment-description string, so size and profile values may be sent as textual fit guidance, but this is not structured size conditioning and may not change the image. It still does not accept custom masks or extra product views.
+**How to apply:** Use IDM-VTON only for the explicitly chosen upper-body pilot. Keep lower-body try-on unavailable until a compatible provider is selected. Check the live Gradio contract and official Space source before ruling out input controls; a custom mask is an editor layer with auto-masking off. Mask guidance controls the editable region, not guaranteed garment fit.
 
-**Why:** The user asked for the strongest available fit approximation without switching away from IDM-VTON; its textual garment description is the only exposed field where size guidance can be attempted.
+**Why:** An earlier investigation incorrectly ruled out manual masks. The official Space source explicitly reads the first editor layer when auto-masking is off; live requests confirmed that path. Text alone is not the only available guidance.
 
 The former 185 cm / largest-size-L model calibration is not applicable to the fictional educational collection or AI-generated model images.
 
 **Why:** That earlier user-selected baseline was an unverified experimental assumption. The user now permits designed educational specifications but requires rigorous distinction between design assumptions and real measurements for the diploma.
 
-**How to apply:** Never infer physical garment dimensions, a model's height or a worn size from generated photographs. Use the declared design specifications for the educational calculation and retain the text-only IDM limitation; empirical accuracy still requires manufactured samples.
+**How to apply:** Never infer physical garment dimensions, a model's height or a worn size from generated photographs. Use declared design specifications for educational calculations, distinguish geometric guidance from trained metric conditioning, and require manufactured samples for empirical accuracy.

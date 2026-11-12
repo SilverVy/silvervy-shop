@@ -25,10 +25,10 @@ async function verify() {
         const selected = scenario;
         if (selected === 'deferred') await new Promise(resolve => { finishDelay = resolve; startDelay(); });
         if (selected === 'quota') return route.fulfill({ status: 503, json: { message: 'У модели исчерпана квота. Попробуйте позже.' } });
-        if (selected === 'expired') return route.fulfill({ status: 401, json: { message: 'Сеанс истёк. Войдите заново.' } });
+        if (selected === 'expired') return route.fulfill({ status: 401, json: { code: 'AUTH_EXPIRED', message: 'Сеанс истёк. Войдите заново.' } });
         if (selected === 'invalid') return route.fulfill({ json: {} });
         return route.fulfill({ json: {
-            image, provider: 'Fixture only — no live inference', sizeConditioning: 'text-only',
+            image, provider: 'Fixture only — no live inference', sizeConditioning: 'calibrated-mask-reference-v1',
             fitNotice: 'Browser test fixture, not real generated output.', fit: { recommendedSize: 'S' }
         } });
     });
@@ -37,7 +37,7 @@ async function verify() {
     }
     try {
         await page.goto(`${base}/fitting.html?product=shirt&size=M`, { waitUntil: 'networkidle' });
-        for (const [key, value] of Object.entries({ chestCm: '100', waistCm: '84', hipCm: '100' })) {
+        for (const [key, value] of Object.entries({ chestCm: '100', waistCm: '84', hipCm: '100', heightCm: '178' })) {
             await page.locator(`[name="${key}"]`).fill(value);
         }
         await page.locator('#photoTitle').click();
@@ -51,23 +51,33 @@ async function verify() {
         await page.locator('#generatePhoto').click();
         assert.equal(requests.length, 0, 'photo must not be sent before consent');
         await page.locator('#photoConsent').check();
+        await page.locator('.calibration-stage svg').waitFor();
+        await page.locator('#generatePhoto').click();
+        await waitText('подтвердите калибровку');
+        assert.equal(requests.length, 0);
+        await page.locator('.calibration-confirm').check();
+        await page.locator('#photoCalibration').screenshot({ path: 'generated-artifacts/calibration-desktop.jpg' });
         await page.locator('#generatePhoto').click();
         await waitText('Фото-превью готово');
         assert.equal(await page.locator('#photoResult img').count(), 1);
         assert.equal(requests[0].productId, 'shirt');
         assert.equal(requests[0].size, 'M');
         assert.equal(requests[0].measurements.chestCm, 100);
+        assert.equal(requests[0].calibration.confirmed, true);
+        assert.equal(Object.keys(requests[0].calibration.points).length, 11);
         assert.equal(requests[0].garmentImage, undefined);
         assert.match(requests[0].personImage, /^data:image\/jpeg;base64,/);
         await page.locator('[name="waistCm"]').fill('85');
         assert.equal(await page.locator('#photoResult img').count(), 0, 'previous photo must disappear when measurements change');
         await page.locator('[data-size="XL"]').click();
         for (const [selected, text] of [['quota', 'исчерпана квота'], ['expired', 'Войдите заново'], ['invalid', 'не вернул корректное изображение']]) {
+            await page.evaluate(() => localStorage.setItem('token', 'browser-fixture-only-not-a-real-token'));
             scenario = selected;
             await page.locator('#generatePhoto').click();
             await waitText(text);
             assert.equal(await page.locator('#photoResult img').count(), 0);
             assert.equal(await page.locator('#generatePhoto').isEnabled(), true);
+            if (selected === 'expired') assert.equal(await page.evaluate(() => localStorage.getItem('token')), null);
         }
         assert.equal(requests.at(-1).size, 'XL');
         scenario = 'deferred';

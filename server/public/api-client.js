@@ -24,7 +24,24 @@
             }
             return base + path;
         }
-        return { url, request: (path, options) => fetchImpl(url(path), options) };
+        async function request(path, options) {
+            const response = await fetchImpl(url(path), options);
+            if (response.status === 401 && response.clone) {
+                const data = await response.clone().json().catch(() => ({}));
+                if (/^AUTH_/.test(data.code || '')) {
+                    try {
+                        const sent = new Headers(options?.headers).get('Authorization');
+                        if (sent === `Bearer ${root.localStorage.getItem('token')}`) {
+                            root.localStorage.removeItem('token');
+                            root.localStorage.removeItem('user');
+                            root.dispatchEvent(new CustomEvent('silvervy:session-expired', { detail: data }));
+                        }
+                    } catch { /* Storage can be disabled; preserve the original response. */ }
+                }
+            }
+            return response;
+        }
+        return { url, request };
     }
     const client = createClient({ baseUrl: resolveBase(root.location, root.SILVERVY_API_BASE) });
     return { ...client, createClient, resolveBase };

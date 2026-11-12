@@ -182,3 +182,17 @@ mtime_ms = 1794484979375
 storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/0d2e3e2a-95c8-42cb-9f59-0a9ccc3a138f/d6416e16-da9d-4e72-a5fe-bdf7f5507f1c"
 storage_version_token = "1794485179878612"
 content_type = "text/markdown"
+
+[[outputs]]
+id = "qdswh-k31Y-u8rvslC9eg"
+uri = "file://generated-artifacts/tryon/live-comparison.png"
+type = "image"
+title = "IDM-VTON: реальные результаты XS и XL"
+description = "Одинаковое учебное фото, мерки тела и seed; два действительных ответа бесплатной публичной модели с размерной маской. Это проверка интеграции, не доказательство физической точности посадки."
+logical_id = "2cededfc-8aa6-4b7b-a48a-10cef001f23b"
+content_hash = "sha256:9521b6c82e6ee09ca5c1d122a620edd8f7502bb9eb6d4539f61624077dca545f"
+size = 295964
+mtime_ms = 1794489347349
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/2cededfc-8aa6-4b7b-a48a-10cef001f23b/b299b811-ddcf-4a2d-8ad3-109d2c0525e0"
+storage_version_token = "1794489555710582"
+content_type = "image/png"

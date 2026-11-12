@@ -1,6 +1,8 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
+const sharp = require('sharp');
+const geometry = require('../server/public/fit-geometry');
 const { generate } = require('../server/controllers/tryOnController');
 const measurements = { heightCm: 178, chestCm: 100, waistCm: 84, hipCm: 100 };
 
@@ -14,8 +16,9 @@ function response() {
 }
 async function request(size = 'M') {
     const image = await fs.readFile('server/public/media/collection/shirt-model.jpg');
-    return { user: { id: 'test-only-user' }, body: {
+    return { user: { id: 'test-only-user', bodyMeasurements: { chestCm: 140, heightCm: 210 } }, body: {
         productId: 'shirt', size, measurements, personImage: 'data:image/jpeg;base64,' + image.toString('base64'),
+        calibration: { confirmed: true, points: structuredClone(geometry.defaults) },
         garmentImage: 'https://untrusted.invalid/not-accepted.jpg',
         garmentDescription: 'untrusted client description'
     } };
@@ -25,9 +28,12 @@ function providerStub({ queue, onJoin, image, onUpload }) {
         const pathname = new URL(String(url)).pathname;
         if (pathname === '/upload') {
             if (onUpload) await onUpload(options.body);
-            return Response.json(['/person.jpg', '/garment.jpg']);
+            return Response.json(['/person.png', '/garment.png', '/mask.png']);
         }
-        if (pathname === '/config') return Response.json({ dependencies: [{ api_name: 'tryon' }] });
+        if (pathname === '/config') return Response.json({
+            dependencies: [{ api_name: 'tryon', inputs: [5, 14, 17, 7, 10, 28, 29] }],
+            components: [{ id: 5, type: 'imageeditor' }]
+        });
         if (pathname === '/queue/join') {
             if (onJoin) onJoin(JSON.parse(options.body));
             return Response.json({ event_id: 'test-event' });
@@ -40,31 +46,41 @@ function providerStub({ queue, onJoin, image, onUpload }) {
     };
 }
 
-test('IDM adapter uses trusted garment, dimension-specific prompts and identical seed across sizes', async t => {
+test('IDM adapter sends different measured masks AND references, live laboratory values, and identical seed across sizes', async t => {
     const original = global.fetch;
     t.after(() => { global.fetch = original; });
     const uploadedReferences = [];
+    const uploadedMasks = [];
     const payloads = [];
-    const image = await fs.readFile('server/public/media/collection/shirt-model.jpg');
+    const image = await sharp('server/public/media/collection/shirt-model.jpg').resize(768, 1024).png().toBuffer();
     global.fetch = providerStub({
         image,
         onJoin: data => payloads.push(data),
-        onUpload: async form => uploadedReferences.push(Buffer.from(await form.getAll('files')[1].arrayBuffer()))
+        onUpload: async form => {
+            assert.equal(form.getAll('files').length, 3);
+            uploadedReferences.push(Buffer.from(await form.getAll('files')[1].arrayBuffer()));
+            uploadedMasks.push(Buffer.from(await form.getAll('files')[2].arrayBuffer()));
+        }
     });
     for (const size of ['XS', 'XL']) {
         const res = response();
         await generate(await request(size), res);
         assert.equal(res.statusCode, 200);
         assert.equal(res.data.size, size);
-        assert.equal(res.data.sizeConditioning, 'text-only');
-        assert.match(res.data.image, /^data:image\/jpeg;base64,/);
+        assert.equal(res.data.sizeConditioning, 'calibrated-mask-reference-v1');
+        assert.equal(res.data.geometry.measurements.chestCm, 100, 'must use laboratory, not stored profile measurement');
+        assert.equal(res.data.geometry.measurements.heightCm, 178);
+        assert.match(res.data.image, /^data:image\/png;base64,/);
     }
     assert.notEqual(payloads[0].data[2], payloads[1].data[2]);
     assert.match(payloads[0].data[2], /garment 108 cm/);
     assert.match(payloads[1].data[2], /garment 132 cm/);
     assert.equal(payloads[0].data[6], payloads[1].data[6]);
+    assert.equal(payloads[0].data[3], false, 'automatic mask must be disabled, otherwise the size mask is ignored');
+    assert.equal(payloads[0].data[0].layers.length, 1);
     assert.ok(!payloads[0].data[2].includes('untrusted client'));
-    assert.ok(uploadedReferences[0].equals(await fs.readFile('server/public/media/collection/shirt-front.jpg')));
+    assert.ok(!uploadedReferences[0].equals(uploadedReferences[1]));
+    assert.ok(!uploadedMasks[0].equals(uploadedMasks[1]));
 });
 
 test('quota and missing image failures do not return fabricated success', async t => {
@@ -107,7 +123,7 @@ test('concurrent requests for one user are rate-limited and lock is released', a
     const waiting = new Promise(resolve => { release = resolve; });
     const ready = new Promise(resolve => { started = resolve; });
     global.fetch = providerStub({
-        image: await fs.readFile('server/public/media/collection/shirt-model.jpg'),
+        image: await sharp('server/public/media/collection/shirt-model.jpg').resize(768, 1024).png().toBuffer(),
         onUpload: async () => { started(); await waiting; }
     });
     const req = await request();
@@ -123,4 +139,33 @@ test('concurrent requests for one user are rate-limited and lock is released', a
     const third = response();
     await generate(req, third);
     assert.equal(third.statusCode, 200);
+});
+
+test('HF access failure remains distinct from site authentication and includes safe diagnostic ID', async t => {
+    const original = global.fetch;
+    t.after(() => { global.fetch = original; });
+    global.fetch = async () => new Response('', { status: 401 });
+    const res = response();
+    await generate(await request(), res);
+    assert.equal(res.statusCode, 502, 'provider auth must not clear the site session');
+    assert.equal(res.data.code, 'HF_AUTH');
+    assert.match(res.data.message, /Hugging Face/);
+    assert.ok(res.data.requestId);
+});
+
+test('calibration is mandatory and impossible nonelastic sizes never fake body shrinkage', async t => {
+    const original = global.fetch;
+    t.after(() => { global.fetch = original; });
+    global.fetch = async () => { throw new Error('Provider should not be contacted'); };
+    const req = await request();
+    delete req.body.calibration;
+    const noGuide = response();
+    await generate(req, noGuide);
+    assert.equal(noGuide.statusCode, 422);
+    req.body.calibration = { confirmed: true, points: structuredClone(geometry.defaults) };
+    req.body.measurements = { ...measurements, chestCm: 170 };
+    const tooSmall = response();
+    await generate(req, tooSmall);
+    assert.equal(tooSmall.statusCode, 422);
+    assert.match(tooSmall.data.message, /меньше тела/);
 });

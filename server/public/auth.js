@@ -45,11 +45,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         <p>Измените данные в любое время. Фото тела в профиле не сохраняется.</p>
                         <form id="bodyMeasurementsForm">
                             <label>Рост, см<input name="heightCm" type="number" min="120" max="220" required></label>
-                            <label>Вес, кг<input name="weightKg" type="number" min="30" max="250" required></label>
-                            <label>Обхват груди, см<input name="chestCm" type="number" min="60" max="160" required></label>
-                            <label>Обхват талии, см<input name="waistCm" type="number" min="45" max="150" required></label>
-                            <label>Обхват бёдер, см<input name="hipCm" type="number" min="65" max="170" required></label>
-                            <label>Длина внутреннего шва, см<input name="inseamCm" type="number" min="55" max="100"></label>
+                            <label>Вес, кг · необязательно<input name="weightKg" type="number" min="30" max="250" step="0.1"></label>
+                            <label>Обхват груди, см<input name="chestCm" type="number" min="60" max="180" step="0.1" required></label>
+                            <label>Обхват талии, см<input name="waistCm" type="number" min="45" max="170" step="0.1" required></label>
+                            <label>Обхват бёдер, см<input name="hipCm" type="number" min="65" max="190" step="0.1" required></label>
+                            <label>Длина внутреннего шва, см<input name="inseamCm" type="number" min="45" max="110" step="0.1"></label>
                             <button type="submit" class="cta-button">Сохранить параметры</button>
                             <span id="measurementsStatus" role="status"></span>
                         </form>
@@ -61,7 +61,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const measurementsForm = document.getElementById('bodyMeasurementsForm');
             const authHeaders = { Authorization: `Bearer ${token}` };
             authApi('/api/auth/profile', { headers: authHeaders })
-                .then(response => response.ok ? response.json() : null)
+                .then(async response => {
+                    const data = await response.json();
+                    if (!response.ok) {
+                        const status = document.getElementById('measurementsStatus');
+                        if (status) status.textContent = data.message || 'Не удалось загрузить профиль';
+                        return null;
+                    }
+                    return data;
+                })
                 .then(data => {
                     if (!data?.user?.bodyMeasurements) return;
                     for (const [key, value] of Object.entries(data.user.bodyMeasurements)) {
@@ -69,7 +77,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (input) input.value = value;
                     }
                 })
-                .catch(() => {});
+                .catch(() => {
+                    const status = document.getElementById('measurementsStatus');
+                    if (status) status.textContent = 'Не удалось загрузить мерки профиля';
+                });
 
             measurementsForm.addEventListener('submit', async event => {
                 event.preventDefault();
@@ -88,6 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const data = await response.json();
                     status.textContent = response.ok ? 'Параметры сохранены' : data.message;
                     status.className = response.ok ? 'success' : 'error';
+                    if (response.ok) localStorage.setItem('silvervy-profile-revision', String(Date.now()));
                 } catch {
                     status.textContent = 'Не удалось сохранить параметры';
                     status.className = 'error';
@@ -220,4 +232,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Инициализация
     updateUI();
+    window.addEventListener('silvervy:session-expired', event => { updateUI(); showError(event.detail.message); });
 });

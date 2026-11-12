@@ -26,3 +26,15 @@ The clothing direction is men's oversized apparel in natural tones such as beige
 **Why:** the user stated these as product requirements for the try-on catalog.
 
 **How to apply:** preserve this direction when proposing or creating replacement catalog garments and when deciding which apparel categories to support.
+
+The user has already tried FitVTON and found its resource requirements too high. A separate GPU service cannot be arranged; use free IDM-VTON or another genuinely available free alternative.
+
+**Why:** the user explicitly ruled out a separate GPU service after the FitVTON trial.
+
+**How to apply:** do not repeatedly propose paid GPU hosting as the solution. Investigate free controls and state their limits rather than claiming metric accuracy from an appearance model.
+
+Current laboratory fields must determine generation; profile values are only an initial source of measurements.
+
+**Why:** the user explicitly emphasized that parameters entered in the laboratory must be accounted for in size-based try-on.
+
+**How to apply:** never substitute stored profile measurements for the user's visible edited laboratory values.

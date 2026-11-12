@@ -1,0 +1,198 @@
+/* Silver.Vy selected-size contour, scoped to the existing schematic component. */
+.schematic { grid-template-columns: minmax(0, 1fr); }
+.schematic .schematic-canvas {
+  display: block;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  padding: clamp(12px, 2vw, 24px);
+  overflow: hidden;
+  background: #e8e6dc;
+}
+.schematic .sv-schematic-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: none;
+  color: #282b25;
+  font-family: 'DM Sans', sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.schematic .sv-schematic-svg.svs-mobile { display: none; }
+.schematic .sv-schematic-svg text { fill: #282b25; }
+.schematic .sv-schematic-svg .svs-eyebrow {
+  fill: #a66e53;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+.schematic .sv-schematic-svg .svs-heading {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 22px;
+}
+.schematic .sv-schematic-svg .svs-size {
+  fill: #a66e53;
+  font-size: 22px;
+  font-weight: 700;
+}
+.schematic .sv-schematic-svg .svs-foot {
+  fill: #73766d;
+  font-size: 10px;
+  letter-spacing: .15px;
+}
+.schematic .sv-schematic-svg .svs-garment {
+  fill-opacity: .64;
+  stroke: #4f5548;
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.schematic .sv-schematic-svg .svs-sleeve-outline {
+  fill-opacity: .64;
+  stroke: #4f5548;
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.schematic .sv-schematic-svg .svs-contour-detail {
+  fill: none;
+  stroke: #626a51;
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  vector-effect: non-scaling-stroke;
+}
+.schematic .sv-schematic-svg .svs-dimension path {
+  fill: none;
+  stroke: #a66e53;
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+.schematic .sv-schematic-svg .svs-dimension circle {
+  fill: #fbfaf6;
+  stroke: #a66e53;
+  stroke-width: 1.3;
+  vector-effect: non-scaling-stroke;
+}
+.schematic .sv-schematic-svg .svs-dimension text {
+  fill: #8b5943;
+  font: 700 9px 'DM Sans', sans-serif;
+  text-anchor: middle;
+}
+.schematic .schematic-copy {
+  min-width: 0;
+  color: #62665c;
+  font-size: .8rem;
+  line-height: 1.55;
+}
+.schematic .sv-schematic-info { display: grid; gap: 12px; }
+.schematic .sv-schematic-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 5px 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #d9d8cd;
+}
+.schematic .sv-schematic-heading strong {
+  color: #282b25;
+  font: 500 1.12rem Georgia, 'Times New Roman', serif;
+}
+.schematic .sv-schematic-kicker {
+  color: #a66e53;
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.schematic .sv-schematic-map {
+  margin: 0;
+  color: #73766d;
+  font-size: .72rem;
+}
+.schematic .sv-schematic-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.schematic .sv-schematic-card {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #d9d8cd;
+  background: #fbfaf6;
+}
+.schematic .sv-schematic-index {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1px solid #a66e53;
+  border-radius: 50%;
+  color: #8b5943;
+  font-size: .7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.schematic .sv-schematic-card-main {
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.schematic .sv-schematic-card-main > strong {
+  color: #282b25;
+  font: 500 1rem Georgia, 'Times New Roman', serif;
+}
+.schematic .sv-schematic-garment { color: #282b25; font-weight: 600; }
+.schematic .sv-schematic-body { color: #73766d; }
+.schematic .sv-schematic-ease { color: #282b25; font-weight: 700; font-variant-numeric: tabular-nums; }
+.schematic .sv-schematic-status {
+  justify-self: start;
+  display: inline-block;
+  padding: 2px 6px;
+  color: #55584e;
+  background: #e8e7dc;
+  font-size: .68rem;
+}
+.schematic .sv-schematic-status--tight { color: #963f34; background: #f2e4de; }
+.schematic .sv-schematic-status--intended { color: #4e6145; background: #e1e8dc; }
+.schematic .sv-schematic-status--loose { color: #83643f; background: #eee8da; }
+.schematic .sv-schematic-target,
+.schematic .sv-schematic-unassessed { color: #73766d; font-size: .72rem; }
+.schematic .sv-schematic-legend {
+  padding: 12px 14px;
+  border-left: 2px solid #a66e53;
+  background: #f0eee5;
+}
+.schematic .sv-schematic-legend strong { color: #282b25; }
+.schematic .sv-schematic-legend p { margin: 5px 0 0; }
+.schematic .sv-schematic-body-note,
+.schematic .sv-schematic-engine,
+.schematic .sv-schematic-empty { margin: 0; }
+.schematic .sv-schematic-engine strong { color: #282b25; }
+.schematic .schematic-caption {
+  margin-top: 0;
+  color: #a66e53;
+  font-size: .62rem;
+  letter-spacing: .1em;
+}
+
+@media (max-width: 680px) {
+  .schematic .schematic-canvas { padding: 10px; }
+  .schematic .sv-schematic-svg.svs-desktop { display: none; }
+  .schematic .sv-schematic-svg.svs-mobile { display: block; }
+  .schematic .sv-schematic-svg.svs-mobile .svs-heading { font-size: 17px; }
+  .schematic .sv-schematic-svg.svs-mobile .svs-size { font-size: 19px; }
+  .schematic .sv-schematic-svg.svs-mobile .svs-eyebrow { font-size: 9px; }
+  .schematic .sv-schematic-svg.svs-mobile .svs-foot { font-size: 8px; }
+  .schematic .sv-schematic-metrics { grid-template-columns: minmax(0, 1fr); }
+  .schematic .sv-schematic-card { padding: 10px; }
+  .schematic .sv-schematic-info { gap: 10px; }
+}

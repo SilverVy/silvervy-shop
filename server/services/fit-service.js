@@ -37,7 +37,10 @@ function assessRequest(body = {}, { forGeneration = false } = {}) {
         'Use this as approximate visual fit guidance only; do not change the person’s anatomy.',
         'Preserve the reference garment color, cut, collar, pockets, closures and construction details.'
     ].join(' ');
-    return { product, garment, fit, description, size };
+    return { product, garment, fit, description, size, measurements: Object.fromEntries(
+        Object.entries(measurements).filter(([key, value]) => Object.hasOwn(fitEngine.ranges, key) &&
+            value !== '' && value != null).map(([key, value]) => [key, Number(value)])
+    ) };
 }
 
 function parsePersonImage(value) {

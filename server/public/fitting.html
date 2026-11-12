@@ -5,6 +5,7 @@
   <meta name="description" content="Учебная лаборатория Silver.Vy: сопоставление мерок человека и демонстрационных размеров одежды.">
   <title>Лаборатория мерок — Silver.Vy</title>
   <link rel="stylesheet" href="styles2.css"><link rel="stylesheet" href="collection.css">
+  <link rel="stylesheet" href="fit-schematic.css"><link rel="stylesheet" href="photo-calibration.css">
 </head>
 <body>
   <header><h1>Silver.Vy</h1></header>
@@ -20,7 +21,9 @@
     <div class="lab-layout">
       <section class="lab-panel" aria-labelledby="measureTitle">
         <h3 id="measureTitle">Ваши мерки</h3>
-        <p class="sv-note">Измеряйте сантиметровой лентой без натяжения. Грудь — по наиболее выступающим точкам; талия — по естественной линии; бёдра — по наиболее полной части. Рост — справочный параметр и не участвует в балле размера. Введённые мерки сохраняются только на время этой вкладки; в профиль они не отправляются.</p>
+        <p class="sv-note">Измеряйте сантиметровой лентой без натяжения. Грудь — по наиболее выступающим точкам; талия — по естественной линии; бёдра — по наиболее полной части. Рост нужен для масштаба фото, но не участвует в балле размера. Сохранённые мерки профиля загружаются автоматически. Для расчёта, схемы и генерации используются текущие поля ниже; изменения остаются в этой вкладке и не перезаписывают профиль.</p>
+        <p class="profile-source" id="profileSource" role="status"></p>
+        <button type="button" class="profile-import" id="importProfile">Загрузить сохранённые мерки профиля</button>
         <form id="bodyForm" novalidate>
           <div class="lab-fields">
             <label data-field="chestCm"><span>Обхват груди, см <b>*</b></span><input name="chestCm" inputmode="decimal" type="number" min="60" max="180" step="0.1" aria-describedby="error-chestCm"><small class="field-error" id="error-chestCm"></small></label>
@@ -58,13 +61,15 @@
     </div>
     <section class="photo-panel lab-panel" aria-labelledby="photoTitle">
       <details>
-        <summary id="photoTitle">Отдельное иллюстративное фото-превью</summary>
+        <summary id="photoTitle">Фото-примерка выбранного размера · экспериментальный метод</summary>
         <div class="photo-controls">
-          <p class="sv-note">Необязательно и отдельно от расчёта мерок. Нужно вертикальное фото анфас в полный рост от 512 × 768 пикселей, до 12 МБ. При запросе фото передаётся внешнему сервису IDM-VTON / Hugging Face. Silver.Vy не записывает фото в профиль или БД; правила хранения внешнего провайдера приложением не контролируются. Результат иллюстративен и не подтверждает фактическую посадку.</p>
+          <p class="sv-note">Мерки из лаборатории и размер выше управляют маской перерисовки, масштабом предметного референса и подсказкой IDM-VTON. Это геометрическое приближение, а не физическая симуляция ткани. Нужно фото анфас в полный рост от 512 × 768 пикселей до 12 МБ, рост и проверка опорных точек. Фото передаётся Hugging Face только по вашему запросу; Silver.Vy не сохраняет его в профиль, БД или браузерное хранилище. Хранение внешним провайдером не контролируется приложением.</p>
           <label for="personPhoto">Выберите фотографию (JPEG, PNG или WebP)</label>
           <input id="personPhoto" type="file" accept="image/jpeg,image/png,image/webp">
           <span id="fileName" class="sv-note">Файл не выбран</span>
-          <label class="photo-consent"><input type="checkbox" id="photoConsent"><span>Я даю согласие на отправку выбранного фото для создания отдельного иллюстративного превью. Фото не сохраняется в профиле или браузерном хранилище.</span></label>
+          <div class="photo-calibration" id="photoCalibration" hidden></div>
+          <div class="photo-request-meta" id="photoRequestMeta" aria-live="polite"></div>
+          <label class="photo-consent"><input type="checkbox" id="photoConsent"><span>Я даю согласие на отправку фото и размерной маски внешнему сервису. Понимаю ограничения экспериментального метода.</span></label>
           <div id="photoAvailability" class="sv-disclaimer" role="status">Проверяем доступность сервиса превью…</div>
           <p id="photoAuthHint" class="sv-note"></p>
           <button class="sv-button photo-button" id="generatePhoto" type="button">Создать фото-превью</button>
@@ -75,5 +80,5 @@
     </section>
   </main>
   <footer><div class="footer-content"><div class="footer-section"><h3>Контакты</h3><p>Красноярск, ул. Щорса, 41</p><p>info@silvervy.ru</p></div><div class="footer-section"><h3>Навигация</h3><div class="footer-links"><a href="catalog.html">Коллекция</a><a href="account.html">Аккаунт</a></div></div><div class="footer-section"><h3>Принцип</h3><p>Условные данные остаются условными. Сравнение доступно без авторизации.</p></div></div><div class="line"></div><p>&copy; 2026 Silver.Vy · Учебный проект</p></footer>
-  <script src="catalog-data.js"></script><script src="fit-engine.js"></script><script src="tryon.js"></script>
+  <script src="catalog-data.js"></script><script src="fit-engine.js"></script><script src="profile-measurements.js"></script><script src="fit-geometry.js"></script><script src="photo-calibration.js"></script><script src="fit-schematic.js"></script><script src="tryon.js"></script>
 </body></html>

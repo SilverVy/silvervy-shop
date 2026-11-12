@@ -77,19 +77,28 @@ exports.getProfile = async (req, res) => {
 };
 
 exports.updateProfile = async (req, res) => {
+    if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+        return res.status(400).json({ message: 'Передайте объект с мерками.' });
+    }
     const allowed = ['heightCm', 'weightKg', 'chestCm', 'waistCm', 'hipCm', 'inseamCm'];
+    const ranges = { ...require('../public/fit-engine').ranges, weightKg: [30, 250] };
     const measurements = {};
 
     for (const key of allowed) {
         const value = req.body[key];
         if (value === null || value === undefined || value === '') continue;
         const number = Number(value);
-        if (!Number.isFinite(number) || number < 1 || number > 300) {
+        if (!['number', 'string'].includes(typeof value) || !Number.isFinite(number) || number < ranges[key][0] || number > ranges[key][1]) {
             return res.status(400).json({ message: 'Проверьте введённые параметры' });
         }
         measurements[key] = number;
     }
 
-    await req.user.update({ bodyMeasurements: measurements });
-    res.status(200).json({ message: 'Параметры сохранены', bodyMeasurements: measurements });
+    try {
+        await req.user.update({ bodyMeasurements: measurements });
+        res.status(200).json({ message: 'Параметры сохранены', bodyMeasurements: measurements });
+    } catch {
+        console.error(JSON.stringify({ event: 'profile_save_failed', code: 'PROFILE_DATABASE' }));
+        res.status(503).json({ message: 'Не удалось сохранить мерки в базе. Попробуйте позже.', code: 'PROFILE_DATABASE' });
+    }
 };

@@ -26,23 +26,40 @@
   let latestFit = null;
   let requestVersion = 0;
   let serviceStatus = null;
-  const storedKey = 'silvervy-fitting-body-v1';
+  const storedKey = 'silvervy-fitting-body-v2';
+  const editedKeys = new Set();
+  let profileRequest = 0;
+  let photoRevision = 0;
   const bodyKeys = ['chestCm', 'waistCm', 'hipCm', 'heightCm', 'inseamCm'];
   const labels = { chestCm: 'Обхват груди', waistCm: 'Обхват талии', hipCm: 'Обхват бёдер', shoulderCm: 'Ширина плеч', lengthCm: 'Длина изделия', sleeveCm: 'Длина рукава', thighCm: 'Обхват бедра', inseamCm: 'Внутренний шов' };
   const dimensionKeys = ['chestCm', 'waistCm', 'hipCm', 'shoulderCm', 'lengthCm', 'sleeveCm', 'thighCm', 'inseamCm'];
   const statusText = { tight: 'Отрицательная прибавка', close: 'Ниже целевого диапазона', intended: 'В целевом диапазоне', loose: 'Выше целевого диапазона', unknown: 'Нет сравнения' };
+  const calibration = window.SilverVyPhotoCalibration(byId('photoCalibration'), {
+    getContext: () => ({ product, garment: product.sizes.find(row => row.size === selectedSize), body: bodyValues() }),
+    onChange: () => { requestVersion += 1; clearPhoto(); }
+  });
+  function owner() {
+    try { return String(JSON.parse(localStorage.getItem('user'))?.id || 'guest'); } catch { return 'guest'; }
+  }
+  let currentOwner = owner();
+  function clearPhoto() {
+    byId('photoResult').replaceChildren();
+    byId('photoStatus').textContent = '';
+  }
 
   function readStored() {
     try {
       const parsed = JSON.parse(sessionStorage.getItem(storedKey) || '{}');
-      return parsed && typeof parsed === 'object' ? parsed : {};
+      if (!parsed || parsed.owner !== owner()) return {};
+      (parsed.editedKeys || []).filter(key => bodyKeys.includes(key)).forEach(key => editedKeys.add(key));
+      return parsed.values || {};
     } catch { return {}; }
   }
   function bodyValues() {
     return Object.fromEntries(bodyKeys.map(key => [key, form.elements[key].value]));
   }
   function saveBody() {
-    try { sessionStorage.setItem(storedKey, JSON.stringify(bodyValues())); } catch { /* session storage may be unavailable */ }
+    try { sessionStorage.setItem(storedKey, JSON.stringify({ owner: owner(), values: bodyValues(), editedKeys: [...editedKeys] })); } catch { /* session storage may be unavailable */ }
   }
   function renderProductOptions() {
     productSelect.innerHTML = products.map(item => `<option value="${item.id}">${item.name} · ${item.category === 'tops' ? 'верх' : 'низ'}</option>`).join('');
@@ -74,6 +91,9 @@
     renderWarnings(latestFit.warnings || []);
     renderComparison(latestFit);
     renderSchematic(latestFit);
+    calibration.refresh();
+    const values = bodyValues();
+    byId('photoRequestMeta').textContent = `${product.name} · выбран ${selectedSize}. В генерацию пойдут текущие мерки лаборатории: грудь ${values.chestCm || '—'}, талия ${values.waistCm || '—'}, бёдра ${values.hipCm || '—'}, рост ${values.heightCm || '—'} см. Предпочтение прибавки влияет на рекомендацию; геометрия выбранного размера берётся из его собственных обмеров.`;
     requestVersion += 1;
     return latestFit;
   }
@@ -125,38 +145,9 @@
     compare.innerHTML = `<table><thead><tr><th>Параметр</th>${sizes}</tr></thead><tbody>${dataRows.join('')}<tr class="selected"><th>Результат движка</th>${fitRows}</tr></tbody></table><p class="sv-note">* Ближайший размер среди прошедших порог совместимости. Значение прибавки = мерка изделия − мерка тела; отрицательное число означает меньшее изделие в окружности. Статусы отображают каждый критерий отдельно.</p>`;
   }
   function renderSchematic(result) {
-    const garment = product.sizes.find(row => row.size === selectedSize);
-    if (!garment) return;
-    const body = bodyValues();
-    const sourceWidth = product.category === 'tops' ? garment.chestCm : garment.hipCm;
-    const unit = 1.7; // Common diagram scale; girths are unfolded into half-circumferences.
-    const width = sourceWidth / 2 * unit;
-    const lengthCm = garment.lengthCm;
-    const length = lengthCm * unit;
-    const left = (300 - width) / 2;
-    const right = 300 - left;
-    const top = 45;
-    const hem = top + length;
-    const title = product.category === 'tops' ? 'Развёртка мерок верха' : 'Развёртка мерок брюк';
-    const waistHalf = (garment.waistCm || sourceWidth) / 2 * unit;
-    const crotch = top + (garment.lengthCm - (garment.inseamCm || 0)) * unit;
-    const garmentSvg = product.category === 'tops'
-      ? `<path d="M${left + 18},${top} L${left},${top + 12} L${left - 24},${top + 70} L${left - 9},${top + 78} L${left},${top + 48} L${left},${hem} L${right},${hem} L${right},${top + 48} L${right + 9},${top + 78} L${right + 24},${top + 70} L${right},${top + 12} L${right - 18},${top} Q150,${top + 14} ${left + 18},${top} Z"/>`
-      : `<path d="M${150 - waistHalf / 2},${top} L${150 + waistHalf / 2},${top} L${right},${crotch} L${right - 4},${hem} L${154},${hem} L150,${crotch} L146,${hem} L${left + 4},${hem} L${left},${crotch} Z"/>`;
-    const bodyGirth = Number(body[product.category === 'tops' ? 'chestCm' : 'hipCm']);
-    const bodyHalf = result.status === 'ready' ? bodyGirth / 2 * unit : null;
-    const bodyMarker = bodyHalf
-      ? `<line x1="${150 - bodyHalf / 2}" y1="${top + 32}" x2="${150 + bodyHalf / 2}" y2="${top + 32}" stroke="#373e35" stroke-width="4"/><text x="150" y="${top + 26}" text-anchor="middle" font-size="10">тело: полуобхват ${bodyGirth / 2} см</text>` : '';
-    schematicCanvas.innerHTML = `<svg viewBox="0 0 300 320" role="img" aria-label="${title}, размер ${selectedSize}; полуобхват ${sourceWidth / 2} сантиметров, длина ${lengthCm} сантиметров">
-      <title>${title}, размер ${selectedSize}</title><line x1="150" y1="12" x2="150" y2="304" stroke="#b9b8ac" stroke-dasharray="3 5"/>
-       <circle cx="150" cy="21" r="12" fill="none" stroke="#7d8175" stroke-width="1.5"/>
-      <g fill="${product.tone}" fill-opacity=".72" stroke="#4f5548" stroke-width="2">${garmentSvg}</g>
-       ${bodyMarker}
-      <line x1="${left}" y1="${hem + 11}" x2="${right}" y2="${hem + 11}" stroke="#a66e53" stroke-width="1.5"/>
-       <text x="150" y="${hem + 27}" text-anchor="middle" fill="#62665c" font-size="10">изделие: полуобхват ${sourceWidth / 2} см</text>
-    </svg>`;
-    const matching = result.status === 'ready' ? result.rows.find(row => row.size === selectedSize) : null;
-    schematicCopy.innerHTML = `<strong>${title} · ${selectedSize}</strong><br>${labels[product.category === 'tops' ? 'chestCm' : 'hipCm']}: ${sourceWidth} см<br>Длина изделия: ${lengthCm} см${product.category === 'bottoms' ? `<br>Внутренний шов: ${garment.inseamCm} см` : ''}<br>Полуобхват = обхват / 2; это не видимая ширина тела и не лекало.${matching ? `<br>Порог совместимости: ${matching.compatible ? 'пройден' : 'не пройден'}.` : ''}<span class="schematic-caption">Плоская схема мерок · не 3D</span>`;
+    const rendered = window.SilverVySchematic.render({ product, size: selectedSize, result, body: bodyValues() });
+    schematicCanvas.innerHTML = rendered.svg;
+    schematicCopy.innerHTML = rendered.copy;
   }
 
   renderProductOptions();
@@ -166,13 +157,13 @@
   evaluateNow();
 
   form.addEventListener('input', event => {
-    if (event.target.matches('input[type="number"]')) saveBody();
+    if (event.target.matches('input[type="number"]')) { editedKeys.add(event.target.name); saveBody(); }
     byId('photoResult').replaceChildren();
     byId('photoStatus').textContent = '';
     evaluateNow();
   });
   form.addEventListener('change', event => {
-    if (event.target.name === 'preference') evaluateNow();
+    if (event.target.name === 'preference') { clearPhoto(); evaluateNow(); }
   });
   productSelect.addEventListener('change', () => {
     product = catalog.getProduct(productSelect.value) || products[0];
@@ -223,6 +214,48 @@
   }
   loadServiceStatus();
 
+  async function loadProfile(force = false) {
+    const source = byId('profileSource');
+    const token = localStorage.getItem('token');
+    if (!token) { source.textContent = 'Гостевой режим: используйте поля лаборатории или войдите, чтобы загрузить профиль.'; return; }
+    const version = ++profileRequest;
+    source.textContent = 'Загружаем сохранённые мерки профиля…';
+    try {
+      const response = await apiRequest('/api/auth/profile', { headers: { Authorization: `Bearer ${token}` } });
+      const data = await response.json().catch(() => ({}));
+      if (version !== profileRequest || localStorage.getItem('token') !== token) return;
+      if (!response.ok) { source.textContent = data.message || 'Не удалось загрузить профиль. Введённые мерки сохранены в этой вкладке.'; return; }
+      const before = JSON.stringify(bodyValues());
+      const profile = data.user?.bodyMeasurements || {};
+      if (force) editedKeys.clear();
+      const current = force ? Object.fromEntries(bodyKeys.map(key => [key, ''])) : bodyValues();
+      const merged = window.SilverVyMeasurements.mergeProfile(current, profile, editedKeys);
+      bodyKeys.forEach(key => { form.elements[key].value = merged[key] ?? ''; });
+      source.textContent = Object.keys(profile).length
+        ? `Мерки профиля загружены. ${editedKeys.size ? 'Ваши изменения в лаборатории оставлены без перезаписи.' : 'Для примерки можно изменить любые поля ниже.'}`
+        : 'В профиле пока нет сохранённых мерок. Заполните поля лаборатории.';
+      saveBody();
+      if (before !== JSON.stringify(bodyValues())) { clearPhoto(); evaluateNow(); }
+    } catch { if (version === profileRequest) source.textContent = 'Профиль недоступен. Используйте текущие мерки лаборатории; они не потеряны.'; }
+  }
+  byId('importProfile').addEventListener('click', () => loadProfile(true));
+  window.addEventListener('focus', () => loadProfile());
+  window.addEventListener('storage', event => {
+    if (!['user', 'token', 'silvervy-profile-revision'].includes(event.key)) return;
+    if (owner() !== currentOwner) {
+      currentOwner = owner(); editedKeys.clear();
+      bodyKeys.forEach(key => { form.elements[key].value = ''; });
+      calibration.clear(); photoInput.value = ''; photoRevision += 1;
+      clearPhoto(); evaluateNow();
+    }
+    loadProfile();
+  });
+  window.addEventListener('silvervy:session-expired', event => {
+    byId('profileSource').textContent = event.detail.message;
+    byId('photoAuthHint').innerHTML = 'Сессия сайта завершена. <a href="account.html">Войти заново</a>. Текущие мерки в лаборатории не удалены.';
+  });
+  loadProfile();
+
   function compressPhoto(file) {
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       return Promise.reject(new Error('Выберите JPEG, PNG или WebP.'));
@@ -247,12 +280,22 @@
     });
   }
   const photoInput = byId('personPhoto');
-  photoInput.addEventListener('change', () => {
+  photoInput.addEventListener('change', async () => {
     const file = photoInput.files?.[0];
+    const revision = ++photoRevision;
+    calibration.clear();
+    byId('photoConsent').checked = false;
     byId('fileName').textContent = file ? `${file.name} · ${Math.round(file.size / 1024)} КБ` : 'Файл не выбран';
     requestVersion += 1;
     byId('photoResult').replaceChildren();
     byId('photoStatus').textContent = '';
+    if (file) {
+      try {
+        const data = await compressPhoto(file);
+        if (revision !== photoRevision) return;
+        await calibration.load(data);
+      } catch (error) { if (revision === photoRevision) byId('photoStatus').textContent = error.message; }
+    }
   });
   byId('photoConsent').addEventListener('change', () => {
     requestVersion += 1;
@@ -290,7 +333,9 @@
     resultArea.replaceChildren();
     status.textContent = 'Подготавливаем уменьшенную копию изображения…';
     try {
-      const personImage = await compressPhoto(file);
+      if (!calibration.image) throw new Error('Дождитесь подготовки фото или выберите корректный файл.');
+      const calibrationPayload = calibration.payload();
+      const personImage = calibration.image;
       if (versionAtStart !== requestVersion) { status.textContent = 'Параметры изменились. Повторите запрос для актуального выбора.'; return; }
       const measurements = Object.fromEntries(bodyKeys.map(key => {
         const value = bodyValues()[key];
@@ -300,10 +345,14 @@
         method: 'POST',
         signal: AbortSignal.timeout(300000),
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ personImage, productId: product.id, size: selectedSize, measurements, preference: form.elements.preference.value })
+        body: JSON.stringify({ personImage, productId: product.id, size: selectedSize, measurements,
+          preference: form.elements.preference.value, calibration: calibrationPayload })
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.message || (response.status === 401 ? 'Авторизуйтесь, чтобы создать фото-превью.' : 'Не удалось создать фото-превью.'));
+      if (!response.ok) {
+        if (response.status === 401) byId('photoAuthHint').innerHTML = 'Нужен повторный вход на сайт. <a href="account.html">Войти заново</a>. Это не замена HF_TOKEN.';
+        throw new Error(`${data.message || 'Не удалось создать фото-превью.'}${data.requestId ? ` Код запроса: ${data.requestId}` : ''}`);
+      }
       if (versionAtStart !== requestVersion) {
         status.textContent = 'Параметры изменились во время обработки. Устаревший результат скрыт.';
         return;
@@ -317,9 +366,9 @@
       const notice = document.createElement('p');
       notice.className = 'sv-note';
       const serverFit = data.fit?.recommendedSize ? ` Серверная проверка: ${data.fit.recommendedSize} — выбран ${selectedSize}.` : '';
-      notice.textContent = `${data.provider || 'Сервис генерации'} · sizeConditioning: ${data.sizeConditioning || 'не указано'}. ${data.fitNotice || 'Иллюстративное изображение, не подтверждение реальной посадки.'}${serverFit}`;
+      notice.textContent = `${data.provider || 'Сервис генерации'} · ${data.sizeConditioning || 'метод не указан'}. ${data.fitNotice || 'Приближение посадки, не физическая симуляция.'}${serverFit}${data.geometry?.warnings ? ' ' + data.geometry.warnings.join(' ') : ''}${data.requestId ? ` Код запроса: ${data.requestId}` : ''}`;
       resultArea.append(image, notice);
-      status.textContent = 'Фото-превью готово. Оно не заменяет проверку мерок и не подтверждает точную посадку.';
+      status.textContent = 'Фото-превью готово по текущим меркам и выбранному размеру. Это экспериментальное приближение, не подтверждение физической посадки.';
     } catch (error) {
       if (versionAtStart === requestVersion) status.textContent = error.name === 'TimeoutError'
         ? 'Время ожидания фото-превью истекло. Сравнение мерок остаётся доступным.'
