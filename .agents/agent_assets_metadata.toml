@@ -168,3 +168,17 @@ mtime_ms = 1794484289356
 storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/5ced37e5-a78c-4b28-abbd-dd01a73ba6e1/a1833614-5722-4866-ba50-14b3fa6ab66d"
 storage_version_token = "1794484716015840"
 content_type = "text/markdown"
+
+[[outputs]]
+id = "CGyYkOn1-dZ4Uw8szEXgY"
+uri = "file://docs/render-readiness.md"
+type = "text"
+title = "Проверка перед обновлением Render"
+description = "Команды запуска, сохранение существующих настроек и список живых проверок после вашего обновления."
+logical_id = "0d2e3e2a-95c8-42cb-9f59-0a9ccc3a138f"
+content_hash = "sha256:b4f3bb6250f5c244cc4fc0ee1eb48faaba7a81c97ed7d10e8d810b8741479e43"
+size = 5354
+mtime_ms = 1794484979375
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/0d2e3e2a-95c8-42cb-9f59-0a9ccc3a138f/d6416e16-da9d-4e72-a5fe-bdf7f5507f1c"
+storage_version_token = "1794485179878612"
+content_type = "text/markdown"

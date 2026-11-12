@@ -1,0 +1,96 @@
+const { chromium } = require('playwright-core');
+const assert = require('node:assert/strict');
+const fs = require('node:fs/promises');
+
+async function verify() {
+    const base = process.env.BASE_URL || (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://127.0.0.1:5000');
+    const browser = await chromium.launch({
+        executablePath: process.env.CHROMIUM_PATH || '/repl/tools/bin/chromium',
+        headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage']
+    });
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.stack || error.message));
+    const image = 'data:image/jpeg;base64,' + (await fs.readFile('server/public/media/collection/shirt-model.jpg')).toString('base64');
+    const requests = [];
+    let scenario = 'success';
+    let finishDelay;
+    let startDelay;
+    await page.route('**/api/status', route => route.fulfill({
+        json: { mode: 'full', tryOnAvailable: true, message: 'Controlled browser-test fixture; not a live provider.' }
+    }));
+    await page.route('**/api/try-on', async route => {
+        requests.push(route.request().postDataJSON());
+        const selected = scenario;
+        if (selected === 'deferred') await new Promise(resolve => { finishDelay = resolve; startDelay(); });
+        if (selected === 'quota') return route.fulfill({ status: 503, json: { message: 'У модели исчерпана квота. Попробуйте позже.' } });
+        if (selected === 'expired') return route.fulfill({ status: 401, json: { message: 'Сеанс истёк. Войдите заново.' } });
+        if (selected === 'invalid') return route.fulfill({ json: {} });
+        return route.fulfill({ json: {
+            image, provider: 'Fixture only — no live inference', sizeConditioning: 'text-only',
+            fitNotice: 'Browser test fixture, not real generated output.', fit: { recommendedSize: 'S' }
+        } });
+    });
+    async function waitText(text) {
+        await page.waitForFunction(value => document.querySelector('#photoStatus').textContent.includes(value), text);
+    }
+    try {
+        await page.goto(`${base}/fitting.html?product=shirt&size=M`, { waitUntil: 'networkidle' });
+        for (const [key, value] of Object.entries({ chestCm: '100', waistCm: '84', hipCm: '100' })) {
+            await page.locator(`[name="${key}"]`).fill(value);
+        }
+        await page.locator('#photoTitle').click();
+        await page.locator('#generatePhoto').click();
+        await waitText('войдите в аккаунт');
+        assert.equal(requests.length, 0);
+        await page.evaluate(() => localStorage.setItem('token', 'browser-fixture-only-not-a-real-token'));
+        await page.locator('#generatePhoto').click();
+        await waitText('подтвердите отдельное согласие');
+        await page.locator('#personPhoto').setInputFiles('server/public/media/collection/shirt-model.jpg');
+        await page.locator('#generatePhoto').click();
+        assert.equal(requests.length, 0, 'photo must not be sent before consent');
+        await page.locator('#photoConsent').check();
+        await page.locator('#generatePhoto').click();
+        await waitText('Фото-превью готово');
+        assert.equal(await page.locator('#photoResult img').count(), 1);
+        assert.equal(requests[0].productId, 'shirt');
+        assert.equal(requests[0].size, 'M');
+        assert.equal(requests[0].measurements.chestCm, 100);
+        assert.equal(requests[0].garmentImage, undefined);
+        assert.match(requests[0].personImage, /^data:image\/jpeg;base64,/);
+        await page.locator('[name="waistCm"]').fill('85');
+        assert.equal(await page.locator('#photoResult img').count(), 0, 'previous photo must disappear when measurements change');
+        await page.locator('[data-size="XL"]').click();
+        for (const [selected, text] of [['quota', 'исчерпана квота'], ['expired', 'Войдите заново'], ['invalid', 'не вернул корректное изображение']]) {
+            scenario = selected;
+            await page.locator('#generatePhoto').click();
+            await waitText(text);
+            assert.equal(await page.locator('#photoResult img').count(), 0);
+            assert.equal(await page.locator('#generatePhoto').isEnabled(), true);
+        }
+        assert.equal(requests.at(-1).size, 'XL');
+        scenario = 'deferred';
+        const started = new Promise(resolve => { startDelay = resolve; });
+        await page.locator('#generatePhoto').click();
+        await started;
+        await page.locator('[name="chestCm"]').fill('101');
+        finishDelay();
+        await waitText('Устаревший результат скрыт');
+        assert.equal(await page.locator('#photoResult img').count(), 0);
+        const count = requests.length;
+        await page.locator('#productSelect').selectOption('trousers');
+        await page.locator('#generatePhoto').click();
+        await waitText('только верхнюю одежду');
+        assert.equal(requests.length, count);
+        const stored = await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }));
+        assert.ok(!stored.includes('data:image/'), 'photo must never be put in browser storage');
+        assert.deepEqual(errors, []);
+        console.log('Photo UI fixture checks passed: login required, consent required, payload, success, quota, expired session, malformed result, stale-result suppression, bottoms restriction and no stored photos. No live inference request was made.');
+    } finally {
+        if (finishDelay) finishDelay();
+        await context.close();
+        await browser.close();
+    }
+}
+verify().catch(error => { console.error(error); process.exitCode = 1; });

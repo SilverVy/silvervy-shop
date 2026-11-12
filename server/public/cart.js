@@ -1,4 +1,6 @@
 const API_URL = '/api/cart';
+const cartApi = (...args) => (window.SilverVyApiReady ||= import('./api-client.js').then(() => window.SilverVyApi))
+    .then(client => client.request(...args));
 
 const tryOnScript = document.createElement('script');
 tryOnScript.src = 'tryon.js';
@@ -29,7 +31,7 @@ async function loadUserCart() {
     if (!checkAuth()) return;
 
     try {
-        const response = await fetch(`${API_URL}`, {
+        const response = await cartApi(API_URL, {
             method: 'GET',
             headers: getAuthHeader()
         });
@@ -54,7 +56,7 @@ async function saveCartToServer() {
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
 
     try {
-        const response = await fetch(`${API_URL}`, {
+        const response = await cartApi(API_URL, {
             method: 'PUT',
             headers: getAuthHeader(),
             body: JSON.stringify({ items: cart })
@@ -199,7 +201,7 @@ if (checkoutForm) checkoutForm.addEventListener('submit', async (e) => {
     };
 
     try {
-        const response = await fetch('/api/orders', {
+        const response = await cartApi('/api/orders', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

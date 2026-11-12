@@ -4,6 +4,12 @@
   const fit = window.SilverVyFit;
   const byId = id => document.getElementById(id);
   if (!catalog || !fit || !byId('bodyForm')) return;
+  const apiReady = window.SilverVyApiReady ||= import('./api-client.js').then(() => window.SilverVyApi);
+  const apiRequest = (...args) => apiReady.then(client => client.request(...args));
+  apiReady.then(client => {
+    const methodology = byId('methodologyDownload');
+    if (methodology) methodology.href = client.url('/fit-methodology.md');
+  }).catch(() => {});
 
   const form = byId('bodyForm');
   const productSelect = byId('productSelect');
@@ -193,7 +199,7 @@
   async function loadServiceStatus() {
     const authHint = byId('photoAuthHint');
     try {
-      const response = await fetch('/api/status', { headers: { Accept: 'application/json' } });
+      const response = await apiRequest('/api/status', { headers: { Accept: 'application/json' } });
       if (!response.ok) throw new Error('status unavailable');
       serviceStatus = await response.json();
     } catch {
@@ -290,7 +296,7 @@
         const value = bodyValues()[key];
         return [key, value === '' ? null : Number(value)];
       }));
-      const response = await fetch('/api/try-on', {
+      const response = await apiRequest('/api/try-on', {
         method: 'POST',
         signal: AbortSignal.timeout(300000),
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -302,6 +308,9 @@
         status.textContent = 'Параметры изменились во время обработки. Устаревший результат скрыт.';
         return;
       }
+      if (typeof data.image !== 'string' || !/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(data.image)) {
+        throw new Error('Сервис не вернул корректное изображение. Сравнение мерок остаётся доступным.');
+      }
       const image = document.createElement('img');
       image.src = data.image;
       image.alt = `Иллюстративное фото-превью изделия ${product.name}, размер ${selectedSize}`;
@@ -312,7 +321,9 @@
       resultArea.append(image, notice);
       status.textContent = 'Фото-превью готово. Оно не заменяет проверку мерок и не подтверждает точную посадку.';
     } catch (error) {
-      if (versionAtStart === requestVersion) status.textContent = error.message || 'Сервис фото-превью временно недоступен.';
+      if (versionAtStart === requestVersion) status.textContent = error.name === 'TimeoutError'
+        ? 'Время ожидания фото-превью истекло. Сравнение мерок остаётся доступным.'
+        : error.message || 'Сервис фото-превью временно недоступен.';
     } finally {
       button.disabled = false;
     }

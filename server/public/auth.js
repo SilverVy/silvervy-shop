@@ -1,3 +1,6 @@
+const authApi = (...args) => (window.SilverVyApiReady ||= import('./api-client.js').then(() => window.SilverVyApi))
+    .then(client => client.request(...args));
+
 function updateCartCounter() {
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
     document.querySelectorAll('#cartCounter').forEach(el => {
@@ -57,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const measurementsForm = document.getElementById('bodyMeasurementsForm');
             const authHeaders = { Authorization: `Bearer ${token}` };
-            fetch('/api/auth/profile', { headers: authHeaders })
+            authApi('/api/auth/profile', { headers: authHeaders })
                 .then(response => response.ok ? response.json() : null)
                 .then(data => {
                     if (!data?.user?.bodyMeasurements) return;
@@ -77,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         .map(input => [input.name, input.value])
                 );
                 try {
-                    const response = await fetch('/api/auth/profile', {
+                    const response = await authApi('/api/auth/profile', {
                         method: 'PUT',
                         headers: { ...authHeaders, 'Content-Type': 'application/json' },
                         body: JSON.stringify(bodyMeasurements)
@@ -152,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-            const response = await fetch('/api/auth/register', {
+            const response = await authApi('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
@@ -191,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-            const response = await fetch('/api/auth/login', {
+            const response = await authApi('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
