@@ -57,7 +57,7 @@ async function main() {
         await page.goto(`${base}/account.html`, { waitUntil: 'networkidle' });
         const account = page.locator('#bodyMeasurementsForm');
         await account.waitFor();
-        for (const [key, value] of Object.entries({ heightCm: '160', chestCm: '82', waistCm: '64', hipCm: '88',
+        for (const [key, value] of Object.entries({ heightCm: '165', chestCm: '82', waistCm: '64', hipCm: '88',
             shoulderCm: '36.5', armLengthCm: '54.5', handLengthCm: '17.2' })) {
             await account.locator(`[name="${key}"]`).fill(value);
         }
@@ -77,7 +77,7 @@ async function main() {
         await page.locator('.sv-sleeve-summary').screenshot({ path: 'generated-artifacts/arm-summary-mobile.jpg' });
         await page.setViewportSize({ width: 1280, height: 1000 });
         await page.locator('.schematic').screenshot({ path: 'generated-artifacts/arm-schematic-desktop.jpg' });
-        profile = { chestCm: 82, waistCm: 64, hipCm: 88, heightCm: 160 };
+        profile = { chestCm: 82, waistCm: 64, hipCm: 88, heightCm: 165 };
         await page.locator('#importProfile').click();
         await page.waitForFunction(() => document.querySelector('[name=armLengthCm]').value === '');
         assert.match(await page.locator('.sv-sleeve-summary').textContent(), /укажите/);

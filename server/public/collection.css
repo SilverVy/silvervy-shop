@@ -52,7 +52,7 @@ footer .footer-section h3 { color: #c7b99f; }
 .apparel-image { position: relative; aspect-ratio: .76; overflow: hidden; background: #dedbd0; }
 .apparel-image img { width: 100%; height: 100%; object-fit: contain; display: block; transition: transform .65s cubic-bezier(.2,.65,.2,1); }
 .apparel-card:hover .apparel-image img { transform: scale(1.035); }
-.apparel-image::after { position: absolute; content: 'УЧЕБНОЕ ИЗОБРАЖЕНИЕ · AI'; bottom: 12px; left: 12px; padding: 6px 8px; color: #f7f5ed; background: rgba(40,43,37,.75); font-size: .56rem; letter-spacing: .11em; }
+.apparel-image::after { content: none; }
 .apparel-meta { display: flex; justify-content: space-between; gap: 12px; padding: 16px 16px 4px; color: var(--sv-muted); font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; }
 .apparel-card h4 { min-height: 2.5em; margin: 8px 16px 2px; font: 500 1.15rem var(--sv-serif); }
 .apparel-price { margin: 0 16px 17px; color: var(--sv-clay); font-size: .9rem; font-weight: 700; }

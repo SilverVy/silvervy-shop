@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fit = require('../server/public/fit-engine');
 const geometry = require('../server/public/fit-geometry');
 const product = require('../server/public/catalog-data').getProduct('shirt');
-const small = { heightCm: 160, chestCm: 82, waistCm: 64, hipCm: 88, shoulderCm: 36, armLengthCm: 54, handLengthCm: 17 };
+const small = { heightCm: 165, chestCm: 82, waistCm: 64, hipCm: 88, shoulderCm: 36, armLengthCm: 54, handLengthCm: 17 };
 function image(size, body = small) {
     return geometry.build({ product, garment: product.sizes.find(g => g.size === size), body,
         points: geometry.defaults, width: 768, height: 1024 });
@@ -30,10 +30,10 @@ test('current shoulder, arm and hand measurements each affect their own sleeve c
     const base = fit.evaluateSleeve(garment, small);
     assert.equal(fit.evaluateSleeve(garment, { ...small, shoulderCm: 40 }).cuffOffsetCm, base.cuffOffsetCm - 2);
     assert.equal(fit.evaluateSleeve(garment, { ...small, armLengthCm: 60 }).cuffOffsetCm, base.cuffOffsetCm - 6);
-    assert.ok(fit.evaluateSleeve(garment, { ...small, handLengthCm: 24 }).handCoverageRatio < base.handCoverageRatio);
+    assert.ok(fit.evaluateSleeve(garment, { ...small, handLengthCm: 23 }).handCoverageRatio < base.handCoverageRatio);
     assert.ok(image('M', { ...small, armLengthCm: 60 }).sleeves[0].cuff.y < image('M').sleeves[0].cuff.y);
-    assert.notDeepEqual(image('M', { ...small, handLengthCm: 24 }).sleeves[0].cuff, image('M').sleeves[0].cuff);
-    const aboveWrist = fit.evaluateSleeve(garment, { ...small, shoulderCm: 44, armLengthCm: 75 });
+    assert.notDeepEqual(image('M', { ...small, handLengthCm: 23 }).sleeves[0].cuff, image('M').sleeves[0].cuff);
+    const aboveWrist = fit.evaluateSleeve(garment, { ...small, shoulderCm: 44, armLengthCm: 72 });
     assert.ok(aboveWrist.cuffOffsetCm < 0);
     assert.equal(aboveWrist.handCoverageRatio, 0);
     assert.match(aboveWrist.label, /выше запястья/);

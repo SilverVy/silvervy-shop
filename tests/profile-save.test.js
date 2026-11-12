@@ -10,7 +10,7 @@ test('profile keeps omitted values, explicitly clears optional fields and valida
         bodyMeasurements: { weightKg: 85, inseamCm: 80 },
         update: async data => { user.bodyMeasurements = data.bodyMeasurements; saved.push(structuredClone(data.bodyMeasurements)); }
     };
-    const body = { heightCm: 160, chestCm: 82, waistCm: 64, hipCm: 88, shoulderCm: '36.5', armLengthCm: '54.5', handLengthCm: '17.2' };
+    const body = { heightCm: 165, chestCm: 82, waistCm: 64, hipCm: 88, shoulderCm: '36.5', armLengthCm: '54.5', handLengthCm: '17.2' };
     const res = response();
     await updateProfile({ user, body }, res);
     assert.equal(res.statusCode, 200);
@@ -20,8 +20,8 @@ test('profile keeps omitted values, explicitly clears optional fields and valida
         await updateProfile({ user, body: { ...body, [key]: -1 } }, invalid);
         assert.equal(invalid.statusCode, 400);
     }
-    await updateProfile({ user, body: { heightCm: 160, shoulderCm: '', armLengthCm: null, handLengthCm: '' } }, response());
-    assert.deepEqual(saved[1], { weightKg: 85, inseamCm: 80, heightCm: 160, chestCm: 82, waistCm: 64, hipCm: 88 });
+    await updateProfile({ user, body: { heightCm: 165, shoulderCm: '', armLengthCm: null, handLengthCm: '' } }, response());
+    assert.deepEqual(saved[1], { weightKg: 85, inseamCm: 80, heightCm: 165, chestCm: 82, waistCm: 64, hipCm: 88 });
     assert.equal(saved.length, 2);
 });
 

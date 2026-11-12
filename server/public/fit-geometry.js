@@ -74,7 +74,7 @@
     }
     function build({ product, garment, body, points, width, height }) {
         validate(points, body);
-        if (product.category !== 'tops') throw new Error('Размерная маска IDM-VTON доступна только для верха.');
+        if (product.category !== 'tops') throw new Error('Фото-примерка доступна только для верхней одежды.');
         if (![width, height].every(n => Number.isInteger(n) && n > 0 && n <= 5000)) throw new Error('Неверный размер фото.');
         if (!['chestCm', 'waistCm', 'hipCm'].every(key => Number(body[key]) > 0)) throw new Error('Нужны обхваты груди, талии и бёдер.');
         const p = Object.fromEntries(Object.entries(points).map(([key, point]) => [key, { x: point.x * width, y: point.y * height }]));
@@ -95,7 +95,7 @@
         const warnings = [
             'Ширина оценена по отношению обхватов при допущении сходного поперечного сечения; ткань и 3D-драпировка не моделируются.',
             'Рукава и проймы приближённые: обхват рукава и лекала коллекции не заданы.',
-            'IDM-VTON может игнорировать небольшую разницу рукавов: расчётные линии манжет не являются измерением сгенерированной одежды.'
+            'Длина рукава на фото может отличаться от расчётной.'
         ];
         if (hemY >= p.feet.y || hemY >= height - 2 || shoulderHalf * 2 >= width * .85) {
             throw new Error('Контур не помещается в фото. Проверьте рост, макушку, подошвы и основание шеи.');

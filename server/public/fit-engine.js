@@ -5,7 +5,7 @@
     else root.SilverVyFit = engine;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (catalog) {
     'use strict';
-    function chartRange(key) {
+    function chartRange(key, bodyFloor = 0) {
         const candidates = [];
         for (const product of catalog?.products || []) {
             const ease = product.ease?.[key];
@@ -21,22 +21,22 @@
         }
         if (!candidates.length) throw new Error(`Нет размерных данных для ${key}`);
         return [
-            Math.round(Math.min(...candidates.map(item => item.minimumBody)) * 10) / 10,
+            Math.max(bodyFloor, Math.round(Math.min(...candidates.map(item => item.minimumBody)) * 10) / 10),
             Math.round(Math.max(...candidates.map(item => item.maximumBody)) * 10) / 10
         ];
     }
-    // Circumference bounds are derived from the outer edge of the supported
-    // chart/ease intervals; other limits protect the adult menswear photo model.
+    // Circumference maxima follow the size chart; lower bounds keep inputs
+    // within a broad, plausible adult menswear range for the supported heights.
     const ranges = {
-        heightCm: [140, 210],
-        chestCm: chartRange('chestCm'),
-        waistCm: chartRange('waistCm'),
-        hipCm: chartRange('hipCm'),
-        shoulderCm: [34, 60],
-        armLengthCm: [45, 76],
-        handLengthCm: [14, 25],
-        inseamCm: [65, 94],
-        weightKg: [40, 200]
+        heightCm: [165, 190],
+        chestCm: chartRange('chestCm', 80),
+        waistCm: chartRange('waistCm', 60),
+        hipCm: chartRange('hipCm', 80),
+        shoulderCm: [36, 58],
+        armLengthCm: [54, 72],
+        handLengthCm: [16, 23],
+        inseamCm: [70, 91],
+        weightKg: [50, 160]
     };
     const labels = { chestCm: 'Грудь', waistCm: 'Талия', hipCm: 'Бёдра' };
     function evaluateSleeve(garment, body) {
@@ -52,10 +52,10 @@
         const coverage = hand ? Math.max(0, Math.min(1, offset / hand)) : null;
         const signed = `${offset >= 0 ? '+' : ''}${offset.toFixed(1)}`;
         const label = offset < -1 ? `Манжета выше запястья на ${Math.abs(offset).toFixed(1)} см`
-            : offset <= 1 ? `Манжета около запястья (${signed} см)`
-                : !hand ? `Манжета за запястьем на ${offset.toFixed(1)} см; для оценки перекрытия укажите длину кисти`
-                    : offset >= hand ? `Расчётно перекрывает всю кисть${offset > hand + 1 ? ` и выходит за её конец на ${(offset - hand).toFixed(1)} см` : ''}`
-                        : `Расчётно перекрывает ${Math.round(coverage * 100)}% длины кисти (${offset.toFixed(1)} см)`;
+            : offset <= 1 ? 'Манжета у запястья'
+                : !hand ? `Манжета за запястьем на ${offset.toFixed(1)} см; укажите длину кисти, чтобы увидеть перекрытие`
+                    : offset >= hand ? `Манжета закрывает всю кисть${offset > hand + 1 ? ` и выходит за кончики пальцев на ${(offset - hand).toFixed(1)} см` : ''}`
+                        : `Манжета закрывает около ${Math.round(coverage * 100)}% кисти`;
         return { status: 'estimated', shoulderShiftCm, shoulderDropCm: Math.max(0, shoulderShiftCm),
             cuffOffsetCm: Math.round(offset * 10) / 10, handCoverageRatio: coverage,
             handLengthCm: hand, label,
@@ -81,7 +81,7 @@
     function evaluate(product, body, preference = 'intended') {
         if (!product || !Array.isArray(product.sizes) || !product.ease ||
             !['tops', 'bottoms'].includes(product.category)) {
-            return { status: 'unavailable', errors: {}, recommendedSize: null, rows: [], warnings: ['Нет размерных данных изделия.'] };
+            return { status: 'unavailable', errors: {}, recommendedSize: null, rows: [], warnings: ['Для этой вещи пока нет размерной сетки.'] };
         }
         const errors = validate(body, product.category);
         if (!['intended', 'closer', 'roomier'].includes(preference)) errors.preference = 'Неизвестная посадка';
@@ -122,10 +122,9 @@
         return {
             status: 'ready', errors: {}, recommendedSize: best ? best.size : null, recommendationKind, rows,
             warnings: [
-                'Расчёт выполнен по условным меркам учебной коллекции, а не по измеренным реальным изделиям.',
-                'Схема сравнивает мерки и прибавки. Она не моделирует ткань, движения, толщину нижних слоёв или индивидуальную форму тела.',
-                ...(recommendationKind === 'closest' ? ['Выбран ближайший допустимый размер: не все зоны соответствуют заданному диапазону прибавок. Смотрите сравнение по зонам.'] : []),
-                ...(product.category === 'bottoms' && !Number(body.inseamCm) ? ['Без внутреннего шва длина брюк не оценивается.'] : [])
+                'На посадку влияют ткань, одежда под низом и ваши предпочтения.',
+                ...(recommendationKind === 'closest' ? ['Ближайший размер подходит не по всем меркам — проверьте сравнение по зонам.'] : []),
+                ...(product.category === 'bottoms' && !Number(body.inseamCm) ? ['Без длины внутреннего шва нельзя оценить длину брюк.'] : [])
             ]
         };
     }

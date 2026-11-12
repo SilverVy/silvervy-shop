@@ -6,11 +6,6 @@
   if (!catalog || !fit || !byId('bodyForm')) return;
   const apiReady = window.SilverVyApiReady ||= import('./api-client.js').then(() => window.SilverVyApi);
   const apiRequest = (...args) => apiReady.then(client => client.request(...args));
-  apiReady.then(client => {
-    const methodology = byId('methodologyDownload');
-    if (methodology) methodology.href = client.url('/fit-methodology.md');
-  }).catch(() => {});
-
   const form = byId('bodyForm');
   const productSelect = byId('productSelect');
   const sizePicker = byId('sizePicker');
@@ -39,10 +34,8 @@
     if (input) { input.min = String(range[0]); input.max = String(range[1]); }
   }
   const labels = { chestCm: 'Обхват груди', waistCm: 'Обхват талии', hipCm: 'Обхват бёдер', shoulderCm: 'Ширина плеч', lengthCm: 'Длина изделия', sleeveCm: 'Длина рукава', thighCm: 'Обхват бедра', inseamCm: 'Внутренний шов' };
-  const rangeLabels = { chestCm: 'грудь', waistCm: 'талия', hipCm: 'бёдра', heightCm: 'рост', inseamCm: 'внутренний шов', shoulderCm: 'плечи', armLengthCm: 'рука', handLengthCm: 'кисть' };
-  byId('measurementLimits').textContent = `Поддерживаемые границы: ${bodyKeys.map(key => `${rangeLabels[key]} ${fit.ranges[key][0]}–${fit.ranges[key][1]} см`).join('; ')}. Вес профиля ${fit.ranges.weightKg[0]}–${fit.ranges.weightKg[1]} кг не участвует в расчёте размера. Обхваты выведены из полной размерной сетки; остальные пределы — рамки этого учебного прототипа, а не медицинская норма.`;
   const dimensionKeys = ['chestCm', 'waistCm', 'hipCm', 'shoulderCm', 'lengthCm', 'sleeveCm', 'thighCm', 'inseamCm'];
-  const statusText = { tight: 'Отрицательная прибавка', close: 'Ниже целевого диапазона', intended: 'В целевом диапазоне', loose: 'Выше целевого диапазона', unknown: 'Нет сравнения' };
+  const statusText = { tight: 'Меньше мерки', close: 'Плотнее желаемого', intended: 'Подходит', loose: 'Свободнее желаемого', unknown: 'Нет данных' };
   const calibration = window.SilverVyPhotoCalibration(byId('photoCalibration'), {
     getContext: () => ({ product, garment: product.sizes.find(row => row.size === selectedSize), body: bodyValues() }),
     onChange: () => { requestVersion += 1; clearPhoto(); }
@@ -124,7 +117,7 @@
     const undersized = row?.checks?.filter(check => Number.isFinite(check.easeCm) && check.easeCm < 0) || [];
     if (!undersized.length) return '';
     const details = undersized.map(check => `${check.label.toLowerCase()} на ${Math.abs(check.easeCm).toFixed(1)} см`).join(', ');
-    return `Размер ${row.size} меньше тела по меркам: ${details}. Фотогенерация для этого размера заблокирована.`;
+    return `Размер ${row.size} мал по меркам: ${details}. Примерка этого размера недоступна.`;
   }
   function updateGenerationGuard() {
     const row = latestFit?.rows?.find(item => item.size === selectedSize);
@@ -139,7 +132,7 @@
     sizePicker.innerHTML = product.sizes.map(row => {
       const fitRow = latestFit?.rows?.find(item => item.size === row.size);
       const undersized = Boolean(sizeBlockMessage(fitRow));
-      return `<button type="button" data-size="${row.size}" class="${undersized ? 'is-too-small' : ''}" aria-pressed="${row.size === selectedSize}"${undersized ? ' title="Меньше мерок тела — генерация недоступна"' : ''}>${row.size}</button>`;
+      return `<button type="button" data-size="${row.size}" class="${undersized ? 'is-too-small' : ''}" aria-pressed="${row.size === selectedSize}"${undersized ? ' title="Этот размер мал по вашим меркам"' : ''}>${row.size}</button>`;
     }).join('');
   }
   function renderErrors(errors = {}) {
@@ -162,22 +155,21 @@
     renderComparison(latestFit);
     renderSchematic(latestFit);
     calibration.refresh();
-    const values = bodyValues();
-    byId('photoRequestMeta').textContent = `${product.name} · выбран ${selectedSize}. В генерацию пойдут текущие мерки лаборатории: грудь ${values.chestCm || '—'}, талия ${values.waistCm || '—'}, бёдра ${values.hipCm || '—'}, рост ${values.heightCm || '—'}, плечи ${values.shoulderCm || '—'}, рука ${values.armLengthCm || '—'}, кисть ${values.handLengthCm || '—'} см. При отсутствии мерок руки применяется приближённая оценка по фото. Предпочтение прибавки влияет на рекомендацию по окружностям; оценка рукава показана отдельно.`;
+    byId('photoRequestMeta').textContent = `Для примерки: ${product.name}, размер ${selectedSize}. Используются мерки из этой формы.`;
     requestVersion += 1;
     return latestFit;
   }
   function renderRecommendation(result) {
     if (result.status === 'invalid') {
-      recommendation.innerHTML = '<strong>Нужны корректные мерки</strong><p>Проверьте обязательные поля и диапазоны, указанные под ними.</p>';
+      recommendation.innerHTML = '<strong>Проверьте мерки</strong><p>Заполните обязательные поля.</p>';
     } else if (result.status === 'unavailable') {
-      recommendation.innerHTML = '<strong>Сравнение недоступно</strong><p>Для этого изделия нет учебных размерных данных.</p>';
+      recommendation.innerHTML = '<strong>Размеры пока недоступны</strong><p>Для этой вещи ещё нет размерной сетки.</p>';
     } else if (!result.recommendedSize) {
-      recommendation.innerHTML = '<strong>Совместимый размер не найден</strong><p>По условиям движка ни один размер не прошёл порог совместимости. Посмотрите отдельные отрицательные и положительные прибавки в таблице.</p>';
+      recommendation.innerHTML = '<strong>Подходящий размер не найден</strong><p>Кажется, эта вещь будет мала или слишком свободна. Сравните мерки по зонам.</p>';
     } else {
       const row = result.rows.find(item => item.size === result.recommendedSize);
       const notAllTarget = row?.checks.some(check => check.status !== 'intended');
-      recommendation.innerHTML = `<strong>Ближайший совместимый размер: ${result.recommendedSize}</strong><p>Это выбор по правилам движка, а не гарантия идеальной посадки.${notAllTarget ? ' Некоторые проверки вне целевого диапазона — смотрите строки ниже.' : ''}</p>`;
+      recommendation.innerHTML = `<strong>Подходящий размер: ${result.recommendedSize}</strong><p>${notAllTarget ? 'Проверьте сравнение по отдельным меркам.' : 'Сравните посадку с вашими предпочтениями.'}</p>`;
     }
   }
   function renderWarnings(items) {
@@ -185,7 +177,7 @@
   }
   function renderComparison(result) {
     if (result.status !== 'ready') {
-      compare.innerHTML = '<p class="sv-note">После ввода обязательных мерок здесь появятся все размеры изделия, разницы окружностей и результаты проверок.</p>';
+      compare.innerHTML = '<p class="sv-note">Заполните мерки, чтобы сравнить все размеры изделия.</p>';
       return;
     }
     const dataRows = [];
@@ -212,24 +204,24 @@
     }
     if (product.category === 'tops') {
       const number = value => value == null ? 'не оценивается' : value.toFixed(1);
-      dataRows.push(`<tr><th>Спуск плеча, см · условная оценка</th>${result.rows.map(row => `<td>${number(row.sleeve.shoulderDropCm)}</td>`).join('')}</tr>`);
+      dataRows.push(`<tr><th>Смещение плеча, см</th>${result.rows.map(row => `<td>${number(row.sleeve.shoulderDropCm)}</td>`).join('')}</tr>`);
       dataRows.push(`<tr><th>Манжета относительно запястья, см<br><small>+ за запястьем; − выше него</small></th>${result.rows.map(row => `<td>${number(row.sleeve.cuffOffsetCm)}</td>`).join('')}</tr>`);
-      dataRows.push(`<tr><th>Положение рукава · расчёт</th>${result.rows.map(row => `<td>${row.sleeve.label}</td>`).join('')}</tr>`);
+      dataRows.push(`<tr><th>Посадка рукава</th>${result.rows.map(row => `<td>${row.sleeve.label}</td>`).join('')}</tr>`);
     }
     const sizes = result.rows.map(row => `<th>${row.size}${row.size === result.recommendedSize ? '<br><small>ближайший*</small>' : ''}</th>`).join('');
     const fitRows = result.rows.map(row => {
       const tooSmall = row.checks.filter(check => Number.isFinite(check.easeCm) && check.easeCm < 0);
-      const label = tooSmall.length ? 'Меньше тела' : row.compatible ? 'Совместим' : 'Не прошёл порог';
+      const label = tooSmall.length ? 'Мал' : row.compatible ? 'Подходит' : 'Не подходит';
       const detail = tooSmall.length ? `<br><small>${tooSmall.map(check => check.label.toLowerCase()).join(', ')}</small>` : '';
       return `<td>${label}${detail}</td>`;
     }).join('');
-    compare.innerHTML = `<table><thead><tr><th>Параметр</th>${sizes}</tr></thead><tbody>${dataRows.join('')}<tr class="selected"><th>Результат движка</th>${fitRows}</tr></tbody></table><p class="sv-note">* Ближайший размер среди прошедших порог совместимости. Значение прибавки = мерка изделия − мерка тела; отрицательное число означает меньшее изделие в окружности. Статусы отображают каждый критерий отдельно.</p>`;
+    compare.innerHTML = `<table><thead><tr><th>Параметр</th>${sizes}</tr></thead><tbody>${dataRows.join('')}<tr class="selected"><th>Итог</th>${fitRows}</tr></tbody></table><p class="sv-note">Прибавка показывает разницу между вещью и вашими мерками. Отрицательное значение означает, что изделие уже.</p>`;
   }
   function renderSchematic(result) {
     const rendered = window.SilverVySchematic.render({ product, size: selectedSize, result, body: bodyValues() });
     schematicCanvas.innerHTML = rendered.svg;
     const sleeve = result.rows?.find(row => row.size === selectedSize)?.sleeve;
-    schematicCopy.innerHTML = rendered.copy + (sleeve ? `<section class="sv-sleeve-summary"><h3>Манжета выбранного размера · расчёт</h3><p>${sleeve.label}.</p>${sleeve.status === 'estimated' ? `<p>Спуск плеча: ${sleeve.shoulderDropCm.toFixed(1)} см; манжета относительно запястья: ${sleeve.cuffOffsetCm > 0 ? '+' : ''}${sleeve.cuffOffsetCm.toFixed(1)} см.</p><p class="sv-note">${sleeve.assumption} Это не измерение сгенерированного фото. Рекомендация размера по окружностям не гарантирует подходящую длину рукава.</p>` : '<p class="sv-note">Старые профили поддерживаются: новые мерки необязательны. На фото ориентир можно приближённо рассчитать по проверенным точкам и росту.</p>'}</section>` : '');
+    schematicCopy.innerHTML = rendered.copy + (sleeve ? `<section class="sv-sleeve-summary"><h3>Посадка рукава · ${selectedSize}</h3><p>${sleeve.label}.</p>${sleeve.status === 'estimated' ? `<p>Смещение плеча: ${sleeve.shoulderDropCm.toFixed(1)} см · манжета: ${sleeve.cuffOffsetCm > 0 ? '+' : ''}${sleeve.cuffOffsetCm.toFixed(1)} см от запястья.</p><p class="sv-note">Сравните длину с фото: на модели рукав может выглядеть иначе.</p>` : '<p class="sv-note">Добавьте длину руки и ширину плеч, чтобы увидеть оценку рукава.</p>'}</section>` : '');
   }
 
   renderProductOptions();
@@ -283,19 +275,19 @@
       serviceStatus = { mode: 'catalog-only', tryOnAvailable: false };
     }
     renderPhotoAvailability();
-    authHint.innerHTML = localStorage.getItem('token') ? '' : 'Для запроса фото-превью потребуется авторизация. <a href="account.html">Войти или создать аккаунт</a>. Размерный расчёт остаётся открытым.';
+    authHint.innerHTML = localStorage.getItem('token') ? '' : 'Для фото-примерки <a href="account.html">войдите в аккаунт</a>. Подбор размера доступен без входа.';
   }
   function renderPhotoAvailability() {
     const panel = byId('photoAvailability');
     if (!panel) return;
     if (product.category === 'bottoms') {
-      panel.textContent = 'Фото-генерация для брюк не поддерживается. Сравнение мерок и плоская схема остаются доступны.';
+      panel.textContent = 'Фото-примерка доступна для верхней одежды. Для брюк можно сравнить мерки и длину.';
     } else if (!serviceStatus) {
-      panel.textContent = 'Проверяем доступность отдельного сервиса фото-превью…';
+      panel.textContent = 'Проверяем доступность фото-примерки…';
     } else if (serviceStatus.mode === 'catalog-only' || !serviceStatus.tryOnAvailable) {
-      panel.textContent = serviceStatus.message || 'Генерация фото-превью сейчас недоступна. Лаборатория мерок и схема продолжают работать.';
+      panel.textContent = 'Фото-примерка сейчас недоступна. Подбор размера работает.';
     } else {
-      panel.textContent = serviceStatus.message || 'Сервис фото-превью доступен для верхней одежды.';
+      panel.textContent = 'Фото-примерка доступна для верхней одежды.';
     }
   }
   loadServiceStatus();
@@ -397,19 +389,19 @@
     const token = localStorage.getItem('token');
     const file = photoInput.files?.[0];
     if (product.category !== 'tops') {
-      status.textContent = 'Фото-генерация поддерживает только верхнюю одежду. Для брюк доступны сравнение мерок и плоская схема.';
+      status.textContent = 'Фото-примерка доступна для верхней одежды. Для брюк можно сравнить мерки и длину.';
       return;
     }
     if (!serviceStatus || !serviceStatus.tryOnAvailable || serviceStatus.mode !== 'full') {
-      status.textContent = serviceStatus?.message || 'Сервис генерации недоступен; продолжайте сравнение размеров без фото.';
+      status.textContent = serviceStatus?.message || 'Фото-примерка сейчас недоступна. Сравнение размеров работает.';
       return;
     }
     if (!token) {
-      status.innerHTML = 'Для генерации войдите в аккаунт. <a href="account.html">Перейти ко входу</a>. Мерки можно сравнивать без входа.';
+      status.innerHTML = 'Чтобы создать фото-примерку, <a href="account.html">войдите в аккаунт</a>.';
       return;
     }
     if (!file || !byId('photoConsent').checked) {
-      status.textContent = 'Выберите изображение и подтвердите отдельное согласие на отправку.';
+      status.textContent = 'Выберите фото и подтвердите отправку.';
       return;
     }
     if (currentFit.status !== 'ready' || !currentFit.rows.some(row => row.size === selectedSize)) {
@@ -419,12 +411,24 @@
     generationBusy = true;
     updateGenerationGuard();
     resultArea.replaceChildren();
-    status.textContent = 'Подготавливаем уменьшенную копию изображения…';
+    status.textContent = 'Готовим фото…';
+    let stage = null;
     try {
       if (!calibration.image) throw new Error('Дождитесь подготовки фото или выберите корректный файл.');
       const calibrationPayload = calibration.payload();
       const personImage = calibration.image;
-      if (versionAtStart !== requestVersion) { status.textContent = 'Параметры изменились. Повторите запрос для актуального выбора.'; return; }
+      if (versionAtStart !== requestVersion) { status.textContent = 'Выбор изменился. Нажмите ещё раз.'; return; }
+      stage = document.createElement('div');
+      stage.className = 'tryon-stage is-generating';
+      const beforeImage = document.createElement('img');
+      beforeImage.className = 'tryon-stage-image tryon-before';
+      beforeImage.src = personImage;
+      beforeImage.alt = 'Исходное фото';
+      const progress = document.createElement('div');
+      progress.className = 'tryon-progress';
+      progress.textContent = 'Подбираем выбранный размер…';
+      stage.append(beforeImage, progress);
+      resultArea.replaceChildren(stage);
       const measurements = Object.fromEntries(bodyKeys.map(key => {
         const value = bodyValues()[key];
         return [key, value === '' ? null : Number(value)];
@@ -438,29 +442,61 @@
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        if (response.status === 401) byId('photoAuthHint').innerHTML = 'Нужен повторный вход на сайт. <a href="account.html">Войти заново</a>. Это не замена HF_TOKEN.';
-        throw new Error(`${data.message || 'Не удалось создать фото-превью.'}${data.requestId ? ` Код запроса: ${data.requestId}` : ''}`);
+        if (response.status === 401) byId('photoAuthHint').innerHTML = 'Срок входа истёк. <a href="account.html">Войдите ещё раз</a>.';
+        throw new Error(data.message || 'Не удалось создать фото-примерку.');
       }
       if (versionAtStart !== requestVersion) {
-        status.textContent = 'Параметры изменились во время обработки. Устаревший результат скрыт.';
+        status.textContent = 'Выбор изменился во время обработки. Повторите примерку.';
+        stage.classList.remove('is-generating');
+        stage.querySelector('.tryon-progress')?.remove();
         return;
       }
       if (typeof data.image !== 'string' || !/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(data.image)) {
-        throw new Error('Сервис не вернул корректное изображение. Сравнение мерок остаётся доступным.');
+        throw new Error('Не удалось получить изображение. Сравнение мерок остаётся доступным.');
       }
       const image = document.createElement('img');
+      image.className = 'tryon-stage-image tryon-after';
       image.src = data.image;
-      image.alt = `Экспериментальная иллюстрация изделия ${product.name}, размер ${selectedSize}; посадка не подтверждена`;
+      image.alt = `Примерка: ${product.name}, размер ${selectedSize}`;
       const notice = document.createElement('p');
       notice.className = 'sv-note';
-      const serverFit = data.fit?.recommendedSize ? ` Серверная проверка: ${data.fit.recommendedSize} — выбран ${selectedSize}.` : '';
-      notice.textContent = `${data.provider || 'Сервис генерации'} · ${data.sizeConditioning || 'метод не указан'}. ${data.fitNotice || 'Экспериментальная иллюстрация, не физическая симуляция.'} Проверьте манжеты, кисти, остатки исходной одежды, цвет и силуэт вручную.${serverFit}${data.geometry?.warnings ? ' ' + data.geometry.warnings.join(' ') : ''}${data.requestId ? ` Код запроса: ${data.requestId}` : ''}`;
-      resultArea.append(image, notice);
-      status.textContent = 'Модель вернула изображение. Проверьте манжеты, кисти, остатки одежды, цвет и силуэт: посадка не подтверждена.';
+      notice.textContent = 'Сравните длину рукавов и общий объём. Фото помогает представить образ, но фактическая посадка может отличаться.';
+      await image.decode().catch(() => {});
+      if (versionAtStart !== requestVersion) {
+        status.textContent = 'Выбор изменился во время обработки. Повторите примерку.';
+        stage.classList.remove('is-generating');
+        stage.querySelector('.tryon-progress')?.remove();
+        return;
+      }
+      stage.querySelector('.tryon-progress')?.remove();
+      stage.append(image);
+      requestAnimationFrame(() => {
+        stage.classList.remove('is-generating');
+        stage.classList.add('is-revealing');
+        image.classList.add('is-visible');
+        beforeImage.classList.add('is-softened');
+      });
+      await new Promise(resolve => window.setTimeout(resolve, 900));
+      if (versionAtStart !== requestVersion) {
+        stage.className = 'tryon-stage';
+        beforeImage.classList.remove('is-softened');
+        stage.replaceChildren(beforeImage);
+        status.textContent = 'Выбор изменился во время обработки. Повторите примерку.';
+        return;
+      }
+      stage.className = 'tryon-stage is-result-ready';
+      stage.replaceChildren(image, notice);
+      status.textContent = 'Готово. Сравните рукава и общий силуэт выбранного размера.';
     } catch (error) {
+      if (stage) {
+        stage.classList.remove('is-generating', 'is-revealing');
+        stage.querySelector('.tryon-progress')?.remove();
+        stage.querySelector('.tryon-after')?.remove();
+        stage.querySelector('.tryon-before')?.classList.remove('is-softened');
+      }
       if (versionAtStart === requestVersion) status.textContent = error.name === 'TimeoutError'
-        ? 'Время ожидания фото-превью истекло. Сравнение мерок остаётся доступным.'
-        : error.message || 'Сервис фото-превью временно недоступен.';
+        ? 'Не дождались фото-примерки. Попробуйте ещё раз.'
+        : error.message || 'Фото-примерка временно недоступна.';
     } finally {
       generationBusy = false;
       updateGenerationGuard();

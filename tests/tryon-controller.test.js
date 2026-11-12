@@ -106,16 +106,16 @@ test('coat fabric color is prioritized and short-arm measurements reach the prov
     for (const size of ['XS', 'XL']) {
         const req = await request(size);
         req.body.productId = 'coat';
-        req.body.measurements = { heightCm: 140, chestCm: 82, waistCm: 64, hipCm: 88, shoulderCm: 36, armLengthCm: 54, handLengthCm: 17 };
+        req.body.measurements = { heightCm: 165, chestCm: 82, waistCm: 64, hipCm: 88, shoulderCm: 36, armLengthCm: 54, handLengthCm: 17 };
         const res = response();
         await generate(req, res);
         assert.equal(res.statusCode, 200);
         const prompt = payloads.at(-1).data[2];
         assert.match(prompt, /^warm muted taupe beige long wool coat\./);
         assert.match(prompt, /Size (XS|XL); circumference ease: chest/);
-        assert.match(prompt, /Keep ankle-length coat \d+\.\d cm above shoe level; do not shorten or add trousers/);
+        assert.match(prompt, /Keep mid-calf-length coat \d+\.\d cm above shoe level; do not shorten or add trousers/);
         assert.match(prompt, /Keep the torso roomy and preserve the selected size width/);
-        assert.equal(res.data.geometry.hemClearanceCm <= 10, true);
+        assert.equal(res.data.geometry.hemClearanceCm > 0 && res.data.geometry.hemClearanceCm <= 35, true);
         if (size === 'XS') {
             assert.equal(res.data.geometry.sleeves[0].wristOffsetCm.toFixed(1), '13.1');
             assert.match(prompt, /circumference ease: chest \+32, waist \+46, hips \+30 cm/);
@@ -138,7 +138,7 @@ test('short-garment prompts carry product-specific measurements across all five 
     const payloads = [];
     const image = await sharp({ create: { width: 768, height: 1024, channels: 3, background: '#b5a28d' } }).png().toBuffer();
     global.fetch = providerStub({ image, onJoin: value => { payloads.push(value); } });
-    const wearer = { heightCm: 160, chestCm: 82, waistCm: 64, hipCm: 88, shoulderCm: 36, armLengthCm: 54, handLengthCm: 17 };
+    const wearer = { heightCm: 165, chestCm: 82, waistCm: 64, hipCm: 88, shoulderCm: 36, armLengthCm: 54, handLengthCm: 17 };
     const products = [
         ['shirt', 'shirt-cropped-reference-v1', 'Long-sleeve cotton shirt'],
         ['bomber', 'bomber-cropped-reference-v1', 'Short bomber jacket'],

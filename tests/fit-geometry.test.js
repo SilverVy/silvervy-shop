@@ -72,7 +72,7 @@ test('sleeve-only changes alter trusted reference pixels without stretching the 
 test('short garments use item-specific cropped references and size-dependent length, volume, and sleeves', async () => {
     const source = await sharp({ create: { width: 768, height: 1024, channels: 3, background: '#123456' } }).png().toBuffer();
     const measurements = {
-        heightCm: 160, chestCm: 82, waistCm: 64, hipCm: 88,
+        heightCm: 165, chestCm: 82, waistCm: 64, hipCm: 88,
         shoulderCm: 36, armLengthCm: 54, handLengthCm: 17
     };
     for (const productId of ['shirt', 'bomber', 'denim', 'linen']) {
@@ -110,7 +110,7 @@ test('short garments use item-specific cropped references and size-dependent len
 test('coat and trench stay on the full-frame outerwear preprocessing route', async () => {
     const source = await sharp({ create: { width: 768, height: 1024, channels: 3, background: '#123456' } }).png().toBuffer();
     const measurements = {
-        heightCm: 160, chestCm: 82, waistCm: 64, hipCm: 88,
+        heightCm: 165, chestCm: 82, waistCm: 64, hipCm: 88,
         shoulderCm: 36, armLengthCm: 54, handLengthCm: 17
     };
     for (const productId of ['coat', 'trench']) {
@@ -170,7 +170,7 @@ test('IDM receives the unchanged person image even when the calculated cuff cove
     const coat = catalog.getProduct('coat');
     const garment = await fs.readFile(`server/public/${coat.images.front}`);
     const measurements = {
-        heightCm: 160, chestCm: 82, waistCm: 64, hipCm: 88,
+        heightCm: 165, chestCm: 82, waistCm: 64, hipCm: 88,
         shoulderCm: 36, armLengthCm: 54, handLengthCm: 17
     };
     const assessment = assessRequest({ productId: 'coat', size: 'XL', measurements });

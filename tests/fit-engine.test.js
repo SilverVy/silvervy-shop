@@ -5,12 +5,10 @@ const fit = require('../server/public/fit-engine');
 const { assessRequest, parsePersonImage } = require('../server/services/fit-service');
 const body = { heightCm: 178, chestCm: 100, waistCm: 84, hipCm: 100, inseamCm: 79 };
 
-test('eight educational designs have complete, strictly graded dimensions', () => {
+test('eight menswear products have complete, strictly graded dimensions', () => {
     assert.equal(catalog.products.length, 8);
     assert.equal(new Set(catalog.products.map(p => p.id)).size, 8);
     for (const product of catalog.products) {
-        assert.equal(product.demo, true);
-        assert.equal(product.source.type, 'educational-design');
         assert.deepEqual(product.sizes.map(s => s.size), ['XS', 'S', 'M', 'L', 'XL']);
         for (const key of Object.keys(product.sizes[0]).filter(key => key !== 'size')) {
             product.sizes.forEach((row, index) => {
@@ -19,11 +17,15 @@ test('eight educational designs have complete, strictly graded dimensions', () =
             });
         }
         assert.ok(!product.images.front.includes('http'));
+        assert.ok(product.images.front.endsWith('-front.jpg'));
+        assert.ok(product.images.display.endsWith('-front-cutout.png'));
+        assert.notEqual(product.images.front, product.images.display);
     }
 });
 
 test('shared adult measurement ranges derive circumference limits from the whole size chart', () => {
-    for (const key of ['chestCm', 'waistCm', 'hipCm']) {
+    const bodyFloors = { chestCm: 80, waistCm: 60, hipCm: 80 };
+    for (const key of Object.keys(bodyFloors)) {
         const candidates = catalog.products.flatMap(product => {
             const target = product.ease[key];
             if (!target) return [];
@@ -34,17 +36,26 @@ test('shared adult measurement ranges derive circumference limits from the whole
             }));
         });
         const expected = [
-            Math.round(Math.min(...candidates.map(item => item.minimum)) * 10) / 10,
+            Math.max(bodyFloors[key], Math.round(Math.min(...candidates.map(item => item.minimum)) * 10) / 10),
             Math.round(Math.max(...candidates.map(item => item.maximum)) * 10) / 10
         ];
         assert.deepEqual(fit.ranges[key], expected);
     }
-    assert.deepEqual(fit.ranges.heightCm, [140, 210]);
-    assert.deepEqual(fit.ranges.shoulderCm, [34, 60]);
-    assert.deepEqual(fit.ranges.armLengthCm, [45, 76]);
-    assert.deepEqual(fit.ranges.handLengthCm, [14, 25]);
-    assert.deepEqual(fit.ranges.inseamCm, [65, 94]);
-    assert.deepEqual(fit.ranges.weightKg, [40, 200]);
+    assert.deepEqual(fit.ranges.heightCm, [165, 190]);
+    assert.deepEqual(fit.ranges.shoulderCm, [36, 58]);
+    assert.deepEqual(fit.ranges.armLengthCm, [54, 72]);
+    assert.deepEqual(fit.ranges.handLengthCm, [16, 23]);
+    assert.deepEqual(fit.ranges.inseamCm, [70, 91]);
+    assert.deepEqual(fit.ranges.weightKg, [50, 160]);
+    const fittingHtml = require('node:fs').readFileSync('server/public/fitting.html', 'utf8');
+    for (const [key, [min, max]] of Object.entries(fit.ranges)) {
+        if (key === 'weightKg') continue;
+        const field = fittingHtml.match(new RegExp(`<input name="${key}"[^>]*>`))?.[0];
+        if (field) {
+            assert.match(field, new RegExp(`min="${min}"`), `${key} minimum`);
+            assert.match(field, new RegExp(`max="${max}"`), `${key} maximum`);
+        }
+    }
 });
 
 test('circumference ease is garment minus body for every product and size', () => {
@@ -81,7 +92,7 @@ test('missing and invalid measurements do not silently get defaults', () => {
 });
 
 test('no supported sizes results in no recommendation, not XL as fallback', () => {
-    const result = fit.evaluate(catalog.getProduct('shirt'), { chestCm: 120, waistCm: 54, hipCm: 126 });
+    const result = fit.evaluate(catalog.getProduct('shirt'), { chestCm: 120, waistCm: 60, hipCm: 126 });
     assert.equal(result.status, 'ready');
     assert.equal(result.recommendedSize, null);
     assert.ok(result.rows.every(row => !row.compatible));
@@ -105,7 +116,7 @@ test('body chart does not pretend to be fabric physics; optional inseam is expli
     const product = catalog.getProduct('trousers');
     const withoutLength = fit.evaluate(product, { waistCm: 84, hipCm: 100 });
     assert.equal(withoutLength.status, 'ready');
-    assert.ok(withoutLength.warnings.some(text => text.includes('длина брюк не оценивается')));
+    assert.ok(withoutLength.warnings.some(text => text.includes('нельзя оценить длину брюк')));
     const withLength = fit.evaluate(product, body);
     assert.equal(withLength.rows.find(row => row.size === 'M').inseamDifferenceCm, 0);
 });

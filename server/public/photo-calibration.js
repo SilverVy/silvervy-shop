@@ -64,7 +64,7 @@
                 status.className = 'calibration-status field-error';
             }
             const radius = image.naturalWidth * .016;
-            stage.innerHTML = `<svg viewBox="0 0 ${image.naturalWidth} ${image.naturalHeight}" role="img" aria-label="Фото, размерная маска, расчётные манжеты и ${Object.keys(points).length} перемещаемых точек">
+            stage.innerHTML = `<svg viewBox="0 0 ${image.naturalWidth} ${image.naturalHeight}" role="img" aria-label="Фото с отметками, которые можно перемещать">
               <image href="${source}" width="${image.naturalWidth}" height="${image.naturalHeight}"/>
               <g fill="#a76f48" fill-opacity=".3">${overlay}</g>
               <g fill="none" stroke="#ffe6ac" stroke-width="${Math.max(2, radius / 4)}">${target}</g>
