@@ -417,6 +417,9 @@ exports.generate = async (req, res) => {
         const prepared = await prepareSizeInputs(person, garmentBuffer, assessment, req.body.calibration);
         console.info(JSON.stringify({ event: 'tryon_started', requestId, productId: assessment.product.id,
             size: assessment.size, method: prepared.metadata.method, hfTokenConfigured: Boolean(process.env.HF_TOKEN) }));
+        const comparison = assessment.fit.rows.find(row => row.size === assessment.size);
+        const fitWords = comparison.checks.some(check => check.easeCm < 0) ? 'tight close-fitting'
+            : comparison.checks.some(check => check.status === 'loose') ? 'very loose oversized' : 'relaxed';
         const ease = [
             ['chest', assessment.garment.chestCm, assessment.measurements.chestCm],
             ['waist', assessment.garment.waistCm, assessment.measurements.waistCm],
@@ -424,32 +427,33 @@ exports.generate = async (req, res) => {
         ].map(([zone, garmentCm, bodyCm]) =>
             `${zone} ${garmentCm - bodyCm >= 0 ? '+' : ''}${Number((garmentCm - bodyCm).toFixed(1))}`
         ).join(', ');
-        const volumeGuidance = `Size ${assessment.size}; ease ${ease} cm. Keep roomy; do not taper.`;
-        const sleeveTarget = prepared.guide.sleeves[0];
-        let cuffGuidance = 'Keep the calculated cuff position.';
-        if (sleeveTarget?.handCoverageRatio >= 1) {
-            const pastFingertips = Math.max(0, sleeveTarget.wristOffsetCm - sleeveTarget.handLengthCm);
-            cuffGuidance = `Cuffs cover both hands, ${pastFingertips.toFixed(1)} cm past fingertips; no fingers visible.`;
-        } else if (sleeveTarget?.handCoverageRatio > 0) {
-            const exposed = Math.max(0, sleeveTarget.handLengthCm - sleeveTarget.wristOffsetCm);
-            cuffGuidance = `Cuffs cover ${Math.round(sleeveTarget.handCoverageRatio * 100)}% of each hand; expose only ${exposed.toFixed(1)} cm at fingertips.`;
-        } else if (sleeveTarget) {
-            cuffGuidance = `Cuffs stop ${Math.abs(sleeveTarget.wristOffsetCm).toFixed(1)} cm before wrists.`;
-        }
+        const volumeGuidance = `Size ${assessment.size}; circumference ease: ${ease} cm. Keep the torso roomy and preserve the selected size width; larger sizes must add chest, waist and hip volume, not only sleeve length.`;
+        const cuffGuidance = prepared.guide.sleeves.map(sleeve => {
+            const side = sleeve.side.toLowerCase();
+            if (sleeve.handCoverageRatio >= 1) {
+                const pastFingertips = Math.max(0, sleeve.wristOffsetCm - sleeve.handLengthCm);
+                return `${side} cuff must cover the entire hand and finish ${pastFingertips.toFixed(1)} cm past the fingertips; no fingers visible below cuff`;
+            }
+            if (sleeve.handCoverageRatio > 0) {
+                const exposed = Math.max(0, sleeve.handLengthCm - sleeve.wristOffsetCm);
+                return `${side} cuff must cover ${Math.round(sleeve.handCoverageRatio * 100)}% of the hand from wrist toward fingertips; leave only the final ${exposed.toFixed(1)} cm of fingertips visible`;
+            }
+            return `${side} cuff must stop ${Math.abs(sleeve.wristOffsetCm).toFixed(1)} cm before wrist; keep the hand visible`;
+        }).join('; ');
+        const meanCuffOffset = prepared.guide.sleeves.reduce((sum, sleeve) => sum + sleeve.wristOffsetCm, 0) / prepared.guide.sleeves.length;
+        const sleeveStyle = meanCuffOffset < -4 ? 'sleeves ending above the wrists'
+            : meanCuffOffset > 1 ? 'sleeves extending over the hands according to the hand-coverage targets'
+                : 'sleeves ending at the wrists';
         const clearance = prepared.guide.hemClearanceCm;
         const hemLevel = clearance <= 12 ? 'ankle-length'
             : clearance <= 20 ? 'lower-calf-length'
                 : clearance <= 34 ? 'mid-calf-length'
                     : clearance <= 48 ? 'knee-length' : 'above-knee-length';
         const hemGuidance = assessment.product.id === 'coat'
-            ? `Keep ${hemLevel} coat; do not shorten or add trousers.`
+            ? `Keep ${hemLevel} coat ${clearance.toFixed(1)} cm above shoe level; do not shorten or add trousers.`
             : `Keep measured hem; do not shorten.`;
         const appearance = [assessment.product.tryOnColor, assessment.product.garmentDescription].filter(Boolean).join(' ');
-        // Keep every high-priority instruction within the provider's short text context.
-        const prompt = `${appearance}. ${volumeGuidance} ${cuffGuidance} ${hemGuidance} Same person, face and pose; match reference color, collar and pockets.`;
-        if (prompt.trim().split(/\s+/).length > 55) {
-            throw new Error('Размерная подсказка для IDM-VTON превышает безопасную длину.');
-        }
+        const prompt = `${appearance}. Matching reference fabric color across torso, shoulders and sleeves. Follow the size mask silhouette. ${volumeGuidance} Sleeve coverage targets: ${cuffGuidance}. ${sleeveStyle}; ${fitWords}; sleeves ${assessment.garment.sleeveCm} cm from shoulder seam; preserve each calculated cuff position. ${hemGuidance} Same person, face and pose; preserve collar, pockets and closures.`;
         const image = await callIdm(prepared.person, prepared.garment, prompt, prepared);
         console.info(JSON.stringify({ event: 'tryon_completed', requestId, elapsedMs: Date.now() - startedAt }));
 

@@ -45,6 +45,12 @@ Sleeve-control examples must include small people with short arms, not only an a
 
 **How to apply:** check small-body scenarios and shoulder drop when assessing the result. Do not exaggerate the catalog's grading just to manufacture a visible difference, and do not present calculated hand coverage as observed photo accuracy.
 
+The user prefers the earlier detailed, separate left/right cuff instructions that gave a closer sleeve result; improve body-volume guidance independently.
+
+**Why:** the user compared generated photos and said that version's sleeves were closer to real life, while larger sizes still lacked enough volume.
+
+**How to apply:** preserve per-arm cuff targets when tuning the torso silhouette; do not compress both cuffs into one shared instruction.
+
 Larger selected sizes must retain visibly larger garment volume in generated images, not only longer sleeves, in line with the measured ease at chest, waist, and hips.
 
 **Why:** the user reported that the XL output lost the expected increase in volume despite larger garment measurements.
@@ -56,6 +62,12 @@ In the user's November 13 XS/XL comparison, sleeve differences became more visib
 **Why:** the user supplied both generated images and the matching size chart and asked for a reality check.
 
 **How to apply:** treat increased visual difference as partial compliance only; compare each cuff to the target fraction of the hand on both arms.
+
+The temporary forearm-extension conditioning produced glove-like hands in the user's Render outputs and was judged worse than the previous result.
+
+**Why:** the user supplied the generated images after this experiment.
+
+**How to apply:** do not re-enable synthetic forearm conditioning for IDM-VTON without a live, user-reviewed preview; avoid trading natural hands for measured cuff coverage.
 
 In a 140 cm wearer test, trousers appeared in the generated coat image even though they were absent from that test's input photo; treat them as model hallucination, not preserved source clothing.
 

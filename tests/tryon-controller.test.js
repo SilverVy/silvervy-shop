@@ -79,12 +79,14 @@ test('IDM adapter sends different measured masks AND references, live laboratory
         assert.match(res.data.image, /^data:image\/png;base64,/);
     }
     assert.notEqual(payloads[0].data[2], payloads[1].data[2]);
-    assert.match(payloads[0].data[2], /Size XS; ease chest/);
-    assert.match(payloads[1].data[2], /Size XL; ease chest/);
-    assert.match(payloads[0].data[2], /Cuffs stop 6\.4 cm before wrists/);
-    assert.match(payloads[1].data[2], /Cuffs stop 0\.6 cm before wrists/);
+    assert.match(payloads[0].data[2], /Size XS; circumference ease: chest/);
+    assert.match(payloads[1].data[2], /Size XL; circumference ease: chest/);
+    assert.match(payloads[0].data[2], /left cuff must stop 6\.4 cm before wrist/);
+    assert.match(payloads[0].data[2], /right cuff must stop 6\.4 cm before wrist/);
+    assert.match(payloads[1].data[2], /left cuff must stop 0\.6 cm before wrist/);
+    assert.match(payloads[1].data[2], /right cuff must stop 0\.6 cm before wrist/);
     for (const prompt of payloads.map(payload => payload.data[2])) {
-        assert.ok(prompt.trim().split(/\s+/).length <= 60, 'all essential directions fit the compact prompt budget');
+        assert.match(prompt, /larger sizes must add chest, waist and hip volume, not only sleeve length/);
         assert.match(prompt, /Same person, face and pose/);
     }
     assert.equal(payloads[0].data[6], payloads[1].data[6]);
@@ -110,23 +112,21 @@ test('coat fabric color is prioritized and short-arm measurements reach the prov
         assert.equal(res.statusCode, 200);
         const prompt = payloads.at(-1).data[2];
         assert.match(prompt, /^warm muted taupe beige long wool coat\./);
-        assert.match(prompt, /Size (XS|XL); ease chest/);
-        assert.match(prompt, /Keep ankle-length coat; do not shorten or add trousers/);
-        assert.match(prompt, /Keep roomy; do not taper/);
-        assert.ok(prompt.trim().split(/\s+/).length <= 55, 'cuff and volume instructions remain inside the compact prompt budget');
-        assert.match(res.data.geometry.armConditioning.method, /masked-forearm-extension-v1/);
+        assert.match(prompt, /Size (XS|XL); circumference ease: chest/);
+        assert.match(prompt, /Keep ankle-length coat \d+\.\d cm above shoe level; do not shorten or add trousers/);
+        assert.match(prompt, /Keep the torso roomy and preserve the selected size width/);
         assert.equal(res.data.geometry.hemClearanceCm <= 10, true);
         if (size === 'XS') {
             assert.equal(res.data.geometry.sleeves[0].wristOffsetCm.toFixed(1), '13.1');
-            assert.match(prompt, /chest \+32, waist \+46, hips \+30 cm/);
-            assert.match(prompt, /Cuffs cover 77% of each hand; expose only 3\.9 cm at fingertips/);
-            assert.equal(res.data.geometry.armConditioning.sides[0].extensionCm, 13.1);
+            assert.match(prompt, /circumference ease: chest \+32, waist \+46, hips \+30 cm/);
+            assert.match(prompt, /left cuff must cover 77% of the hand from wrist toward fingertips; leave only the final 3\.9 cm of fingertips visible/);
+            assert.match(prompt, /right cuff must cover 77% of the hand from wrist toward fingertips; leave only the final 3\.9 cm of fingertips visible/);
         } else {
             assert.equal(res.data.geometry.sleeves[0].wristOffsetCm.toFixed(1), '18.9');
             assert.equal(res.data.geometry.sleeves[0].handCoverageRatio, 1);
-            assert.match(prompt, /chest \+56, waist \+70, hips \+54 cm/);
-            assert.match(prompt, /Cuffs cover both hands, 1\.9 cm past fingertips; no fingers visible/);
-            assert.equal(res.data.geometry.armConditioning.sides[0].extensionCm, 18.9);
+            assert.match(prompt, /circumference ease: chest \+56, waist \+70, hips \+54 cm/);
+            assert.match(prompt, /left cuff must cover the entire hand and finish 1\.9 cm past the fingertips; no fingers visible below cuff/);
+            assert.match(prompt, /right cuff must cover the entire hand and finish 1\.9 cm past the fingertips; no fingers visible below cuff/);
         }
     }
     assert.notEqual(payloads[0].data[2], payloads[1].data[2]);

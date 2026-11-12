@@ -91,7 +91,7 @@ test('outside the submitted mask output pixels exactly preserve the normalized s
     const fakeOutput = await sharp({ create: { width: 768, height: 1024, channels: 3, background: '#ee7722' } }).png().toBuffer();
     const output = await preserveOutsideMask(fakeOutput, prepared);
     const actual = await sharp(output).removeAlpha().raw().toBuffer();
-    const original = await sharp(prepared.sourcePerson.buffer).removeAlpha().raw().toBuffer();
+    const original = await sharp(prepared.person.buffer).removeAlpha().raw().toBuffer();
     const mask = await sharp(prepared.mask).extractChannel(0).raw().toBuffer();
     let protectedPixels = 0, changedPixels = 0;
     for (let i = 0; i < mask.length; i++) {
@@ -106,10 +106,10 @@ test('outside the submitted mask output pixels exactly preserve the normalized s
     assert.ok(changedPixels > 1000);
 });
 
-test('temporary forearm extension conditions IDM only inside the size mask and never leaks into the final base image', async () => {
+test('IDM receives the unchanged person image even when the calculated cuff covers the hand', async () => {
     const source = await fs.readFile('server/public/media/collection/shirt-model.jpg');
-    const product = catalog.getProduct('coat');
-    const garment = await fs.readFile(`server/public/${product.images.front}`);
+    const coat = catalog.getProduct('coat');
+    const garment = await fs.readFile(`server/public/${coat.images.front}`);
     const measurements = {
         heightCm: 160, chestCm: 82, waistCm: 64, hipCm: 88,
         shoulderCm: 36, armLengthCm: 54, handLengthCm: 17
@@ -118,29 +118,11 @@ test('temporary forearm extension conditions IDM only inside the size mask and n
     const prepared = await prepareSizeInputs(
         { buffer: source }, garment, assessment, { points: geometry.defaults, confirmed: true }
     );
-    assert.equal(prepared.metadata.armConditioning.method, 'masked-forearm-extension-v1');
-    assert.equal(prepared.metadata.armConditioning.sides.length, 2);
-    assert.ok(prepared.metadata.armConditioning.sides.every(side => side.extensionCm === 18.9));
-
-    const original = await sharp(prepared.sourcePerson.buffer).removeAlpha().raw().toBuffer();
-    const conditioned = await sharp(prepared.person.buffer).removeAlpha().raw().toBuffer();
-    const mask = await sharp(prepared.mask).extractChannel(0).raw().toBuffer();
-    let changedInside = 0;
-    for (let i = 0; i < mask.length; i++) {
-        if (mask[i] === 0) {
-            assert.deepEqual(conditioned.subarray(i * 3, i * 3 + 3), original.subarray(i * 3, i * 3 + 3));
-        } else if (!conditioned.subarray(i * 3, i * 3 + 3).equals(original.subarray(i * 3, i * 3 + 3))) {
-            changedInside++;
-        }
-    }
-    assert.ok(changedInside > 10, 'the hand-covered edit region receives a temporary arm continuation');
-
-    const fakeOutput = await sharp({ create: { width: 768, height: 1024, channels: 3, background: '#ee7722' } }).png().toBuffer();
-    const finalImage = await preserveOutsideMask(fakeOutput, prepared);
-    const finalPixels = await sharp(finalImage).removeAlpha().raw().toBuffer();
-    for (let i = 0; i < mask.length; i++) {
-        if (mask[i] === 0) {
-            assert.deepEqual(finalPixels.subarray(i * 3, i * 3 + 3), original.subarray(i * 3, i * 3 + 3));
-        }
-    }
+    assert.equal(prepared.guide.sleeves[0].wristOffsetCm.toFixed(1), '18.9');
+    const oriented = await sharp(source).rotate().png().toBuffer();
+    const expected = await sharp(oriented).resize(768, 1024, { fit: 'contain', background: '#f3f1e9' }).png().toBuffer();
+    assert.deepEqual(
+        await sharp(prepared.person.buffer).removeAlpha().raw().toBuffer(),
+        await sharp(expected).removeAlpha().raw().toBuffer()
+    );
 });
