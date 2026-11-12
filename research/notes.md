@@ -42,3 +42,54 @@ Image-only 2D diffusion cannot guarantee exact garment preservation or physical 
 ## Gaps
 
 The web search callbacks returned HTTP 402 during this research. Findings were verified by direct reads of official repositories and documentation; the evidence URLs and excerpts are recorded under research/sources/.
+
+
+# Research Notes: Rights-cleared catalog and size-fit assets
+
+**Status:** researching
+**Depth:** Standard
+
+## Plan
+
+- **Question:** Can Silver.Vy source rights-cleared apparel assets that match each product image, composition, size chart, and graded pattern/3D model?
+- **Scope:** Men's oversized apparel in muted natural colors; keep footwear; check public datasets, real products, licensing, per-size garment data, and viable fit simulation.
+- **Audience:** Silver.Vy project owner
+- **Deliverable:** Sourced comparison report and a recommendation; do not replace catalog until product-data path is approved.
+
+## Focus Areas
+
+| # | Area | Status | Sources |
+|---|---|---|---|
+| 1 | Public 3D garment and pattern datasets | pending | -- |
+| 2 | Real retail items with matching 3D assets and size specs | pending | -- |
+| 3 | Image, pattern, and data reuse rights | pending | -- |
+| 4 | Size-accurate simulation inputs and limits | pending | -- |
+| 5 | Practical Silver.Vy pilot and integration choices | pending | -- |
+
+## Coverage Checklist
+
+- [ ] Which open datasets contain both 3D garment geometry and sewing patterns?
+- [ ] Are there real retail garments whose photos, compositions, size charts, and 3D/pattern assets can all be reused?
+- [ ] What does each relevant dataset license permit for this educational website?
+- [ ] What garment and body measurements, fabric properties, and validation are required for defensible size fit?
+- [ ] Can a coherent natural-tone oversized men's collection be assembled without inventing product data?
+- [ ] What practical choices should the owner approve before replacing the existing apparel catalog?
+
+## Findings Log
+
+_[@key] markers reference sources in research/sources.json._
+
+### Existing evidence
+
+- The current repo's VTON research says IDM-VTON does not condition on size measurements; it cannot guarantee exact size-specific fit [@idm-vton].
+- Initial official ETH metadata describes GarmentCodeData v2 as synthetic 3D garments with sewing patterns, and lists a CC BY 4.0 license [@garmentcodedata-v2-eth].
+
+## Conflicts & Open Questions
+
+- Synthetic pattern datasets may support custom demonstrator garments but are not verified retail products with known fiber composition.
+- Retail product data may be public while product photography, graded patterns, and 3D assets remain unavailable or separately licensed.
+
+## Gaps
+
+- Verify the actual data schemas, garment classes, license scope, and storage/compute demands of candidate datasets.
+- Find or rule out real apparel products with all required assets and reuse rights.

@@ -89,14 +89,14 @@ content_type = "image/png"
 id = "trmlGlAJOnTs4KcWxORmT"
 uri = "file://research/notes.md"
 type = "text"
-title = "Исследование 3D-примерки"
-description = "План и выводы о сохранении одежды и посадке по размеру."
+title = "Research Notes: Silver.Vy Catalog Fit"
+description = "Research plan and running findings for data-backed catalog sourcing."
 logical_id = "26887250-ac59-48ce-81e4-fea5f2fd2fef"
-content_hash = "sha256:1fd25c3ce94cccb24d99650727b9f51fce9b8bff2667525a718a4f4c6e1e6b77"
-size = 1273
-mtime_ms = 1793276578976
-storage_uri = "gcs://replit-rams-assets-kirk/rams/assets/repl:ecabb725-e452-436f-9e5b-8b727de341bc/26887250-ac59-48ce-81e4-fea5f2fd2fef/156d4ee3-bc75-4059-8273-2b23d1c6bc78"
-storage_version_token = "1793276585019169"
+content_hash = "sha256:1c2f9d234b302b0872f10f89e5cb811179adec62be74a83853fe2c3bbee79a5a"
+size = 5166
+mtime_ms = 1794483318512
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:dbeec2a7-08f7-4644-88a4-2c928c7b2776/26887250-ac59-48ce-81e4-fea5f2fd2fef/2eeb9e8c-40ad-481b-85ac-cd1e7b99b187"
+storage_version_token = "1794483319434880"
 content_type = "text/markdown"
 
 [[outputs]]
